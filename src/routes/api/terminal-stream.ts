@@ -12,7 +12,7 @@ export const Route = createFileRoute('/api/terminal-stream')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!requireLocalOrAuth(request)) {
+        if (!(await requireLocalOrAuth(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             {

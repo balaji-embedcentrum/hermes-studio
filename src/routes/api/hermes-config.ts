@@ -16,7 +16,6 @@ import {
 import { createCapabilityUnavailablePayload } from '@/lib/feature-gates'
 
 
-type AuthResult = Response | true
 
 const HERMES_HOME = path.join(os.homedir(), '.hermes')
 const CONFIG_PATH = path.join(HERMES_HOME, 'config.yaml')
@@ -168,8 +167,9 @@ export const Route = createFileRoute('/api/hermes-config')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const authResult = isAuthenticated(request) as AuthResult
-        if (authResult !== true) return authResult
+        if (!(await isAuthenticated(request))) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
         await ensureGatewayProbed()
         if (!getCapabilities().config) {
           return Response.json({
@@ -237,8 +237,9 @@ export const Route = createFileRoute('/api/hermes-config')({
       },
 
       PATCH: async ({ request }) => {
-        const authResult = isAuthenticated(request) as AuthResult
-        if (authResult !== true) return authResult
+        if (!(await isAuthenticated(request))) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
         await ensureGatewayProbed()
         if (!getCapabilities().config) {
           return new Response(

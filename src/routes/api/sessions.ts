@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/sessions')({
     handlers: {
       GET: async ({ request }) => {
         // Auth check
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         await ensureGatewayProbed()
@@ -46,7 +46,7 @@ export const Route = createFileRoute('/api/sessions')({
         }
       },
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         const csrfCheckPost = requireJsonContentType(request)
@@ -103,7 +103,7 @@ export const Route = createFileRoute('/api/sessions')({
         }
       },
       PATCH: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         const csrfCheckPatch = requireJsonContentType(request)
@@ -169,7 +169,7 @@ export const Route = createFileRoute('/api/sessions')({
         }
       },
       DELETE: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         await ensureGatewayProbed()

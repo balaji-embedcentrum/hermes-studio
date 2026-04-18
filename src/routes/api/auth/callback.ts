@@ -106,40 +106,30 @@ export const Route = createFileRoute('/api/auth/callback')({
           // Non-fatal — continue with login
         }
 
-        // ── Set session cookies via client-side script, then redirect ────
+        // ── Set session cookies via Set-Cookie headers (HttpOnly) ───────
         //
-        // TanStack Start strips Set-Cookie headers from Response objects
-        // returned by server handlers. There is no workaround within the
-        // framework — so we return an HTML page whose inline script sets
-        // the cookies via document.cookie and then navigates to /projects.
+        // Session tokens are HttpOnly so they cannot be exfiltrated by
+        // in-page JavaScript / XSS. Secure is enforced on HTTPS. Same-site
+        // lax is required so GitHub's 302 back into our callback carries
+        // cookies; Strict would break the OAuth flow.
         //
         const isHttps = url.protocol === 'https:'
-        const secure = isHttps ? ' Secure;' : ''
+        const secure = isHttps ? '; Secure' : ''
+        const encodedAT = encodeURIComponent(access_token)
+        const encodedRT = encodeURIComponent(refresh_token ?? '')
+        const cookies = [
+          `sb-access-token=${encodedAT}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${expires_in}`,
+          `sb-refresh-token=${encodedRT}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30}`,
+          `hermes_pkce_verifier=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`,
+          `hermes_force_reauth=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`,
+        ]
 
         console.info('[auth/callback] Login successful for user:', user.id)
 
-        const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Signing in...</title></head>
-<body>
-<script>
-(function(){
-  var at = ${JSON.stringify(access_token)};
-  var rt = ${JSON.stringify(refresh_token ?? '')};
-  var ex = ${JSON.stringify(expires_in)};
-  document.cookie = "sb-access-token=" + encodeURIComponent(at) + "; path=/; max-age=" + ex + "; samesite=lax;${secure}";
-  document.cookie = "sb-refresh-token=" + encodeURIComponent(rt) + "; path=/; max-age=" + (60*60*24*30) + "; samesite=lax;${secure}";
-  document.cookie = "hermes_pkce_verifier=; path=/; max-age=0;";
-  document.cookie = "hermes_force_reauth=; path=/; max-age=0;";
-  window.location.replace("/agents");
-})();
-</script>
-<noscript><a href="/agents">Click here to continue</a></noscript>
-</body></html>`
+        const headers = new Headers({ Location: new URL('/agents', url).toString() })
+        for (const c of cookies) headers.append('Set-Cookie', c)
 
-        return new Response(html, {
-          status: 200,
-          headers: { 'Content-Type': 'text/html; charset=utf-8' },
-        })
+        return new Response(null, { status: 302, headers })
       },
     },
   },

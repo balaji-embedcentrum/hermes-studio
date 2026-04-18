@@ -13,7 +13,7 @@ const FEATURES = [
   { icon: Terminal, title: 'Terminal', desc: 'Full xterm terminal inside the browser, wired to your workspace shell.' },
   { icon: Folder, title: 'GitHub Workspaces', desc: 'Sign in with GitHub, clone any repo, and let the agent read, create, and modify files in place.' },
   { icon: Sparkles, title: 'Memory & Skills', desc: "Browse the agent's memory store and skill library. Agent behavior shaped by your context." },
-  { icon: GitFork, title: 'Open Source', desc: 'MIT licensed. Built on Hermes Workspace by Eric (outsourc-e). Self-host or run locally.' },
+  { icon: GitFork, title: 'Open Source', desc: 'MIT licensed. Self-host or run locally. No vendor lock-in.' },
 ]
 
 function LandingPage() {
@@ -81,10 +81,10 @@ function LandingPage() {
 
       <footer style={{ marginTop: 'auto', borderTop: `1px solid ${borderColor}`, padding: '32px 24px', textAlign: 'center', color: textMuted, fontSize: 13 }}>
         <div style={{ marginBottom: 6 }}>
-          Hermes Studio — MIT licensed. Built on{' '}
-          <a href="https://github.com/outsourc-e/hermes-agent" target="_blank" rel="noopener noreferrer" style={{ color: accent, textDecoration: 'none' }}>
-            Hermes Workspace
-          </a>{' '}by Eric (outsourc-e).
+          Hermes Studio — MIT licensed. See{' '}
+          <a href="https://github.com/balaji-embedcentrum/hermes-studio/blob/main/CREDITS.md" target="_blank" rel="noopener noreferrer" style={{ color: accent, textDecoration: 'none' }}>
+            CREDITS
+          </a>.
         </div>
       </footer>
     </div>

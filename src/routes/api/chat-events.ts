@@ -16,7 +16,7 @@ export const Route = createFileRoute('/api/chat-events')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             { status: 401, headers: { 'Content-Type': 'application/json' } },

@@ -14,7 +14,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
           })
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
         })
       },
       POST: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
           })
@@ -72,7 +72,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
         })
       },
       PATCH: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
           })
@@ -98,7 +98,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
         })
       },
       DELETE: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
           })

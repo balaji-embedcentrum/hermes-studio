@@ -7,7 +7,7 @@ export const Route = createFileRoute('/api/start-agent')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
 

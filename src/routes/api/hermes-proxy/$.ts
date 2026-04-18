@@ -55,7 +55,7 @@ export const Route = createFileRoute('/api/hermes-proxy/$')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             { status: 401, headers: { 'content-type': 'application/json' } },
@@ -64,7 +64,7 @@ export const Route = createFileRoute('/api/hermes-proxy/$')({
         return proxyRequest(request, params._splat || '')
       },
       POST: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             { status: 401, headers: { 'content-type': 'application/json' } },
@@ -73,7 +73,7 @@ export const Route = createFileRoute('/api/hermes-proxy/$')({
         return proxyRequest(request, params._splat || '')
       },
       PATCH: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             { status: 401, headers: { 'content-type': 'application/json' } },
@@ -82,7 +82,7 @@ export const Route = createFileRoute('/api/hermes-proxy/$')({
         return proxyRequest(request, params._splat || '')
       },
       DELETE: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             { status: 401, headers: { 'content-type': 'application/json' } },

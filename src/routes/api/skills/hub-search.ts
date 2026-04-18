@@ -158,7 +158,7 @@ export const Route = createFileRoute('/api/skills/hub-search')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         try {

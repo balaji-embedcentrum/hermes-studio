@@ -56,12 +56,17 @@ type FileEntry = {
 function ensureWorkspacePath(input: string) {
   const raw = input.trim()
   if (!raw) return WORKSPACE_ROOT
-  const resolved = path.isAbsolute(raw)
-    ? path.resolve(raw)
-    : path.resolve(WORKSPACE_ROOT, raw)
-  // Allow absolute paths that exist on the local filesystem
-  // (local Hermes agent mode — paths like /Users/.../sylang-projects/repo)
-  if (!resolved.startsWith(WORKSPACE_ROOT) && !path.isAbsolute(raw)) {
+  // Always anchor resolution to WORKSPACE_ROOT. Absolute paths supplied by
+  // the caller are treated as relative to WORKSPACE_ROOT by stripping the
+  // leading slash — we never honor an attacker-supplied /etc/passwd.
+  const normalized = raw.replace(/^\/+/, '')
+  const resolved = path.resolve(WORKSPACE_ROOT, normalized)
+  // Final containment check after symlink-agnostic resolve. A normalized
+  // path that still escapes the root (e.g. via relative traversal) is rejected.
+  const rootWithSep = WORKSPACE_ROOT.endsWith(path.sep)
+    ? WORKSPACE_ROOT
+    : WORKSPACE_ROOT + path.sep
+  if (resolved !== WORKSPACE_ROOT && !resolved.startsWith(rootWithSep)) {
     throw new Error('Path is outside workspace')
   }
   return resolved
@@ -280,7 +285,7 @@ export const Route = createFileRoute('/api/files')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         try {
@@ -440,7 +445,7 @@ export const Route = createFileRoute('/api/files')({
         }
       },
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         const ip = getClientIp(request)
@@ -618,7 +623,7 @@ export const Route = createFileRoute('/api/files')({
           }
 
           if (action === 'delete') {
-            if (!requireLocalOrAuth(request)) {
+            if (!(await requireLocalOrAuth(request))) {
               return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
             }
             const targetPath = ensureWorkspacePath(String(body.path || ''))

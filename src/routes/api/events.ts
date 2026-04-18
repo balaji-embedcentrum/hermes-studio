@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { getAuthUser } from '../../server/supabase-auth'
 import {
   ensureBusStarted,
   subscribeToChatEvents,
@@ -7,7 +8,29 @@ import {
 export const Route = createFileRoute('/api/events')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // Require Supabase auth. Without this the SSE stream leaked every
+        // user's chat events to anonymous subscribers.
+        const auth = await getAuthUser(request)
+        if (!auth) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+
+        // Require an explicit sessionKey — callers must say WHICH chat
+        // they're listening to. The bus filter then only delivers events
+        // whose data.sessionKey matches. (Ownership of the sessionKey
+        // itself is enforced at write time — send-stream checks auth.)
+        const sessionKey = new URL(request.url).searchParams.get('sessionKey')
+        if (!sessionKey) {
+          return new Response(
+            JSON.stringify({ error: 'sessionKey query param required' }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } },
+          )
+        }
+
         await ensureBusStarted()
 
         const encoder = new TextEncoder()
@@ -16,14 +39,12 @@ export const Route = createFileRoute('/api/events')({
 
         const stream = new ReadableStream({
           start(controller) {
-            // Send connected event immediately
             controller.enqueue(
               encoder.encode(
                 `event: connected\ndata: ${JSON.stringify({ ts: Date.now() })}\n\n`,
               ),
             )
 
-            // Subscribe to chat event bus
             unsubscribe = subscribeToChatEvents((event) => {
               try {
                 controller.enqueue(
@@ -34,9 +55,8 @@ export const Route = createFileRoute('/api/events')({
               } catch {
                 // Stream closed
               }
-            })
+            }, sessionKey)
 
-            // Keepalive every 15s
             keepaliveInterval = setInterval(() => {
               try {
                 controller.enqueue(encoder.encode(`: keepalive\n\n`))

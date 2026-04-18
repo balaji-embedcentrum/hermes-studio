@@ -52,8 +52,9 @@ export const Route = createFileRoute('/api/connection-status')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const authResult = isAuthenticated(request)
-        if (authResult !== true) return authResult as unknown as Response
+        if (!(await isAuthenticated(request))) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
 
         const caps = await ensureGatewayProbed()
         const activeModel = readActiveModel()

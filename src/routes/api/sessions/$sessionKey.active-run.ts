@@ -7,7 +7,7 @@ export const Route = createFileRoute('/api/sessions/$sessionKey/active-run')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
 

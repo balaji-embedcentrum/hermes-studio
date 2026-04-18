@@ -16,7 +16,7 @@ export const Route = createFileRoute('/api/ping')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!requireLocalOrAuth(request)) {
+        if (!(await requireLocalOrAuth(request))) {
           return Response.json(
             {
               ok: false,

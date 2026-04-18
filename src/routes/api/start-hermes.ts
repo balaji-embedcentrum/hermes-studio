@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/start-hermes')({
     handlers: {
       POST: async ({ request }) => {
         try {
-          if (!isAuthenticated(request)) {
+          if (!(await isAuthenticated(request))) {
             return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
           }
 

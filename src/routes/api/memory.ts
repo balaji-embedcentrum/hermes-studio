@@ -12,7 +12,7 @@ export const Route = createFileRoute('/api/memory')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!requireLocalOrAuth(request)) {
+        if (!(await requireLocalOrAuth(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
 

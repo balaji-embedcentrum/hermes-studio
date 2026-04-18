@@ -1,141 +1,75 @@
-import { randomBytes, timingSafeEqual } from 'node:crypto'
+/**
+ * Auth middleware — secure-by-default.
+ *
+ * Every protected API route calls isAuthenticated() / requireLocalOrAuth()
+ * which verifies a Supabase JWT via @supabase/supabase-js. No session-token
+ * shortcut, no HERMES_PASSWORD bypass, no X-Forwarded-For trust.
+ *
+ * The legacy password flow (isPasswordProtectionEnabled/verifyPassword) is
+ * kept only so the deprecated /api/auth POST still compiles; it now no-ops
+ * and the route returns 410 Gone. All real auth is Supabase JWT.
+ */
+
+import { getAuthUser } from './supabase-auth'
 
 /**
- * In-memory session store.
- * For production, consider Redis or a database.
+ * True iff the request carries a valid Supabase session JWT.
+ * Used as `await isAuthenticated(request)`.
  */
-const validTokens = new Set<string>()
-
-/**
- * Generate a cryptographically secure session token.
- */
-export function generateSessionToken(): string {
-  return randomBytes(32).toString('hex')
+export async function isAuthenticated(request: Request): Promise<boolean> {
+  const user = await getAuthUser(request)
+  return user !== null
 }
 
 /**
- * Store a session token as valid.
+ * Kept for backward compatibility with existing call sites that previously
+ * allowed unauthenticated requests from loopback / Tailscale / LAN.
+ *
+ * That "trusted network" shortcut is removed: it was exploitable by spoofing
+ * X-Forwarded-For through the edge proxy. This now behaves identically to
+ * isAuthenticated() and MUST return true before the caller touches the FS
+ * or spawns a process.
  */
-export function storeSessionToken(token: string): void {
-  validTokens.add(token)
-}
-
-/**
- * Check if a session token is valid.
- */
-export function isValidSessionToken(token: string): boolean {
-  return validTokens.has(token)
-}
-
-/**
- * Remove a session token (logout).
- */
-export function revokeSessionToken(token: string): void {
-  validTokens.delete(token)
-}
-
-/**
- * Check if password protection is enabled.
- */
-export function isPasswordProtectionEnabled(): boolean {
-  return Boolean(
-    process.env.HERMES_PASSWORD && process.env.HERMES_PASSWORD.length > 0,
-  )
-}
-
-/**
- * Verify password using timing-safe comparison.
- */
-export function verifyPassword(password: string): boolean {
-  const configured = process.env.HERMES_PASSWORD
-  if (!configured || configured.length === 0) {
-    return false
-  }
-
-  // Timing-safe comparison
-  const passwordBuf = Buffer.from(password, 'utf8')
-  const configuredBuf = Buffer.from(configured, 'utf8')
-
-  // If lengths differ, still do a comparison to avoid timing leak
-  if (passwordBuf.length !== configuredBuf.length) {
-    return false
-  }
-
-  try {
-    return timingSafeEqual(passwordBuf, configuredBuf)
-  } catch {
-    return false
-  }
-}
-
-/**
- * Extract session token from cookie header.
- */
-export function getSessionTokenFromCookie(
-  cookieHeader: string | null,
-): string | null {
-  if (!cookieHeader) return null
-
-  const cookies = cookieHeader.split(';').map((c) => c.trim())
-  for (const cookie of cookies) {
-    if (cookie.startsWith('hermes-auth=')) {
-      return cookie.substring('hermes-auth='.length)
-    }
-  }
-  return null
-}
-
-function isLocalRequest(request: Request): boolean {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const ip = forwarded?.split(',')[0]?.trim() || '127.0.0.1'
-  const localIPs = ['127.0.0.1', '::1', 'localhost', '::ffff:127.0.0.1']
-  if (localIPs.includes(ip)) return true
-  // Allow Tailscale (100.x.x.x) and private LAN ranges
-  if (/^100\.\d+\.\d+\.\d+$/.test(ip)) return true
-  if (/^192\.168\./.test(ip)) return true
-  if (/^10\./.test(ip)) return true
-  return false
-}
-
-/**
- * Check if the request is authenticated.
- * Returns true if:
- * - Password protection is disabled, OR
- * - Request has a valid session token
- */
-export function isAuthenticated(request: Request): boolean {
-  // No password configured? No auth needed
-  if (!isPasswordProtectionEnabled()) {
-    return true
-  }
-
-  // Check for valid session token
-  const cookieHeader = request.headers.get('cookie')
-  const token = getSessionTokenFromCookie(cookieHeader)
-
-  if (!token) {
-    return false
-  }
-
-  return isValidSessionToken(token)
-}
-
-export function requireLocalOrAuth(request: Request): boolean {
-  if (!isPasswordProtectionEnabled()) {
-    return isLocalRequest(request)
-  }
-
+export async function requireLocalOrAuth(request: Request): Promise<boolean> {
   return isAuthenticated(request)
 }
 
+// ── Deprecated legacy password auth (no-op shims, kept for compile) ──────────
+
+export function isPasswordProtectionEnabled(): boolean {
+  return false
+}
+
+export function verifyPassword(_password: string): boolean {
+  return false
+}
+
+export function generateSessionToken(): string {
+  throw new Error('Deprecated — use Supabase auth via /api/auth/github')
+}
+
+export function storeSessionToken(_token: string): void {
+  /* no-op */
+}
+
+export function isValidSessionToken(_token: string): boolean {
+  return false
+}
+
+export function revokeSessionToken(_token: string): void {
+  /* no-op */
+}
+
+export function getSessionTokenFromCookie(_cookieHeader: string | null): string | null {
+  return null
+}
+
 /**
- * Create a Set-Cookie header for the session token.
+ * Kept only because /api/auth/logout expects a clear-cookie helper.
+ * Emits a Set-Cookie that expires the legacy cookie with all hardening flags.
  */
-export function createSessionCookie(token: string): string {
-  // httpOnly: prevents JS access
-  // secure: HTTPS only (disabled for local dev)
-  // sameSite=strict: CSRF protection
-  // path=/: available everywhere
-  // maxAge: 30 days
-  return `hermes-auth=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${30 * 24 * 60 * 60}`
+export function createSessionCookie(_token: string): string {
+  // Empty value + Max-Age=0 clears the cookie on the client.
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  return `hermes-auth=; HttpOnly${secure}; SameSite=Strict; Path=/; Max-Age=0`
 }

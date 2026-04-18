@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/hermes-jobs')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
           })
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/api/hermes-jobs')({
         })
       },
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
           })

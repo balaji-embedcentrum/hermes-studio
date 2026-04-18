@@ -13,7 +13,7 @@ export const Route = createFileRoute('/api/terminal-input')({
     handlers: {
       POST: async ({ request }) => {
         // Auth check
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             { status: 401, headers: { 'Content-Type': 'application/json' } },

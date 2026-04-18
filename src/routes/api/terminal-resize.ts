@@ -7,7 +7,7 @@ export const Route = createFileRoute('/api/terminal-resize')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return new Response(
             JSON.stringify({ ok: false, error: 'Unauthorized' }),
             {

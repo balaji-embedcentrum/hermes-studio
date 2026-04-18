@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "description": "AI agent workspace — chat, files, terminal, memory, and skills in one browser IDE.",
   "author": "Balaji Boominathan <balaji@sylang.dev>",
-  "contributors": [
-    "Eric (https://github.com/outsourc-e) — original Hermes Workspace"
-  ],
   "homepage": "https://github.com/balaji-embedcentrum/hermes-studio",
   "repository": {
     "type": "git",

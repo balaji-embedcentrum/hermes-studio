@@ -14,7 +14,7 @@ export const Route = createFileRoute('/api/skills/install')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
+        if (!(await isAuthenticated(request))) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         if (IS_REMOTE_AGENT) {
