@@ -1,17 +1,17 @@
 {
-  "name": "Sylang",
-  "short_name": "Sylang",
-  "description": "AI-powered MBSE workspace for ISO 26262 and ASPICE",
+  "name": "Hermes Studio",
+  "short_name": "Hermes Studio",
+  "description": "AI agent workspace — chat, files, terminal, memory, and skills.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0E1A",
   "theme_color": "#6366F1",
-  "categories": ["productivity", "utilities"],
+  "categories": ["productivity", "utilities", "developer"],
   "icons": [
     {
-      "src": "/sylang-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "/hermes-crest.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

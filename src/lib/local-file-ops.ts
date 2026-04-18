@@ -15,8 +15,8 @@ type FileEntry = {
 
 /**
  * Extract repo name from an absolute workspace path.
- * E.g. "/Users/balaji/sylang-projects/owner/repo" → "repo"
- * E.g. "/Users/balaji/sylang-projects/repo" → "repo"
+ * E.g. "/Users/me/projects/owner/repo" → "repo"
+ * E.g. "/Users/me/projects/repo" → "repo"
  */
 function extractRepoName(absPath: string): string {
   const segments = absPath.replace(/\\/g, '/').split('/').filter(Boolean)
@@ -41,7 +41,7 @@ function getRelativePath(filePath: string, workspaceRoot: string): string {
 /**
  * List files in a directory via local Hermes agent.
  * @param agentUrl - local Hermes URL (e.g. http://localhost:8642)
- * @param workspaceRoot - project root (e.g. /Users/.../sylang-projects/owner/AutoInverter)
+ * @param workspaceRoot - project root (e.g. /Users/.../projects/owner/MyRepo)
  * @param dirPath - directory to list (same as workspaceRoot for root, or a subfolder path)
  */
 export async function localListFiles(

@@ -304,7 +304,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             var d = document.createElement('div');
             d.id = 'splash-screen';
             d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:'+bg+';transition:opacity 0.5s ease;';
-            d.innerHTML = '<img src="/hermes-crest.svg" alt="Hermes Studio" style="width:72px;height:72px;margin-bottom:20px;border-radius:16px;filter:'+(isDark ? 'invert(1) brightness(2)' : 'none')+';drop-shadow(0 8px 32px color-mix(in srgb,'+accent+' 45%, transparent))" />'
+            d.innerHTML = '<img src="/hermes-crest.svg" alt="Hermes Studio" style="width:72px;height:72px;margin-bottom:20px;border-radius:16px;filter:drop-shadow(0 8px 32px color-mix(in srgb,'+accent+' 45%, transparent))" />'
               + '<div style="font:700 28px/1 system-ui,-apple-system,sans-serif;letter-spacing:-0.02em;color:'+accent+';margin-bottom:6px">Hermes Studio</div>'
               + '<div style="font:400 13px/1 system-ui,-apple-system,sans-serif;letter-spacing:0.04em;color:'+muted+'">AI Agent Workspace</div>'
               + '<div style="margin-top:28px;width:140px;height:3px;background:'+(isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')+';border-radius:3px;overflow:hidden;position:relative"><div id=splash-bar style="width:0%;height:100%;background:'+accent+';border-radius:3px;transition:width 0.4s ease"></div></div>';

@@ -36,7 +36,7 @@ export type PersistedRunState = {
 
 // Run state is local to the web app (UI-level state, not agent state).
 // Use /tmp so it works whether or not ~/.hermes exists on this machine.
-const RUNS_ROOT = process.env.SYLANG_RUNS_DIR
+const RUNS_ROOT = process.env.HERMES_RUNS_DIR
   || path.join(tmpdir(), 'hermes-runs')
 
 

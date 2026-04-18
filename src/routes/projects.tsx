@@ -295,7 +295,7 @@ function ProjectsPage() {
         style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-sidebar)' }}
       >
         <div className="flex items-center gap-3">
-          <img src="/hermes-crest.svg" alt="Hermes Studio" className="h-8 w-8 rounded-lg" style={{ filter: 'invert(1) brightness(2)' }} />
+          <img src="/hermes-crest.svg" alt="Hermes Studio" className="h-8 w-8 rounded-lg" />
           <span className="font-semibold text-lg" style={{ color: 'var(--theme-text)' }}>
             Hermes Studio
           </span>

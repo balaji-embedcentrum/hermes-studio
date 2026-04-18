@@ -38,6 +38,8 @@ export type Profile = {
   github_token: string | null
   system_uid: number | null
   credits: number
+  // Legacy value preserved to match the Supabase profiles.tier column;
+  // rename requires a DB migration, do not change this alone.
   tier: 'free' | 'pro' | 'byollm' | 'sylang_llm'
   llm_key_enc: string | null
   stripe_id: string | null
