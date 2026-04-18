@@ -1,0 +1,221 @@
+import { HERMES_API, getAgentConfig } from './gateway-capabilities'
+
+/** Optional bearer token for authenticated OpenAI-compatible endpoints (e.g. Codex OAuth). */
+const BEARER_TOKEN = process.env.HERMES_API_TOKEN || ''
+
+/** Cached first available model from /v1/models — used as fallback when no model is specified. */
+let _cachedDefaultModel: string | null = null
+
+async function getDefaultModel(): Promise<string> {
+  if (_cachedDefaultModel) return _cachedDefaultModel
+  if (process.env.HERMES_DEFAULT_MODEL) {
+    _cachedDefaultModel = process.env.HERMES_DEFAULT_MODEL
+    return _cachedDefaultModel
+  }
+  try {
+    const headers: Record<string, string> = {}
+    if (BEARER_TOKEN) headers['Authorization'] = `Bearer ${BEARER_TOKEN}`
+    const res = await fetch(`${HERMES_API}/v1/models`, {
+      headers,
+      signal: AbortSignal.timeout(3_000),
+    })
+    if (res.ok) {
+      const data = (await res.json()) as { data?: Array<{ id: string }> }
+      if (data.data && data.data.length > 0) {
+        // Prefer a known-good chat model over the first alphabetical one
+        const preferred = data.data.find((m) =>
+          /qwen|llama|mistral|gemma/i.test(m.id),
+        )
+        _cachedDefaultModel = preferred?.id ?? data.data[0].id
+        return _cachedDefaultModel
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return 'default'
+}
+
+export type OpenAICompatContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } }
+
+export type OpenAICompatMessage = {
+  role: string
+  content: string | Array<OpenAICompatContentPart>
+}
+
+export type OpenAIChatOptions = {
+  model?: string
+  stream?: boolean
+  temperature?: number
+  signal?: AbortSignal
+  sessionId?: string
+  userId?: string  // Used to look up selected agent's API URL
+}
+
+type OpenAIChatRequest = {
+  model: string
+  messages: Array<{
+    role: string
+    content: string | Array<OpenAICompatContentPart>
+  }>
+  stream: boolean
+  temperature?: number
+}
+
+type OpenAIChatCompletionResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string | null
+    }
+  }>
+}
+
+export async function buildRequestBody(
+  messages: Array<OpenAICompatMessage>,
+  options: OpenAIChatOptions,
+): Promise<OpenAIChatRequest> {
+  const model =
+    options.model && options.model !== 'default'
+      ? options.model
+      : await getDefaultModel()
+  return {
+    model,
+    messages,
+    stream: options.stream === true,
+    temperature: options.temperature,
+  }
+}
+
+export type StreamChunkType = { type: 'content' | 'reasoning'; text: string }
+
+export async function* parseOpenAIStream(
+  response: Response,
+): AsyncGenerator<StreamChunkType, void, void> {
+  const reader = response.body?.getReader()
+  if (!reader) {
+    throw new Error('No response body')
+  }
+
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+
+    let boundary = buffer.indexOf('\n\n')
+    while (boundary >= 0) {
+      const rawEvent = buffer.slice(0, boundary)
+      buffer = buffer.slice(boundary + 2)
+
+      for (const line of rawEvent.split('\n')) {
+        const trimmed = line.trim()
+        if (!trimmed.startsWith('data:')) continue
+
+        const payload = trimmed.slice(5).trim()
+        if (!payload || payload === '[DONE]') continue
+
+        try {
+          const parsed = JSON.parse(payload) as {
+            choices?: Array<{
+              delta?: {
+                content?: string | null
+                reasoning?: string | null
+                reasoning_content?: string | null
+              }
+            }>
+          }
+          const d = parsed.choices?.[0]?.delta
+          const content = d?.content || ''
+          const reasoning = d?.reasoning || d?.reasoning_content || ''
+          // Yield content when available; fall back to reasoning only if no content yet
+          if (content) yield { type: 'content' as const, text: content }
+          else if (reasoning)
+            yield { type: 'reasoning' as const, text: reasoning }
+        } catch {
+          // Ignore malformed chunks.
+        }
+      }
+
+      boundary = buffer.indexOf('\n\n')
+    }
+  }
+}
+
+export function openaiChat(
+  messages: Array<OpenAICompatMessage>,
+  options: OpenAIChatOptions & { stream: true },
+): Promise<AsyncGenerator<StreamChunkType, void, void>>
+export function openaiChat(
+  messages: Array<OpenAICompatMessage>,
+  options?: OpenAIChatOptions & { stream?: false },
+): Promise<string>
+export async function openaiChat(
+  messages: Array<OpenAICompatMessage>,
+  options: OpenAIChatOptions = {},
+): Promise<string | AsyncGenerator<StreamChunkType, void, void>> {
+  // Use selected agent's URL + model + key if userId provided
+  const agentConfig = options.userId ? await getAgentConfig(options.userId) : { url: HERMES_API }
+  const apiUrl = agentConfig.url
+  const token = agentConfig.apiKey || BEARER_TOKEN
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  console.info(`[openai-chat] auth: agentKey=${agentConfig.apiKey ? agentConfig.apiKey.slice(0, 8) + '...' : 'NONE'} bearerToken=${BEARER_TOKEN ? BEARER_TOKEN.slice(0, 8) + '...' : 'NONE'} using=${token ? token.slice(0, 8) + '...' : 'NONE'}`)
+  if (options.sessionId) {
+    headers['X-Hermes-Session-Id'] = options.sessionId
+  }
+
+  // If agent has a model_name and caller didn't specify one, use the agent's model
+  const effectiveOptions = agentConfig.model && (!options.model || options.model === 'default')
+    ? { ...options, model: agentConfig.model }
+    : options
+
+  const targetUrl = `${apiUrl}/v1/chat/completions`
+  console.info(`[openai-chat] POST ${targetUrl} model=${effectiveOptions.model ?? 'default'} stream=${options.stream ?? false}`)
+
+  // Combine caller abort signal with a 60s timeout for remote agents
+  const timeoutMs = 60_000
+  const timeoutSignal = AbortSignal.timeout(timeoutMs)
+  const combinedSignal = options.signal
+    ? AbortSignal.any([options.signal, timeoutSignal])
+    : timeoutSignal
+
+  let response: Response
+  try {
+    response = await fetch(targetUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(await buildRequestBody(messages, effectiveOptions)),
+      signal: combinedSignal,
+    })
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err)
+    console.error(`[openai-chat] Fetch failed for ${targetUrl}: ${reason}`)
+    if (reason.includes('abort') || reason.includes('timeout')) {
+      throw new Error(`Agent at ${apiUrl} did not respond within ${timeoutMs / 1000}s`)
+    }
+    throw new Error(`Failed to connect to agent at ${apiUrl}: ${reason}`)
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    console.error(`[openai-chat] ${targetUrl} responded ${response.status}: ${text.slice(0, 500)}`)
+    throw new Error(`Agent at ${apiUrl}: ${response.status} ${text}`)
+  }
+
+  console.info(`[openai-chat] ${targetUrl} → ${response.status} OK`)
+
+  if (options.stream) {
+    return parseOpenAIStream(response)
+  }
+
+  const data = (await response.json()) as OpenAIChatCompletionResponse
+  return data.choices?.[0]?.message?.content ?? ''
+}

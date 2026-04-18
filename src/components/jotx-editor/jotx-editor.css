@@ -1,0 +1,6354 @@
+/**
+ * Jotx Editor Styles - Beautiful, Notion-like
+ */
+
+.jotx-editor {
+  width: 100%;
+  min-height: calc(100vh - var(--jotx-header-height, 60px));
+  padding: var(--jotx-editor-padding, 40px);
+}
+
+.jotx-editor-wrapper {
+  max-width: var(--jotx-editor-maxWidth, 1200px);
+  margin: 0 auto;
+  position: relative;
+}
+
+.jotx-editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--jotx-textSecondary);
+  font-size: 14px;
+}
+
+/* Tiptap Editor Content */
+.jotx-editor-content {
+  position: relative;
+  outline: none;
+  font-size: var(--jotx-editor-fontSize, 14px);
+  line-height: var(--jotx-editor-lineHeight, 1.6);
+  color: var(--jotx-text);
+}
+
+/* Placeholder */
+.jotx-editor-content .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--jotx-textMuted);
+  pointer-events: none;
+  height: 0;
+}
+
+/* Headings */
+.jotx-editor-content h1 {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 1.5em 0 0.5em;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content h1:first-child {
+  margin-top: 0;
+}
+
+.jotx-editor-content h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.2em 0 0.4em;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1em 0 0.3em;
+  color: var(--jotx-text);
+}
+
+/* Paragraph */
+.jotx-editor-content p {
+  margin: 0.75em 0;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content p:first-child {
+  margin-top: 0;
+}
+
+/* Lists */
+.jotx-editor-content ul,
+.jotx-editor-content ol {
+  /* Default list indent: one extra level in from paragraph baseline */
+  padding-left: 2.25em;
+  margin: 0.75em 0;
+  position: relative;
+  list-style-position: outside;
+}
+
+.jotx-editor-content ul {
+  list-style: disc;
+}
+
+.jotx-editor-content ol {
+  list-style: decimal;
+}
+
+.jotx-editor-content ul ul {
+  list-style: circle;
+}
+
+.jotx-editor-content ol ol {
+  list-style: lower-alpha;
+}
+
+/* Nested lists spacing (no rails; indentation is the visual cue) */
+.jotx-editor-content ul ul,
+.jotx-editor-content ul ol,
+.jotx-editor-content ol ul,
+.jotx-editor-content ol ol {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  padding-left: 1.75em;
+}
+
+.jotx-editor-content li {
+  margin: 0.25em 0;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content li p {
+  margin: 0;
+}
+
+/* Task list (Checklist) */
+.jotx-editor-content ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.75em 0;
+  position: relative;
+}
+
+/* CRITICAL: Force flexbox on task item to keep checkbox and text on same line */
+.jotx-editor-content li[data-type="taskItem"],
+.ProseMirror li[data-type="taskItem"],
+ul[data-type="taskList"]>li {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+  gap: 0.5em;
+  padding: 0.15em 0;
+}
+
+/* Checkbox label - must be inline */
+.jotx-editor-content li[data-type="taskItem"]>label,
+.ProseMirror li[data-type="taskItem"]>label {
+  position: static !important;
+  margin: 0 !important;
+  padding: 0;
+  line-height: 1.5;
+  user-select: none;
+  display: inline-flex !important;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 2px !important;
+}
+
+/* Checkbox input */
+.jotx-editor-content li[data-type="taskItem"]>label input[type="checkbox"],
+.ProseMirror li[data-type="taskItem"]>label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--jotx-primary);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Content div - MUST BE INLINE to keep on same line as checkbox */
+.jotx-editor-content li[data-type="taskItem"]>div,
+.ProseMirror li[data-type="taskItem"]>div {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: inline !important;
+  /* Changed from block to inline */
+}
+
+.jotx-editor-content li[data-type="taskItem"]>div>*,
+.ProseMirror li[data-type="taskItem"]>div>* {
+  margin: 0;
+  display: inline !important;
+}
+
+.jotx-editor-content li[data-type="taskItem"] p,
+.ProseMirror li[data-type="taskItem"] p {
+  margin: 0;
+  display: inline !important;
+  line-height: 1.5;
+}
+
+/* Nested task lists spacing (no rails) */
+.jotx-editor-content ul[data-type="taskList"] ul[data-type="taskList"] {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  padding-left: 1.75em;
+  position: relative;
+}
+
+/* Blockquote */
+.jotx-editor-content blockquote {
+  border-left: 3px solid var(--jotx-primary);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--jotx-textSecondary);
+  font-style: italic;
+}
+
+/* Code Block */
+.jotx-editor-content pre {
+  background-color: var(--jotx-backgroundSecondary);
+  border: 1px solid var(--jotx-border);
+  border-radius: 6px;
+  padding: 1em;
+  margin: 1em 0;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.jotx-editor-content pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  color: var(--jotx-text);
+}
+
+/* Inline Code */
+.jotx-editor-content code {
+  background-color: var(--jotx-backgroundSecondary);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9em;
+  color: var(--jotx-text);
+}
+
+/* Horizontal Rule */
+.jotx-editor-content hr {
+  border: none;
+  border-top: 2px solid var(--jotx-border);
+  margin: 2em 0;
+}
+
+/* Callout */
+.jotx-editor-content div[data-type="callout"] {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 1em 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.jotx-callout-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+}
+
+.jotx-callout-toolbar-floating {
+  position: fixed;
+  z-index: 12000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.jotx-callout-chip {
+  border: 1px solid var(--jotx-border);
+  background: transparent;
+  color: var(--jotx-textSecondary);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.jotx-callout-chip[data-variant="info"] {
+  border-color: rgba(148, 163, 184, 0.75);
+}
+
+.jotx-callout-chip[data-variant="warning"] {
+  border-color: rgba(245, 158, 11, 0.75);
+}
+
+.jotx-callout-chip[data-variant="success"] {
+  border-color: rgba(34, 197, 94, 0.75);
+}
+
+.jotx-callout-chip[data-variant="danger"] {
+  border-color: rgba(239, 68, 68, 0.75);
+}
+
+.jotx-callout-chip.active {
+  color: var(--jotx-text);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.jotx-callout-chip.active[data-variant="info"] {
+  color: rgba(148, 163, 184, 0.95);
+}
+
+.jotx-callout-chip.active[data-variant="warning"] {
+  color: rgba(245, 158, 11, 0.95);
+}
+
+.jotx-callout-chip.active[data-variant="success"] {
+  color: rgba(34, 197, 94, 0.95);
+}
+
+.jotx-callout-chip.active[data-variant="danger"] {
+  color: rgba(239, 68, 68, 0.95);
+}
+
+.jotx-callout-chip:hover {
+  color: var(--jotx-text);
+  background: var(--jotx-backgroundTertiary);
+}
+
+.jotx-editor-content div[data-type="callout"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(148, 163, 184, 0.95);
+  /* info = grey */
+  opacity: 0.9;
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="info"] {
+  background: rgba(148, 163, 184, 0.10);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="warning"] {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="danger"] {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="success"] {
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="warning"]::before {
+  background: rgba(245, 158, 11, 0.95);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="success"]::before {
+  background: rgba(34, 197, 94, 0.95);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="danger"]::before {
+  background: rgba(239, 68, 68, 0.95);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="warning"] {
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="danger"] {
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="success"] {
+  border-color: rgba(34, 197, 94, 0.55);
+}
+
+.jotx-editor-content div[data-type="callout"] p {
+  margin: 0;
+}
+
+/* Link card + Attach card */
+.jotx-editor-content div[data-type="linkCard"],
+.jotx-editor-content div[data-type="attach"] {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 1em 0;
+}
+
+.jotx-editor-content div[data-type="linkCard"] p,
+.jotx-editor-content div[data-type="attach"] p {
+  margin: 0;
+}
+
+.jotx-editor-content div[data-type="linkCard"] {
+  border-left: 3px solid var(--jotx-primary);
+}
+
+.jotx-editor-content div[data-type="attach"] {
+  border-left: 3px solid var(--jotx-textSecondary);
+}
+
+/* Image */
+.jotx-editor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 1em 0;
+  border: 1px solid var(--jotx-border);
+}
+
+/* Table */
+.jotx-editor-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--jotx-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1em 0;
+  background: var(--jotx-background);
+}
+
+.jotx-editor-content th,
+.jotx-editor-content td {
+  border-right: 1px solid var(--jotx-border);
+  border-bottom: 1px solid var(--jotx-border);
+  padding: 10px 12px;
+  vertical-align: top;
+}
+
+.jotx-editor-content tr:last-child td {
+  border-bottom: none;
+}
+
+.jotx-editor-content th:last-child,
+.jotx-editor-content td:last-child {
+  border-right: none;
+}
+
+.jotx-editor-content th {
+  background: var(--jotx-backgroundSecondary);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--jotx-textSecondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.jotx-editor-content table[data-type="properties"] th {
+  background: rgba(148, 163, 184, 0.10);
+}
+
+/* Table Cell Selection - Tiptap adds .selectedCell class */
+.jotx-editor-content .selectedCell,
+.jotx-editor-content td.selectedCell,
+.jotx-editor-content th.selectedCell,
+.ProseMirror .selectedCell {
+  background: rgba(0, 200, 200, 0.3) !important;
+  outline: 2px solid var(--jotx-primary, #00c8c8);
+  outline-offset: -2px;
+}
+
+/* Improve table cell selection cursor */
+.jotx-editor-content table td,
+.jotx-editor-content table th {
+  cursor: cell;
+  user-select: text;
+}
+
+/* Column/Row resize handles */
+.jotx-editor-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: var(--jotx-primary);
+  pointer-events: auto;
+  cursor: col-resize;
+}
+
+.jotx-editor-content .tableWrapper {
+  overflow-x: auto;
+}
+
+.jotx-editor-content table.resize-cursor {
+  cursor: col-resize;
+}
+
+/* Links */
+.jotx-editor-content a {
+  color: var(--jotx-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.jotx-editor-content a:hover {
+  border-bottom-color: var(--jotx-primary);
+}
+
+/* Inline highlight */
+.jotx-editor-content mark {
+  background: rgba(250, 204, 21, 0.35);
+  padding: 0.08em 0.2em;
+  border-radius: 0.25em;
+}
+
+/* Selection */
+.jotx-editor-content ::selection {
+  background-color: var(--jotx-primary);
+  color: white;
+}
+
+/* Focus */
+.jotx-editor-content:focus {
+  outline: none;
+}
+
+/* Smooth transitions */
+.jotx-editor-content * {
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+}
+
+/* Empty state */
+.jotx-editor-content:empty::before {
+  content: 'Start typing or press \'/\' for commands...';
+  color: var(--jotx-textMuted);
+  pointer-events: none;
+}
+
+/* Link Block */
+.jotx-link-block {
+  margin: 0.5em 0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: var(--jotx-bgSecondary, rgba(0, 0, 0, 0.03));
+  border-left: 3px solid var(--jotx-primary, #007bff);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.jotx-link-block:hover {
+  background-color: var(--jotx-bgHover, rgba(0, 0, 0, 0.05));
+}
+
+.jotx-link-block-anchor {
+  color: var(--jotx-primary, #007bff);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jotx-link-block-anchor::before {
+  content: '🔗';
+  font-size: 1em;
+}
+
+.jotx-link-block-anchor:hover {
+  text-decoration: underline;
+}
+
+/* Template Picker Modal */
+.jotx-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.1s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.jotx-modal-content {
+  background-color: var(--vscode-quickInput-background, var(--vscode-editor-background));
+  border: 1px solid var(--vscode-quickInput-border, var(--vscode-widget-border));
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  max-width: 480px;
+  width: 90%;
+  max-height: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.15s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.jotx-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--vscode-quickInput-border, var(--vscode-widget-border));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jotx-modal-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-quickInput-foreground, var(--vscode-foreground));
+}
+
+.jotx-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--vscode-icon-foreground);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: opacity 0.2s;
+  opacity: 0.7;
+}
+
+.jotx-modal-close:hover {
+  opacity: 1;
+}
+
+.jotx-template-list {
+  padding: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.jotx-template-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+}
+
+.jotx-template-item:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-list-focusOutline, var(--vscode-focusBorder));
+}
+
+.jotx-template-item:active {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.jotx-template-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.jotx-template-name {
+  font-weight: 400;
+  color: var(--vscode-quickInput-foreground, var(--vscode-foreground));
+}/* BlockMenu - Block-level operations */
+
+.block-menu-handle {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0.7; /* More visible by default */
+  transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  color: var(--vscode-foreground);
+  border-radius: 6px;
+  z-index: 100;
+  pointer-events: all;
+  padding: 8px; /* Bigger clickable area */
+}
+
+/* Extend hover zone with invisible pseudo-element */
+.block-menu-handle::before {
+  content: '';
+  position: absolute;
+  inset: -8px; /* Extend 8px in all directions */
+  pointer-events: all;
+}
+
+.block-menu-handle:hover {
+  opacity: 1;
+  background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+  transform: scale(1.1); /* Slight scale up for feedback */
+}
+
+.block-menu-handle:active {
+  opacity: 1;
+  cursor: grabbing;
+}
+
+.block-menu-popup {
+  position: absolute;
+  background: var(--vscode-menu-background, #252526);
+  border: 1px solid var(--vscode-menu-border, #454545);
+  border-radius: 6px;
+  padding: 4px;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.block-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--vscode-menu-foreground, #cccccc);
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.block-menu-item:hover {
+  background: var(--vscode-menu-selectionBackground, #04395e);
+  color: var(--vscode-menu-selectionForeground, #ffffff);
+}
+
+.block-menu-item.danger:hover {
+  background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+  color: var(--vscode-errorForeground, #f48771);
+}
+
+.block-menu-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.block-menu-item span:nth-child(2) {
+  flex: 1;
+}
+
+.block-menu-shortcut {
+  font-size: 11px;
+  opacity: 0.6;
+  font-family: monospace;
+}
+
+.block-menu-divider {
+  height: 1px;
+  background: var(--vscode-menu-separatorBackground, #454545);
+  margin: 4px 0;
+}
+
+
+
+/* Button Styles */
+
+.button-wrapper {
+    margin: 16px 0;
+    display: block;
+}
+
+/* Alignment */
+.button-align-left {
+    text-align: left;
+}
+
+.button-align-center {
+    text-align: center;
+}
+
+.button-align-right {
+    text-align: right;
+}
+
+.button-selected {
+    outline: 2px solid #14b8a6;
+    outline-offset: 4px;
+    border-radius: 8px;
+}
+
+/* Base Button - H3 size (NOT H1) */
+.jotx-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1em;
+    /* H3 equivalent - smaller than H1 */
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.jotx-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.jotx-button:active {
+    transform: translateY(0);
+}
+
+/* Primary - Teal branding */
+.jotx-button-primary {
+    background: #14b8a6;
+    color: white;
+}
+
+.jotx-button-primary:hover {
+    background: #0d9488;
+}
+
+/* Secondary */
+.jotx-button-secondary {
+    background: var(--vscode-button-secondaryBackground, #3c3c3c);
+    color: var(--vscode-button-secondaryForeground, #ffffff);
+}
+
+.jotx-button-secondary:hover {
+    background: var(--vscode-button-secondaryHoverBackground, #505050);
+}
+
+/* Outline */
+.jotx-button-outline {
+    background: transparent;
+    color: #14b8a6;
+    border: 2px solid #14b8a6;
+}
+
+.jotx-button-outline:hover {
+    background: rgba(20, 184, 166, 0.1);
+}
+
+/* Ghost */
+.jotx-button-ghost {
+    background: transparent;
+    color: var(--vscode-foreground);
+}
+
+.jotx-button-ghost:hover {
+    background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.1));
+}
+
+/* Button with edit icon container */
+.button-with-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.button-edit-icon {
+    cursor: pointer;
+    opacity: 0.4;
+    font-size: 14px;
+    transition: opacity 0.2s ease;
+}
+
+.button-edit-icon:hover {
+    opacity: 1;
+}
+
+/* Button Edit Form */
+.button-edit-form {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: rgba(128, 128, 128, 0.1);
+    border: 1px solid var(--vscode-panel-border, #3c3c3c);
+    border-radius: 8px;
+    min-width: 280px;
+}
+
+.button-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.button-edit-row label {
+    flex: 0 0 50px;
+    font-size: 0.85em;
+    color: var(--vscode-descriptionForeground, #888);
+}
+
+.button-edit-row input,
+.button-edit-row select {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--vscode-input-border, #3c3c3c);
+    border-radius: 4px;
+    background: var(--vscode-input-background, #1e1e1e);
+    color: var(--vscode-input-foreground, #fff);
+    font-size: 0.9em;
+    caret-color: #14b8a6;
+    /* Visible cursor */
+}
+
+.button-edit-row input:focus,
+.button-edit-row select:focus {
+    outline: none;
+    border-color: #14b8a6;
+}
+
+.button-edit-done {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: #14b8a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    align-self: flex-end;
+}
+
+.button-edit-done:hover {
+    background: #0d9488;
+}
+/* ButtonStrip Container Styles */
+.buttonstrip-wrapper {
+    width: 100%;
+    margin: 8px 0;
+    position: relative;
+}
+
+.buttonstrip-wrapper.buttonstrip-selected {
+    outline: 2px solid var(--vscode-focusBorder, #007acc);
+    border-radius: 6px;
+}
+
+/* Grid container for buttons - EXACTLY 3 COLUMNS */
+.buttonstrip-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 12px;
+    width: 100%;
+    /* Ensure grid applies to children */
+    align-items: stretch;
+}
+
+/* CRITICAL: Make NodeViewContent and button wrappers work with CSS Grid */
+.buttonstrip-content {
+    display: contents;
+}
+
+/* The buttons are wrapped in NodeViewWrapper divs - use display:contents to ignore them */
+.buttonstrip-content>div {
+    display: contents;
+}
+
+.buttonstrip-wrapper .button-wrapper {
+    display: flex !important;
+    width: auto !important;
+    height: 100%;
+    margin: 0 !important;
+}
+
+/* Make button fill the wrapper */
+.buttonstrip-wrapper .jotx-button {
+    width: 100% !important;
+    height: 100%;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+
+/* EDIT MODE STYLES */
+.buttonstrip-edit-ui {
+    padding: 16px;
+    background: var(--vscode-editor-background, #1e1e1e);
+    border: 1px solid var(--vscode-focusBorder, #007acc);
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.buttonstrip-edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+}
+
+.buttonstrip-edit-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.05));
+    border-radius: 4px;
+}
+
+.buttonstrip-edit-column h4 {
+    margin: 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    text-align: center;
+}
+
+.buttonstrip-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.buttonstrip-form-group label {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground, #888);
+}
+
+.buttonstrip-form-group input,
+.buttonstrip-form-group select {
+    padding: 4px 8px;
+    border: 1px solid var(--vscode-input-border, #3c3c3c);
+    background: var(--vscode-input-background, #1e1e1e);
+    color: var(--vscode-input-foreground, #cccccc);
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.buttonstrip-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--vscode-panel-border, #3c3c3c);
+}
+
+.buttonstrip-done-btn {
+    background: var(--vscode-button-background, #0e639c);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.buttonstrip-done-btn:hover {
+    background: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+
+    .buttonstrip-container,
+    .buttonstrip-edit-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.jotx-chart {
+  position: relative;
+  /* Anchor for overlay */
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 1em 0;
+}
+
+.jotx-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.jotx-chart-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--jotx-textSecondary);
+}
+
+.jotx-chart-type {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.jotx-chart-type-btn,
+.jotx-chart-settings {
+  width: 32px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  cursor: pointer;
+}
+
+.jotx-chart-type-btn.active {
+  border-color: rgba(99, 102, 241, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25);
+}
+
+.jotx-chart-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.jotx-chart-canvasWrap {
+  height: 260px;
+  background: var(--jotx-background);
+  border: 1px solid var(--jotx-border);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+/* Radar needs more room for point labels */
+.jotx-chart[data-chart-type="radar"] .jotx-chart-canvasWrap {
+  height: 340px;
+  padding: 12px;
+}
+
+.jotx-chart-editor {
+  margin-top: 10px;
+  background: var(--jotx-background);
+  border: 1px solid var(--jotx-border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.jotx-chart-editorHint {
+  font-size: 12px;
+  color: var(--jotx-textSecondary);
+  margin-bottom: 6px;
+}
+
+.jotx-chart-editor textarea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  border: 1px solid var(--jotx-border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--jotx-backgroundSecondary);
+  color: var(--jotx-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ===== Tooltip visibility: force overflow visible up the chain ===== */
+.jotx-chart,
+.jotx-chart-canvasWrap,
+.jotx-chart-canvasWrap>div,
+.jotx-chart-canvasWrap>div>div {
+  overflow: visible !important;
+}
+.jotx-codeblock {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 10px;
+  margin: 1em 0;
+  overflow: hidden;
+}
+
+.jotx-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--jotx-backgroundTertiary, rgba(148, 163, 184, 0.08));
+  border-bottom: 1px solid var(--jotx-border);
+}
+
+.jotx-codeblock-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.jotx-codeblock-langLabel {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--jotx-textSecondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.jotx-codeblock-select {
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  padding: 0 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.jotx-codeblock-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jotx-codeblock-btn {
+  width: 32px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  cursor: pointer;
+}
+
+.jotx-codeblock-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 18px rgba(99, 102, 241, 0.12);
+}
+
+.jotx-codeblock-pre {
+  margin: 0;
+  padding: 12px 12px;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+  background: transparent; /* wrapper already has bg */
+  border: none;
+}
+
+.jotx-codeblock-pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  color: var(--jotx-text);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+
+
+/* Columns block container */
+.columns-wrapper {
+    position: relative;
+    border: 1px solid var(--jotx-border, #333);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    min-height: 60px;
+}
+
+/* Control bar — visible on hover */
+.columns-controls {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+    user-select: none;
+}
+
+.columns-wrapper:hover .columns-controls {
+    opacity: 1;
+}
+
+/* Icon buttons */
+.columns-icon-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.columns-icon-btn:hover {
+    background: var(--jotx-bg-hover, rgba(255, 255, 255, 0.05));
+    border-color: var(--jotx-border, #555);
+}
+
+.columns-icon-btn.active {
+    background: var(--jotx-bg-active, rgba(20, 184, 166, 0.1));
+    border-color: var(--jotx-accent, #14b8a6);
+}
+
+/* Grid layout container — wraps NodeViewContent */
+.columns-grid {
+    align-items: start;
+}
+
+/* CRITICAL: Make NodeViewContent transparent to CSS Grid
+   This is the same pattern used by GridCardNodeView.
+   `display: contents` removes the element from layout flow,
+   so column children become direct grid items. */
+.columns-content {
+    display: contents;
+}
+
+/* Individual column styling */
+.column-content {
+    padding: 8px;
+    min-height: 40px;
+    border-radius: 4px;
+}
+
+/* Column dividers — only for multi-column layouts */
+.column-content+.column-content {
+    border-left: 1px solid var(--jotx-border, #333);
+    padding-left: 12px;
+}
+
+/* Responsive: stack on narrow */
+@media (max-width: 500px) {
+    .columns-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .column-content+.column-content {
+        border-left: none;
+        border-top: 1px solid var(--jotx-border, #333);
+        padding-left: 8px;
+        padding-top: 12px;
+    }
+}
+.jotx-datetime-node {
+  margin: 0.75em 0;
+}
+
+.jotx-datetime-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  color: var(--jotx-text);
+  cursor: pointer;
+}
+
+.jotx-datetime-pill:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 10px 22px rgba(99, 102, 241, 0.12);
+  transform: translateY(-1px);
+}
+
+.jotx-datetime-text {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--jotx-text);
+}
+
+.jotx-datetime-popover {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--jotx-border);
+  border-radius: 12px;
+  background: var(--jotx-backgroundSecondary);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
+  width: 360px;
+}
+
+.jotx-datetime-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.jotx-datetime-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--jotx-textSecondary);
+  min-width: 60px;
+}
+
+.jotx-datetime-select,
+.jotx-datetime-input {
+  flex: 1 1 auto;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  padding: 0 10px;
+  outline: none;
+}
+
+.jotx-datetime-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.jotx-datetime-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.jotx-datetime-btn-primary {
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25);
+}
+
+
+
+/**
+ * Document Header Styles - Knowledge Hub Theme Compatible
+ * Uses app's CSS custom properties for seamless theming
+ */
+
+.jotx-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 24px;
+  background-color: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  backdrop-filter: blur(8px);
+}
+
+.jotx-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.jotx-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Logo/Brand */
+.jotx-header-logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.jotx-header-logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #14b8a6;
+  /* Teal brand color */
+  letter-spacing: -0.5px;
+}
+
+/* Lock/Unlock Toggle */
+.jotx-header-lock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.jotx-header-lock-btn.locked {
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted) / 0.6);
+}
+
+.jotx-header-lock-btn.locked:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted));
+  border-color: hsl(var(--border));
+}
+
+.jotx-header-lock-btn.unlocked {
+  color: #14b8a6;
+  background: hsl(173 80% 40% / 0.1);
+  border-color: hsl(173 80% 40% / 0.3);
+}
+
+.jotx-header-lock-btn.unlocked:hover {
+  background: hsl(173 80% 40% / 0.2);
+  border-color: hsl(173 80% 40% / 0.5);
+}
+
+/* Type Selector */
+.jotx-header-type-container {
+  position: relative;
+}
+
+.jotx-header-type-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.jotx-header-type-button:hover {
+  background: hsl(var(--accent) / 0.1);
+  border-color: hsl(var(--accent) / 0.3);
+  color: hsl(var(--foreground));
+}
+
+.jotx-header-type-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.jotx-header-type-chevron {
+  opacity: 0.5;
+}
+
+/* Dropdown Menu */
+.jotx-header-type-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  /* Solid background with fallbacks */
+  background: hsl(var(--popover, 220 15% 13%));
+  border: 1px solid hsl(var(--border, 220 10% 25%));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  width: 200px;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.jotx-type-menu-header {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground, 220 8% 55%));
+  border-bottom: 1px solid hsl(var(--border, 220 10% 25%));
+  background: hsl(var(--muted, 220 12% 18%) / 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.jotx-type-menu-list {
+  padding: 4px;
+}
+
+.jotx-type-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: hsl(var(--foreground, 0 0% 95%));
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.jotx-type-menu-item:hover {
+  background: hsl(var(--muted, 220 12% 18%));
+}
+
+.jotx-type-menu-item.active {
+  background: hsl(var(--accent, 173 80% 40%));
+  color: hsl(var(--accent-foreground, 0 0% 100%));
+}
+
+/* Title */
+.jotx-header-title-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.jotx-header-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.2s;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.jotx-header-title:hover {
+  opacity: 0.7;
+  background: hsl(var(--muted) / 0.5);
+}
+
+.jotx-header-title-input {
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--muted));
+  border: 2px solid hsl(var(--accent));
+  border-radius: 6px;
+  outline: none;
+  font-family: inherit;
+}
+
+/* Buttons */
+.jotx-header-button,
+.jotx-header-graph-btn,
+.jotx-header-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: hsl(var(--muted-foreground));
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.jotx-header-button:hover:not(:disabled),
+.jotx-header-graph-btn:hover,
+.jotx-header-help-btn:hover {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--muted));
+}
+
+.jotx-header-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.jotx-header-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.jotx-header-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .jotx-header {
+    padding: 0 16px;
+  }
+
+  .jotx-header-type-button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+/**
+ * EditorRibbon CSS
+ * Zero gap from header, sticky, centered, full width
+ */
+
+.editor-ribbon {
+    /* Pull up to eliminate gap from parent padding */
+    margin: -40px -40px 0 -40px;
+    padding: 0;
+
+    /* Visual styling - Knowledge Hub compatible with VS Code fallbacks */
+    background: hsl(var(--background, 220 15% 13%));
+    border-bottom: 1px solid hsl(var(--border, 220 10% 25%));
+
+    /* Sticky when scrolling */
+    position: sticky;
+    top: 0;
+    z-index: 900;
+
+    /* Smooth slide animation */
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.2s ease-out, opacity 0.15s ease-out, padding 0.2s ease-out;
+}
+
+.editor-ribbon.expanded {
+    max-height: 100px;
+    opacity: 1;
+    padding: 8px 16px;
+    margin-bottom: 16px;
+}
+
+.editor-ribbon-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* Section separator */
+.editor-ribbon-separator {
+    width: 1px;
+    height: 24px;
+    background: hsl(var(--border, 220 10% 25%));
+    flex-shrink: 0;
+}
+
+/* Section container */
+.editor-ribbon-section {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: nowrap;
+}
+
+.editor-ribbon-section-label {
+    font-size: 10px;
+    color: hsl(var(--muted-foreground, 220 8% 55%));
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 6px;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+/* Button styles */
+.editor-ribbon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: hsl(var(--foreground, 0 0% 95%));
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s, opacity 0.1s;
+    flex-shrink: 0;
+}
+
+.editor-ribbon-btn:hover:not(:disabled) {
+    background: hsl(var(--muted, 220 12% 18%));
+}
+
+.editor-ribbon-btn:active:not(:disabled) {
+    background: hsl(var(--accent, 173 80% 40%) / 0.2);
+}
+
+/* Teal branding for active state */
+.editor-ribbon-btn.active {
+    background: #14b8a6;
+    /* Teal brand color */
+    color: #ffffff;
+}
+
+.editor-ribbon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Button group */
+.editor-ribbon-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    background: hsl(var(--muted, 220 12% 18%));
+    border-radius: 4px;
+    padding: 2px;
+}
+
+/* Color picker wrapper */
+.editor-ribbon-color-picker {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.editor-ribbon-color-picker input[type="color"] {
+    position: absolute;
+    opacity: 0;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.editor-ribbon-color-preview {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 8px;
+    height: 3px;
+    border-radius: 1px;
+}
+
+/* Level indicator chip - teal brand accent */
+.editor-ribbon-level-chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--primary, #14b8a6);
+    color: #ffffff;
+    margin-right: 4px;
+}
+
+/* Responsive: stack on narrow widths */
+@media (max-width: 600px) {
+    .editor-ribbon {
+        margin: -40px -16px 0 -16px;
+    }
+
+    .editor-ribbon.expanded {
+        max-height: 100px;
+    }
+
+    .editor-ribbon-content {
+        gap: 8px;
+    }
+
+    .editor-ribbon-separator {
+        display: none;
+    }
+}
+/* Export Menu Styles */
+.jotx-export-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.jotx-export-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--vscode-dropdown-background, #252535);
+    border: 1px solid var(--vscode-dropdown-border, #3c3c5c);
+    border-radius: 4px;
+    padding: 4px;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    z-index: 9999;
+}
+
+.jotx-export-header {
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--vscode-descriptionForeground, #888);
+    border-bottom: 1px solid var(--vscode-widget-border, #3c3c5c);
+    margin-bottom: 4px;
+}
+
+.jotx-export-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    color: var(--vscode-foreground, #ccc);
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.15s ease;
+}
+
+.jotx-export-item:hover {
+    background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+}
+
+.jotx-export-item svg {
+    flex-shrink: 0;
+    color: var(--vscode-icon-foreground);
+}
+
+.jotx-export-item span:first-of-type {
+    flex: 1;
+}
+
+.jotx-export-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    border-radius: 10px;
+    font-weight: 500;
+}
+/* Graph View Styles */
+
+.graph-view-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.graph-view-container {
+    width: 92vw;
+    height: 88vh;
+    background: #12122a;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Header */
+.graph-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 22px;
+    background: #0e0e22;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.graph-view-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.graph-icon {
+    font-size: 22px;
+}
+
+.graph-view-title h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #eee;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.graph-stats {
+    font-size: 11px;
+    color: #666;
+    padding: 3px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.graph-view-header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Connected Only Toggle */
+.graph-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #888;
+    user-select: none;
+    font-family: system-ui, -apple-system, sans-serif;
+    transition: color 0.2s;
+}
+
+.graph-filter-toggle:hover {
+    color: #bbb;
+}
+
+.graph-filter-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #14b8a6;
+    cursor: pointer;
+}
+
+.graph-view-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.graph-view-controls button {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: #aaa;
+    padding: 7px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.graph-view-controls button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+/* Graph Content */
+.graph-view-content {
+    flex: 1;
+    position: relative;
+    background: #0a0a1a;
+}
+
+.graph-view-content svg {
+    display: block;
+}
+
+/* Legend / Filters */
+.graph-legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(14, 14, 34, 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 11px;
+    color: #bbb;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.legend-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #999;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.legend-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.legend-item-hidden {
+    opacity: 0.35;
+}
+
+.legend-item-hidden:hover {
+    opacity: 0.6;
+}
+
+.legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.legend-label {
+    font-size: 11px;
+    color: #bbb;
+    white-space: nowrap;
+}
+
+.legend-item-hidden .legend-label {
+    text-decoration: line-through;
+    color: #555;
+}
+
+/* Node Panel (Side Panel) */
+.graph-node-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 300px;
+    background: rgba(14, 14, 34, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, sans-serif;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    max-height: calc(100% - 32px);
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 8px;
+}
+
+.panel-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+}
+
+.panel-type-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #fff;
+    width: fit-content;
+    opacity: 0.9;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panel-header button {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    border-radius: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.panel-header button:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.panel-content {
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.panel-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.panel-section:last-child {
+    border-bottom: none;
+}
+
+.panel-section-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.panel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.panel-label {
+    color: #666;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.panel-value {
+    color: #ccc;
+    font-size: 11px;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+    white-space: nowrap;
+}
+
+.panel-value-mono {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 10px;
+    color: #999;
+}
+
+.panel-value-path {
+    color: #5B9BD5;
+}
+
+/* Connections List */
+.panel-connection {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.conn-icon {
+    flex-shrink: 0;
+}
+
+.conn-outgoing {
+    color: #14b8a6;
+}
+
+.conn-incoming {
+    color: #a78bfa;
+}
+
+.conn-type {
+    font-size: 9px;
+    color: #555;
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 1px 5px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 3px;
+}
+
+/* Clickable links in panel */
+.panel-link {
+    background: none;
+    border: none;
+    color: #5B9BD5;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-align: left;
+    font-family: system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panel-link:hover {
+    background: rgba(91, 155, 213, 0.12);
+    color: #7bb8e8;
+}
+
+/* Navigate Button */
+.panel-actions {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.panel-navigate-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.panel-navigate-btn:hover {
+    background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .graph-view-container {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .graph-legend {
+        bottom: auto;
+        top: 80px;
+        left: 10px;
+        font-size: 10px;
+        padding: 8px 12px;
+    }
+
+    .graph-node-panel {
+        width: 100%;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        border-radius: 12px 12px 0 0;
+        max-height: 50vh;
+    }
+}
+/* Grid Card Styles */
+
+.gridcard-wrapper {
+  margin: 16px 0;
+}
+
+/* Layout Controls - Show on hover */
+.gridcard-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.gridcard-wrapper:hover .gridcard-controls,
+.gridcard-wrapper:focus-within .gridcard-controls {
+  opacity: 1;
+}
+
+.gridcard-layout-select {
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-panel-border, #3c3c3c);
+  border-radius: 4px;
+  background: var(--vscode-dropdown-background, #3c3c3c);
+  color: var(--vscode-dropdown-foreground, #cccccc);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.gridcard-layout-select:hover {
+  border-color: var(--vscode-focusBorder, #14b8a6);
+}
+
+.gridcard-layout-select:focus {
+  border-color: var(--vscode-focusBorder, #14b8a6);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder, #14b8a6);
+}
+
+.gridcard {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  align-items: stretch;
+  /* Make all cards same height */
+}
+
+/* CRITICAL: Make NodeViewContent and card wrappers work with CSS Grid */
+.gridcard-content {
+  display: contents;
+}
+
+/* The cards are wrapped in NodeViewWrapper divs - style them as grid items */
+.gridcard-content>div {
+  display: contents;
+}
+
+/* Card Styles - Distinct background from theme */
+.card {
+  background: rgba(128, 128, 128, 0.1);
+  border: 1px solid var(--vscode-panel-border, #3c3c3c);
+  border-radius: 10px;
+  padding: 20px;
+  cursor: default;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* CENTER horizontally */
+  justify-content: center;
+  /* CENTER vertically */
+  text-align: center;
+  /* CENTER text */
+  gap: 8px;
+  min-height: 100px;
+  height: 100%;
+  /* Stretch to fill grid cell */
+  position: relative;
+  box-sizing: border-box;
+}
+
+.card[data-has-link="true"] {
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: #14b8a6;
+  background: rgba(128, 128, 128, 0.15);
+}
+
+.card[data-has-link="true"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
+}
+
+.card-selected {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+}
+
+/* Card Color Accents - Left Border */
+.card-color-blue {
+  border-left: 4px solid #3b82f6;
+}
+
+.card-color-green {
+  border-left: 4px solid #22c55e;
+}
+
+.card-color-red {
+  border-left: 4px solid #ef4444;
+}
+
+.card-color-yellow {
+  border-left: 4px solid #eab308;
+}
+
+.card-color-purple {
+  border-left: 4px solid #a855f7;
+}
+
+.card-color-teal {
+  border-left: 4px solid #14b8a6;
+}
+
+.card-color-gray {
+  border-left: 4px solid #6b7280;
+}
+
+/* Card Content - H1 sizing, centered */
+.card-icon {
+  font-size: 2em;
+  margin-bottom: 4px;
+}
+
+.card-title {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  line-height: 1.3;
+}
+
+.card-value {
+  font-size: 2.5em;
+  font-weight: 700;
+  color: #14b8a6;
+  line-height: 1;
+  margin-top: 8px;
+}
+
+.card-link-indicator {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground, #888);
+  margin-top: auto;
+  padding-top: 8px;
+  width: 100%;
+  border-top: 1px solid var(--vscode-panel-border, #3c3c3c);
+  opacity: 0.7;
+}
+
+.card-link-clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card-link-clickable:hover {
+  opacity: 1;
+  color: #14b8a6;
+  background: rgba(20, 184, 166, 0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: 8px -8px -8px -8px;
+  border-top: none;
+}
+
+/* Card Edit Form */
+.card-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+}
+
+.card-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-edit-row label {
+  flex: 0 0 50px;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+.card-edit-row input,
+.card-edit-row select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  border-radius: 4px;
+  background: var(--vscode-input-background, #1e1e1e);
+  color: var(--vscode-input-foreground, #fff);
+  font-size: 0.9em;
+  caret-color: #14b8a6;
+  /* Visible cursor */
+}
+
+.card-edit-row input:focus,
+.card-edit-row select:focus {
+  outline: none;
+  border-color: #14b8a6;
+}
+
+.card-edit-done {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #14b8a6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  align-self: flex-end;
+}
+
+.card-edit-done:hover {
+  background: #0d9488;
+}
+.jotx-image-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.jotx-image-toolbar-floating {
+  position: fixed;
+  z-index: 11550; /* above inline toolbar */
+}
+
+.jotx-image-toolbar-btn {
+  width: 32px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  cursor: pointer;
+}
+
+.jotx-image-toolbar-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 18px rgba(99, 102, 241, 0.12);
+}
+
+.jotx-image-toolbar-btn.active {
+  border-color: rgba(99, 102, 241, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25);
+}
+
+.jotx-image-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--jotx-border);
+  opacity: 0.9;
+  margin: 0 2px;
+}
+
+.jotx-image-toolbar-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jotx-image-toolbar-size input[type="range"] {
+  width: 140px;
+}
+
+.jotx-image-toolbar-size-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--jotx-textSecondary);
+  min-width: 34px;
+  text-align: right;
+}
+
+
+
+/**
+ * Image and Video Block Styles
+ */
+
+/* === IMAGE BLOCK === */
+.jotx-image-block {
+  margin: 20px 0;
+  position: relative;
+}
+
+.jotx-image-block.selected {
+  outline: 2px solid var(--jotx-primary, #007bff);
+  outline-offset: 4px;
+}
+
+.jotx-image-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.jotx-image-block img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* Alignment */
+.jotx-image-align-left {
+  text-align: left;
+}
+
+.jotx-image-align-center {
+  text-align: center;
+}
+
+.jotx-image-align-right {
+  text-align: right;
+}
+
+.jotx-image-align-full img {
+  width: 100%;
+}
+
+/* Caption */
+.jotx-image-caption {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--jotx-textSecondary, #666);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.jotx-image-caption:focus {
+  outline: none;
+  border-color: var(--jotx-border, #ddd);
+  background: var(--jotx-backgroundSecondary, #f5f5f5);
+}
+
+/* Controls */
+.jotx-image-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.jotx-image-controls button,
+.jotx-image-controls select,
+.jotx-image-controls input {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  background: var(--vscode-input-background, white);
+  color: var(--vscode-input-foreground, #333);
+  cursor: pointer;
+}
+
+.jotx-image-controls button:hover {
+  background: #f0f0f0;
+}
+
+/* Empty state */
+.jotx-image-block-empty,
+.jotx-float-image-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px;
+  border: 2px dashed var(--jotx-border, #ddd);
+  border-radius: 12px;
+  background: var(--jotx-backgroundSecondary, #f9f9f9);
+}
+
+.jotx-image-upload-button {
+  padding: 12px 24px;
+  font-size: 14px;
+  color: white;
+  background: var(--jotx-primary, #007bff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.jotx-image-upload-button:hover:not(:disabled) {
+  background: var(--jotx-primaryHover, #0056b3);
+}
+
+.jotx-image-upload-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jotx-image-error {
+  color: var(--jotx-error, #dc3545);
+  font-size: 12px;
+}
+
+/* === FLOAT IMAGE BLOCK === */
+/* Container holds both the floating image and the content */
+.jotx-float-image-container {
+  margin: 0 0 24px 0;
+  padding: 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  position: relative;
+  overflow: auto; /* Ensures container wraps floated children */
+}
+
+.jotx-float-image-container.selected {
+  border-color: var(--jotx-primary, #007bff);
+  background: var(--jotx-backgroundSecondary, rgba(0, 123, 255, 0.05));
+}
+
+/* The image wrapper floats left or right */
+.jotx-float-image-wrapper {
+  position: relative;
+  max-width: 50%;
+  margin-bottom: 16px;
+}
+
+.jotx-float-image-wrapper.jotx-float-left {
+  float: left;
+  margin-right: 20px;
+}
+
+.jotx-float-image-wrapper.jotx-float-right {
+  float: right;
+  margin-left: 20px;
+}
+
+.jotx-float-image-wrapper img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.jotx-float-image-wrapper .jotx-image-caption {
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* Editable content area wraps around the floating image */
+.jotx-float-image-content {
+  min-height: 100px;
+  padding: 8px;
+  /* Content will naturally wrap around the floated image */
+}
+
+.jotx-float-image-content p {
+  margin: 0 0 12px 0;
+}
+
+.jotx-float-image-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* === VIDEO BLOCK === */
+.jotx-video-block {
+  margin: 20px 0;
+  position: relative;
+}
+
+.jotx-video-block.selected {
+  outline: 2px solid var(--jotx-primary, #007bff);
+  outline-offset: 4px;
+}
+
+.jotx-video-title {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--jotx-text, #333);
+}
+
+.jotx-video-wrapper {
+  position: relative;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  min-height: 450px; /* Ensure wrapper is visible */
+}
+
+.jotx-video-wrapper iframe,
+.jotx-video-wrapper video {
+  display: block;
+  width: 100%;
+  min-height: 450px; /* Ensure iframe is visible */
+  border: none;
+}
+
+.jotx-video-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--jotx-backgroundSecondary, #f5f5f5);
+  border-radius: 8px;
+}
+
+.jotx-video-controls input,
+.jotx-video-controls button {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid var(--jotx-border, #ddd);
+  border-radius: 6px;
+  background: var(--vscode-input-background, white);
+  color: var(--vscode-input-foreground, #333);
+}
+
+.jotx-video-controls input::placeholder {
+  color: var(--vscode-input-placeholderForeground, #999);
+}
+
+.jotx-video-controls button {
+  cursor: pointer;
+  background: var(--jotx-primary, #007bff);
+  color: white;
+  border: none;
+}
+
+.jotx-video-controls button:hover {
+  background: var(--jotx-primaryHover, #0056b3);
+}
+
+/* Empty state */
+.jotx-video-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  border: 2px dashed var(--jotx-border, #ddd);
+  border-radius: 12px;
+  background: var(--jotx-backgroundSecondary, #f9f9f9);
+}
+
+.jotx-video-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.jotx-video-input-group input {
+  padding: 12px;
+  font-size: 14px;
+  border: 1px solid var(--jotx-border, #ddd);
+  border-radius: 8px;
+  background: var(--vscode-input-background, white);
+  color: var(--vscode-input-foreground, #333);
+}
+
+.jotx-video-input-group input::placeholder {
+  color: var(--vscode-input-placeholderForeground, #999);
+}
+
+.jotx-video-empty button {
+  padding: 12px 24px;
+  font-size: 14px;
+  color: white;
+  background: var(--jotx-primary, #007bff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.jotx-video-empty button:hover {
+  background: var(--jotx-primaryHover, #0056b3);
+}
+
+.jotx-video-error {
+  color: var(--jotx-error, #dc3545);
+  font-size: 14px;
+}
+
+/* === YOUTUBE THUMBNAIL PREVIEW === */
+.jotx-youtube-thumbnail {
+  position: relative;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.jotx-youtube-thumbnail:hover {
+  transform: scale(1.01);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.jotx-youtube-thumbnail img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 200px;
+  object-fit: cover;
+}
+
+.jotx-youtube-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s;
+}
+
+.jotx-youtube-thumbnail:hover .jotx-youtube-play-overlay {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.jotx-youtube-play-overlay svg {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.jotx-youtube-click-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.jotx-youtube-thumbnail:hover .jotx-youtube-click-hint {
+  opacity: 1;
+}
+
+.jotx-youtube-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--jotx-backgroundSecondary, #f5f5f5);
+  border-radius: 8px;
+}
+
+.jotx-youtube-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  background: #FF0000;
+  border-radius: 4px;
+}
+
+.jotx-youtube-link {
+  color: var(--vscode-textLink-foreground, #007bff);
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jotx-youtube-link:hover {
+  text-decoration: underline;
+}
+
+.youtube-preview .jotx-video-controls {
+  margin-top: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .jotx-float-left,
+  .jotx-float-right {
+    float: none;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .jotx-video-wrapper {
+    width: 100% !important;
+  }
+
+  .jotx-youtube-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Jotx Editor Styles - Beautiful, Notion-like
+ */
+
+.jotx-editor {
+  width: 100%;
+  min-height: calc(100vh - var(--jotx-header-height, 60px));
+  padding: var(--jotx-editor-padding, 40px);
+}
+
+.jotx-editor-wrapper {
+  max-width: var(--jotx-editor-maxWidth, 1200px);
+  margin: 0 auto;
+  position: relative;
+}
+
+.jotx-editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--jotx-textSecondary);
+  font-size: 14px;
+}
+
+/* Tiptap Editor Content */
+.jotx-editor-content {
+  position: relative;
+  outline: none;
+  font-size: var(--jotx-editor-fontSize, 14px);
+  line-height: var(--jotx-editor-lineHeight, 1.6);
+  color: var(--jotx-text);
+}
+
+/* Placeholder */
+.jotx-editor-content .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--jotx-textMuted);
+  pointer-events: none;
+  height: 0;
+}
+
+/* Headings */
+.jotx-editor-content h1 {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 1.5em 0 0.5em;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content h1:first-child {
+  margin-top: 0;
+}
+
+.jotx-editor-content h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.2em 0 0.4em;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1em 0 0.3em;
+  color: var(--jotx-text);
+}
+
+/* Paragraph */
+.jotx-editor-content p {
+  margin: 0.75em 0;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content p:first-child {
+  margin-top: 0;
+}
+
+/* Lists */
+.jotx-editor-content ul,
+.jotx-editor-content ol {
+  /* Default list indent: one extra level in from paragraph baseline */
+  padding-left: 2.25em;
+  margin: 0.75em 0;
+  position: relative;
+  list-style-position: outside;
+}
+
+.jotx-editor-content ul {
+  list-style: disc;
+}
+
+.jotx-editor-content ol {
+  list-style: decimal;
+}
+
+.jotx-editor-content ul ul {
+  list-style: circle;
+}
+
+.jotx-editor-content ol ol {
+  list-style: lower-alpha;
+}
+
+/* Nested lists spacing (no rails; indentation is the visual cue) */
+.jotx-editor-content ul ul,
+.jotx-editor-content ul ol,
+.jotx-editor-content ol ul,
+.jotx-editor-content ol ol {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  padding-left: 1.75em;
+}
+
+.jotx-editor-content li {
+  margin: 0.25em 0;
+  color: var(--jotx-text);
+}
+
+.jotx-editor-content li p {
+  margin: 0;
+}
+
+/* Task list (Checklist) */
+.jotx-editor-content ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.75em 0;
+  position: relative;
+}
+
+/* CRITICAL: Force flexbox on task item to keep checkbox and text on same line */
+.jotx-editor-content li[data-type="taskItem"],
+.ProseMirror li[data-type="taskItem"],
+ul[data-type="taskList"]>li {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+  gap: 0.5em;
+  padding: 0.15em 0;
+}
+
+/* Checkbox label - must be inline */
+.jotx-editor-content li[data-type="taskItem"]>label,
+.ProseMirror li[data-type="taskItem"]>label {
+  position: static !important;
+  margin: 0 !important;
+  padding: 0;
+  line-height: 1.5;
+  user-select: none;
+  display: inline-flex !important;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 2px !important;
+}
+
+/* Checkbox input */
+.jotx-editor-content li[data-type="taskItem"]>label input[type="checkbox"],
+.ProseMirror li[data-type="taskItem"]>label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--jotx-primary);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Content div - MUST BE INLINE to keep on same line as checkbox */
+.jotx-editor-content li[data-type="taskItem"]>div,
+.ProseMirror li[data-type="taskItem"]>div {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: inline !important;
+  /* Changed from block to inline */
+}
+
+.jotx-editor-content li[data-type="taskItem"]>div>*,
+.ProseMirror li[data-type="taskItem"]>div>* {
+  margin: 0;
+  display: inline !important;
+}
+
+.jotx-editor-content li[data-type="taskItem"] p,
+.ProseMirror li[data-type="taskItem"] p {
+  margin: 0;
+  display: inline !important;
+  line-height: 1.5;
+}
+
+/* Nested task lists spacing (no rails) */
+.jotx-editor-content ul[data-type="taskList"] ul[data-type="taskList"] {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  padding-left: 1.75em;
+  position: relative;
+}
+
+/* Blockquote */
+.jotx-editor-content blockquote {
+  border-left: 3px solid var(--jotx-primary);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--jotx-textSecondary);
+  font-style: italic;
+}
+
+/* Code Block */
+.jotx-editor-content pre {
+  background-color: var(--jotx-backgroundSecondary);
+  border: 1px solid var(--jotx-border);
+  border-radius: 6px;
+  padding: 1em;
+  margin: 1em 0;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.jotx-editor-content pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  color: var(--jotx-text);
+}
+
+/* Inline Code */
+.jotx-editor-content code {
+  background-color: var(--jotx-backgroundSecondary);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9em;
+  color: var(--jotx-text);
+}
+
+/* Horizontal Rule */
+.jotx-editor-content hr {
+  border: none;
+  border-top: 2px solid var(--jotx-border);
+  margin: 2em 0;
+}
+
+/* Callout */
+.jotx-editor-content div[data-type="callout"] {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 1em 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.jotx-callout-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+}
+
+.jotx-callout-toolbar-floating {
+  position: fixed;
+  z-index: 12000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.jotx-callout-chip {
+  border: 1px solid var(--jotx-border);
+  background: transparent;
+  color: var(--jotx-textSecondary);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.jotx-callout-chip[data-variant="info"] {
+  border-color: rgba(148, 163, 184, 0.75);
+}
+
+.jotx-callout-chip[data-variant="warning"] {
+  border-color: rgba(245, 158, 11, 0.75);
+}
+
+.jotx-callout-chip[data-variant="success"] {
+  border-color: rgba(34, 197, 94, 0.75);
+}
+
+.jotx-callout-chip[data-variant="danger"] {
+  border-color: rgba(239, 68, 68, 0.75);
+}
+
+.jotx-callout-chip.active {
+  color: var(--jotx-text);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.jotx-callout-chip.active[data-variant="info"] {
+  color: rgba(148, 163, 184, 0.95);
+}
+
+.jotx-callout-chip.active[data-variant="warning"] {
+  color: rgba(245, 158, 11, 0.95);
+}
+
+.jotx-callout-chip.active[data-variant="success"] {
+  color: rgba(34, 197, 94, 0.95);
+}
+
+.jotx-callout-chip.active[data-variant="danger"] {
+  color: rgba(239, 68, 68, 0.95);
+}
+
+.jotx-callout-chip:hover {
+  color: var(--jotx-text);
+  background: var(--jotx-backgroundTertiary);
+}
+
+.jotx-editor-content div[data-type="callout"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(148, 163, 184, 0.95);
+  /* info = grey */
+  opacity: 0.9;
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="info"] {
+  background: rgba(148, 163, 184, 0.10);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="warning"] {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="danger"] {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="success"] {
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="warning"]::before {
+  background: rgba(245, 158, 11, 0.95);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="success"]::before {
+  background: rgba(34, 197, 94, 0.95);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="danger"]::before {
+  background: rgba(239, 68, 68, 0.95);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="warning"] {
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="danger"] {
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.jotx-editor-content div[data-type="callout"][data-variant="success"] {
+  border-color: rgba(34, 197, 94, 0.55);
+}
+
+.jotx-editor-content div[data-type="callout"] p {
+  margin: 0;
+}
+
+/* Link card + Attach card */
+.jotx-editor-content div[data-type="linkCard"],
+.jotx-editor-content div[data-type="attach"] {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 1em 0;
+}
+
+.jotx-editor-content div[data-type="linkCard"] p,
+.jotx-editor-content div[data-type="attach"] p {
+  margin: 0;
+}
+
+.jotx-editor-content div[data-type="linkCard"] {
+  border-left: 3px solid var(--jotx-primary);
+}
+
+.jotx-editor-content div[data-type="attach"] {
+  border-left: 3px solid var(--jotx-textSecondary);
+}
+
+/* Image */
+.jotx-editor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 1em 0;
+  border: 1px solid var(--jotx-border);
+}
+
+/* Table */
+.jotx-editor-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--jotx-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1em 0;
+  background: var(--jotx-background);
+}
+
+.jotx-editor-content th,
+.jotx-editor-content td {
+  border-right: 1px solid var(--jotx-border);
+  border-bottom: 1px solid var(--jotx-border);
+  padding: 10px 12px;
+  vertical-align: top;
+}
+
+.jotx-editor-content tr:last-child td {
+  border-bottom: none;
+}
+
+.jotx-editor-content th:last-child,
+.jotx-editor-content td:last-child {
+  border-right: none;
+}
+
+.jotx-editor-content th {
+  background: var(--jotx-backgroundSecondary);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--jotx-textSecondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.jotx-editor-content table[data-type="properties"] th {
+  background: rgba(148, 163, 184, 0.10);
+}
+
+/* Table Cell Selection - Tiptap adds .selectedCell class */
+.jotx-editor-content .selectedCell,
+.jotx-editor-content td.selectedCell,
+.jotx-editor-content th.selectedCell,
+.ProseMirror .selectedCell {
+  background: rgba(0, 200, 200, 0.3) !important;
+  outline: 2px solid var(--jotx-primary, #00c8c8);
+  outline-offset: -2px;
+}
+
+/* Improve table cell selection cursor */
+.jotx-editor-content table td,
+.jotx-editor-content table th {
+  cursor: cell;
+  user-select: text;
+}
+
+/* Column/Row resize handles */
+.jotx-editor-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: var(--jotx-primary);
+  pointer-events: auto;
+  cursor: col-resize;
+}
+
+.jotx-editor-content .tableWrapper {
+  overflow-x: auto;
+}
+
+.jotx-editor-content table.resize-cursor {
+  cursor: col-resize;
+}
+
+/* Links */
+.jotx-editor-content a {
+  color: var(--jotx-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.jotx-editor-content a:hover {
+  border-bottom-color: var(--jotx-primary);
+}
+
+/* Inline highlight */
+.jotx-editor-content mark {
+  background: rgba(250, 204, 21, 0.35);
+  padding: 0.08em 0.2em;
+  border-radius: 0.25em;
+}
+
+/* Selection */
+.jotx-editor-content ::selection {
+  background-color: var(--jotx-primary);
+  color: white;
+}
+
+/* Focus */
+.jotx-editor-content:focus {
+  outline: none;
+}
+
+/* Smooth transitions */
+.jotx-editor-content * {
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+}
+
+/* Empty state */
+.jotx-editor-content:empty::before {
+  content: 'Start typing or press \'/\' for commands...';
+  color: var(--jotx-textMuted);
+  pointer-events: none;
+}
+
+/* Link Block */
+.jotx-link-block {
+  margin: 0.5em 0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: var(--jotx-bgSecondary, rgba(0, 0, 0, 0.03));
+  border-left: 3px solid var(--jotx-primary, #007bff);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.jotx-link-block:hover {
+  background-color: var(--jotx-bgHover, rgba(0, 0, 0, 0.05));
+}
+
+.jotx-link-block-anchor {
+  color: var(--jotx-primary, #007bff);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jotx-link-block-anchor::before {
+  content: '🔗';
+  font-size: 1em;
+}
+
+.jotx-link-block-anchor:hover {
+  text-decoration: underline;
+}
+
+/* Template Picker Modal */
+.jotx-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.1s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.jotx-modal-content {
+  background-color: var(--vscode-quickInput-background, var(--vscode-editor-background));
+  border: 1px solid var(--vscode-quickInput-border, var(--vscode-widget-border));
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  max-width: 480px;
+  width: 90%;
+  max-height: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.15s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.jotx-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--vscode-quickInput-border, var(--vscode-widget-border));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jotx-modal-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-quickInput-foreground, var(--vscode-foreground));
+}
+
+.jotx-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--vscode-icon-foreground);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: opacity 0.2s;
+  opacity: 0.7;
+}
+
+.jotx-modal-close:hover {
+  opacity: 1;
+}
+
+.jotx-template-list {
+  padding: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.jotx-template-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+}
+
+.jotx-template-item:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-list-focusOutline, var(--vscode-focusBorder));
+}
+
+.jotx-template-item:active {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.jotx-template-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.jotx-template-name {
+  font-weight: 400;
+  color: var(--vscode-quickInput-foreground, var(--vscode-foreground));
+}
+.jotxlink-node-wrapper {
+    margin: 12px 0;
+}
+
+.jotxlink-box {
+    border: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--vscode-editor-background, hsl(var(--background, 220 15% 10%)));
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+}
+
+.jotxlink-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid transparent;
+}
+
+.jotxlink-header:hover {
+    background: var(--vscode-list-hoverBackground, hsl(var(--muted, 220 12% 18%)));
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.type-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.jotxlink-box .node-label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.jotxlink-box .node-meta {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground, hsl(var(--muted-foreground, 220 8% 75%)));
+    flex-shrink: 0;
+}
+
+.edit-source-btn {
+    background: var(--vscode-button-secondaryBackground);
+    border: none;
+    color: var(--vscode-button-secondaryForeground);
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.jotxlink-header:hover .edit-source-btn {
+    opacity: 1;
+}
+
+.edit-source-btn:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.jotxlink-content {
+    padding: 0;
+    border-top: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+    /* Ensure proper text color is inherited immediately */
+    color: var(--vscode-foreground, hsl(var(--foreground, 222 47% 11%)));
+    background: var(--vscode-editor-background, hsl(var(--background, 0 0% 100%)));
+}
+
+/* Old styles - kept for backwards compatibility */
+.jotxlink-empty {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 2px dashed var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.jotxlink-empty-icon {
+    color: var(--vscode-descriptionForeground);
+    flex-shrink: 0;
+}
+
+.jotxlink-empty-inputs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.jotxlink-input {
+    width: 100%;
+    padding: 6px 10px;
+    background: var(--vscode-input-background);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 4px;
+    color: var(--vscode-input-foreground);
+    font-size: 13px;
+}
+
+.jotxlink-input:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+}
+
+/* Document metadata view for linked documents */
+.jotxlink-document-meta {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.jotxlink-document-meta .meta-row {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.jotxlink-document-meta .meta-label {
+    color: var(--vscode-descriptionForeground);
+    min-width: 70px;
+    flex-shrink: 0;
+}
+
+.jotxlink-document-meta .meta-value {
+    color: var(--vscode-foreground);
+    word-break: break-all;
+}
+.jotx-link-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.jotx-link-dialog {
+  position: relative;
+  z-index: 100000;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  border-radius: 8px;
+  /* Web fallbacks: light border, white background, dark text */
+  border: 1px solid var(--vscode-widget-border, hsl(220 13% 80%));
+  background: var(--vscode-editorWidget-background, hsl(0 0% 100%));
+  color: var(--vscode-editorWidget-foreground, hsl(222 47% 11%));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+}
+
+.jotx-link-dialog-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-editorWidget-foreground, hsl(222 47% 11%));
+  margin-bottom: 12px;
+}
+
+.jotx-link-dialog-field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.jotx-link-dialog-label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, hsl(215 14% 45%));
+  margin-bottom: 6px;
+}
+
+.jotx-link-dialog-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-input-border, hsl(220 13% 80%));
+  background: var(--vscode-input-background, hsl(210 20% 98%));
+  color: var(--vscode-input-foreground, hsl(222 47% 11%));
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.jotx-link-dialog-input::placeholder {
+  color: var(--vscode-input-placeholderForeground, hsl(215 14% 65%));
+}
+
+.jotx-link-dialog-input:focus {
+  border-color: var(--vscode-focusBorder, hsl(221 83% 53%));
+  outline: 2px solid var(--vscode-focusBorder, hsl(221 83% 53%));
+  outline-offset: -1px;
+}
+
+.jotx-link-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.jotx-link-dialog-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-button-secondaryBackground, hsl(220 13% 80%));
+  background: var(--vscode-button-secondaryBackground, transparent);
+  color: var(--vscode-button-secondaryForeground, hsl(222 47% 11%));
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.jotx-link-dialog-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground, hsl(220 13% 95%));
+}
+
+.jotx-link-dialog-btn.primary {
+  background: var(--vscode-button-background, hsl(221 83% 53%));
+  color: var(--vscode-button-foreground, hsl(0 0% 100%));
+  border-color: transparent;
+}
+
+.jotx-link-dialog-btn.primary:hover {
+  background: var(--vscode-button-hoverBackground, hsl(221 83% 45%));
+}
+
+.jotx-link-dialog-hint {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, hsl(215 14% 45%));
+}
+
+.jotx-link-dialog-hint kbd {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: inherit;
+  color: var(--vscode-editor-foreground, hsl(222 47% 11%));
+  background-color: var(--vscode-keybindingLabel-background, hsl(220 13% 93%));
+  border: 1px solid var(--vscode-keybindingLabel-border, hsl(220 13% 80%));
+  border-bottom-color: var(--vscode-keybindingLabel-bottomBorder, hsl(220 13% 75%));
+  border-radius: 4px;
+  box-shadow: inset 0 -1px 0 var(--vscode-keybindingLabel-bottomBorder, hsl(220 13% 75%));
+}
+.jotx-math {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 12px;
+  margin: 1em 0;
+  overflow: hidden;
+}
+
+.ProseMirror-selectednode .jotx-math-preview,
+.ProseMirror-selectednode .jotx-math-preview * {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: none;
+  /* Shadow handled by wrapper, avoid double shadow */
+  /* NUCLEAR option: force all children to respect these colors */
+  color: var(--jotx-text, hsl(222 47% 11%)) !important;
+  background: var(--jotx-background, hsl(0 0% 100%)) !important;
+}
+
+/* CRITICAL: Override global ::selection rule that turns text white */
+.jotx-math-preview ::selection,
+.jotx-math-preview *::selection {
+  background: rgba(99, 102, 241, 0.2) !important;
+  color: var(--jotx-text, hsl(222 47% 11%)) !important;
+}
+
+.jotx-math-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--jotx-border);
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.jotx-math-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--jotx-textSecondary);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.jotx-math-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jotx-math-iconbtn {
+  width: 34px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  cursor: pointer;
+}
+
+.jotx-math-iconbtn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 18px rgba(99, 102, 241, 0.12);
+}
+
+.jotx-math-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.jotx-math-input {
+  min-height: 150px;
+  resize: vertical;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border, hsl(220 13% 80%));
+  background: var(--jotx-background, hsl(0 0% 100%));
+  color: var(--jotx-text, hsl(222 47% 11%));
+  padding: 10px;
+  outline: none;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  tab-size: 2;
+}
+
+.jotx-math-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  /* Explicitly keep text color on focus */
+  color: var(--jotx-text, hsl(222 47% 11%));
+  background: var(--jotx-background, hsl(0 0% 100%));
+}
+
+.jotx-math-preview {
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  padding: 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+  min-height: 0;
+  resize: vertical;
+  overflow: auto;
+}
+
+.jotx-math-empty {
+  color: var(--jotx-textMuted);
+  font-size: 13px;
+}
+
+/* responsive: already vertical */
+.jotx-mermaid {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 1em 0;
+}
+
+.jotx-mermaid-editor {
+  position: relative;
+}
+
+.jotx-mermaid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.jotx-mermaid-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--jotx-textSecondary);
+  flex-shrink: 0;
+}
+
+/* Shared title input for rich blocks */
+.jotx-block-title-input {
+  flex: 1;
+  margin: 0 12px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--jotx-text);
+  background: var(--jotx-background);
+  border: 1px solid var(--jotx-border);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.jotx-block-title-input:focus {
+  border-color: var(--jotx-primary);
+}
+
+.jotx-block-title-input::placeholder {
+  color: var(--jotx-textSecondary);
+  opacity: 0.6;
+}
+
+.jotx-mermaid-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.jotx-mermaid-copybtn,
+.jotx-mermaid-iconbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--jotx-background);
+  color: var(--jotx-textSecondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  opacity: 0.7;
+}
+
+.jotx-mermaid-copybtn:hover,
+.jotx-mermaid-iconbtn:hover {
+  opacity: 1;
+  background: var(--jotx-backgroundSecondary);
+  color: var(--jotx-primary);
+}
+
+.jotx-mermaid-copybtn:active,
+.jotx-mermaid-iconbtn:active {
+  transform: scale(0.95);
+}
+
+.jotx-mermaid-code {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--jotx-background);
+  border: 1px solid var(--jotx-border);
+  border-radius: 10px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.jotx-mermaid-textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--jotx-text);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+}
+
+.jotx-mermaid-preview {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--jotx-background);
+  border: 1px dashed var(--jotx-border);
+  border-radius: 10px;
+  overflow: auto;
+  position: relative;
+  min-height: 200px;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.jotx-mermaid-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.jotx-mermaid-svg {
+  display: block;
+  will-change: transform;
+  flex-shrink: 0;
+}
+
+.jotx-mermaid-svg svg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: none;
+  min-width: fit-content;
+}
+/* ─── Motion Block ─────────────────────────────────────────────── */
+
+.jotx-motion {
+    position: relative;
+    border: 1px solid var(--jotx-border, #313244);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 12px 0;
+    background: var(--jotx-surface, #1e1e2e);
+    transition: border-color 0.2s ease;
+}
+
+.jotx-motion[data-selected='true'] {
+    border-color: var(--jotx-accent, #89b4fa);
+}
+
+/* ─── Header ───────────────────────────────────────────────────── */
+
+.jotx-motion-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--jotx-border, #313244);
+    background: var(--jotx-surface-alt, #181825);
+}
+
+.jotx-motion-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--jotx-accent, #89b4fa);
+    white-space: nowrap;
+    padding: 3px 8px;
+    background: rgba(137, 180, 250, 0.1);
+    border-radius: 4px;
+}
+
+.jotx-motion-header .jotx-block-title-input {
+    flex: 1;
+    min-width: 100px;
+    border: none;
+    background: transparent;
+    color: var(--jotx-text, #cdd6f4);
+    font-size: 13px;
+    padding: 4px 8px;
+    outline: none;
+    border-radius: 4px;
+}
+
+.jotx-motion-header .jotx-block-title-input:focus {
+    background: var(--jotx-surface, #1e1e2e);
+}
+
+.jotx-motion-header .jotx-block-title-input::placeholder {
+    color: var(--jotx-text-muted, #585b70);
+}
+
+/* ─── Type Switcher ────────────────────────────────────────────── */
+
+.jotx-motion-types {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.jotx-motion-type-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--jotx-text-muted, #585b70);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.jotx-motion-type-btn:hover {
+    color: var(--jotx-text, #cdd6f4);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.jotx-motion-type-btn.active {
+    color: var(--jotx-accent, #89b4fa);
+    background: rgba(137, 180, 250, 0.15);
+}
+
+.jotx-motion-toggle-source {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--jotx-text-muted, #585b70);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.jotx-motion-toggle-source:hover {
+    color: var(--jotx-text, #cdd6f4);
+}
+
+/* ─── Confirmation Overlay ─────────────────────────────────────── */
+
+.jotx-motion-confirm-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+}
+
+.jotx-motion-confirm-text {
+    margin-bottom: 16px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.jotx-motion-confirm-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.jotx-motion-btn-danger {
+    padding: 6px 14px;
+    background: #d93025;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.jotx-motion-btn-danger:hover {
+    background: #c62b20;
+}
+
+.jotx-motion-btn-cancel {
+    padding: 6px 14px;
+    background: #45475a;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.jotx-motion-btn-cancel:hover {
+    background: #585b70;
+}
+
+/* ─── Playback Bar ─────────────────────────────────────────────── */
+
+.jotx-motion-playback {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--jotx-border, #313244);
+    background: var(--jotx-surface-alt, #181825);
+}
+
+.jotx-motion-transport {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--jotx-text-muted, #585b70);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.jotx-motion-transport:hover {
+    color: var(--jotx-text, #cdd6f4);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.jotx-motion-transport.active {
+    color: var(--jotx-accent, #89b4fa);
+}
+
+.jotx-motion-play-btn {
+    width: 30px;
+    height: 30px;
+    color: var(--jotx-accent, #89b4fa);
+}
+
+.jotx-motion-play-btn:hover {
+    color: white;
+    background: var(--jotx-accent, #89b4fa);
+}
+
+/* Scrubber */
+.jotx-motion-scrubber {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--jotx-border, #313244);
+    border-radius: 2px;
+    outline: none;
+    margin: 0 6px;
+    cursor: pointer;
+}
+
+.jotx-motion-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--jotx-accent, #89b4fa);
+    cursor: pointer;
+    border: 2px solid var(--jotx-surface, #1e1e2e);
+    transition: transform 0.1s ease;
+}
+
+.jotx-motion-scrubber::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+}
+
+.jotx-motion-time {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--jotx-text-muted, #585b70);
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Speed menu */
+.jotx-motion-speed-wrap {
+    position: relative;
+}
+
+.jotx-motion-speed-btn {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--jotx-text-muted, #585b70);
+    background: transparent;
+    border: 1px solid var(--jotx-border, #313244);
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.jotx-motion-speed-btn:hover {
+    color: var(--jotx-text, #cdd6f4);
+    border-color: var(--jotx-text-muted, #585b70);
+}
+
+.jotx-motion-speed-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--jotx-surface, #1e1e2e);
+    border: 1px solid var(--jotx-border, #313244);
+    border-radius: 6px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    margin-bottom: 4px;
+}
+
+.jotx-motion-speed-menu button {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--jotx-text-muted, #585b70);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.jotx-motion-speed-menu button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--jotx-text, #cdd6f4);
+}
+
+.jotx-motion-speed-menu button.active {
+    color: var(--jotx-accent, #89b4fa);
+    background: rgba(137, 180, 250, 0.1);
+}
+
+/* ─── Errors ───────────────────────────────────────────────────── */
+
+.jotx-motion-errors {
+    padding: 6px 12px;
+    background: rgba(243, 139, 168, 0.1);
+    border-bottom: 1px solid rgba(243, 139, 168, 0.3);
+    font-size: 12px;
+    color: #f38ba8;
+    font-family: monospace;
+}
+
+/* ─── Canvas ───────────────────────────────────────────────────── */
+
+.jotx-motion-canvas-wrap {
+    width: 100%;
+    position: relative;
+    background: var(--jotx-surface, #1e1e2e);
+    min-height: 200px;
+}
+
+.jotx-motion-canvas-wrap canvas {
+    display: block;
+    width: 100%;
+}
+
+/* ─── Source Editor ────────────────────────────────────────────── */
+
+.jotx-motion-source {
+    border-top: 1px solid var(--jotx-border, #313244);
+}
+
+.jotx-motion-source-hint {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--jotx-text-muted, #585b70);
+    background: var(--jotx-surface-alt, #181825);
+}
+
+.jotx-motion-source textarea {
+    width: 100%;
+    background: var(--jotx-surface, #1e1e2e);
+    color: var(--jotx-text, #cdd6f4);
+    border: none;
+    padding: 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    min-height: 120px;
+    tab-size: 2;
+}
+
+.jotx-motion-source textarea::placeholder {
+    color: var(--jotx-text-muted, #585b70);
+}
+.node-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.node-picker-dialog {
+    /* Support both VS Code and web */
+    /* Use inherit to get theme colors from parent, with solid dark fallback */
+    background: var(--vscode-editor-background, hsl(var(--background, 220 15% 10%)));
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+    border: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+    border-radius: 8px;
+    width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.node-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+}
+
+.node-picker-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.close-btn:hover {
+    background: var(--vscode-list-hoverBackground, hsl(var(--muted, 220 12% 18%)));
+}
+
+.node-picker-search {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+}
+
+.node-picker-search input {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--vscode-input-background, hsl(var(--input, 220 12% 22%)));
+    border: 1px solid var(--vscode-input-border, hsl(var(--border, 220 12% 22%)));
+    border-radius: 4px;
+    color: var(--vscode-input-foreground, hsl(var(--foreground, 0 0% 95%)));
+    font-size: 14px;
+}
+
+.node-picker-search input:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder, hsl(var(--primary, 175 60% 50%)));
+}
+
+.node-picker-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+    background: var(--vscode-editor-background, hsl(var(--background, 220 15% 10%)));
+}
+
+.node-picker-tabs button {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.7;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.node-picker-tabs button:hover {
+    opacity: 1;
+    background: var(--vscode-list-hoverBackground, hsl(var(--muted, 220 12% 18%)));
+}
+
+.node-picker-tabs button.active {
+    opacity: 1;
+    border-bottom-color: var(--vscode-focusBorder, hsl(var(--primary, 175 60% 50%)));
+}
+
+.node-picker-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 300px;
+}
+
+.node-list {
+    padding: 8px;
+}
+
+.node-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.node-item:hover {
+    background: var(--vscode-list-hoverBackground, hsl(var(--muted, 220 12% 18%)));
+}
+
+.node-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.node-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.node-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--vscode-foreground, hsl(var(--foreground, 0 0% 95%)));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.node-meta {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground, hsl(var(--muted-foreground, 220 8% 75%)));
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.loading,
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--vscode-descriptionForeground, hsl(var(--muted-foreground, 220 8% 75%)));
+    font-size: 14px;
+}
+
+.node-picker-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cancel-btn {
+    padding: 8px 16px;
+    background: var(--vscode-button-secondaryBackground, hsl(var(--secondary, 222 47% 11%)));
+    border: none;
+    border-radius: 4px;
+    color: var(--vscode-button-secondaryForeground, hsl(var(--secondary-foreground, 213 31% 91%)));
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.cancel-btn:hover {
+    background: var(--vscode-button-secondaryHoverBackground, hsl(var(--secondary) / 0.8));
+}
+/* Presentation Toolbar Styles */
+
+.jotx-presentation-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
+    background: var(--vscode-editorWidget-background, #252526);
+}
+
+.jotx-pres-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    border: 1px solid var(--vscode-button-border, #3c3c3c);
+    border-radius: 4px;
+    background: var(--vscode-button-secondaryBackground, #3c3c3c);
+    color: var(--vscode-button-secondaryForeground, #cccccc);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.jotx-pres-btn:hover {
+    background: var(--vscode-button-secondaryHoverBackground, #505050);
+}
+
+.jotx-pres-btn-primary {
+    background: var(--vscode-button-background, #0e639c);
+    color: var(--vscode-button-foreground, #ffffff);
+    border: none;
+}
+
+.jotx-pres-btn-primary:hover {
+    background: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+.jotx-pres-slide-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+/* Slide Marker Inline Decorations */
+
+.jotx-slide-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 0;
+    margin: 12px 0 4px 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--vscode-editorLineNumber-foreground, #858585);
+    user-select: none;
+    pointer-events: none;
+}
+
+.jotx-slide-marker-break {
+    color: var(--vscode-editorInfo-foreground, #3794ff);
+}
+.readonly-block-renderer {
+    position: relative;
+    margin: 8px 0;
+}
+
+/* Make readonly content truly uneditable - block all user interaction */
+.readonly-block-renderer .readonly-block-content {
+    pointer-events: none;
+    user-select: none;
+    cursor: default;
+}
+
+/* Allow interaction with specific elements like buttons */
+.readonly-block-renderer .edit-source-btn,
+.readonly-block-renderer .readonly-block-header {
+    pointer-events: auto;
+    user-select: auto;
+    cursor: pointer;
+}
+
+/* Prevent focus outline on readonly content */
+.readonly-block-renderer .ProseMirror {
+    outline: none;
+    cursor: default;
+    caret-color: transparent;
+}
+
+/* Block contenteditable behavior */
+.readonly-block-renderer [contenteditable="true"] {
+    pointer-events: none;
+    user-select: none;
+}
+
+.edit-source-btn {
+    background: var(--vscode-button-background);
+    border: none;
+    color: var(--vscode-button-foreground);
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    margin-top: 8px;
+}
+
+.edit-source-btn:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+/* Document block */
+.readonly-document {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.document-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--vscode-foreground);
+}
+
+.document-meta {
+    font-size: 13px;
+    color: var(--vscode-descriptionForeground);
+    margin-bottom: 12px;
+}
+
+.document-properties {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.property-row {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.property-key {
+    color: var(--vscode-descriptionForeground);
+    min-width: 100px;
+}
+
+.property-value {
+    color: var(--vscode-foreground);
+}
+
+/* Mermaid block */
+.readonly-mermaid {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-textBlockQuote-background);
+}
+
+.readonly-mermaid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.readonly-mermaid-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.readonly-mermaid-svg {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    background: var(--vscode-editor-background);
+    border-radius: 4px;
+    overflow: auto;
+}
+
+.readonly-mermaid-svg svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.readonly-mermaid-error {
+    color: var(--vscode-errorForeground);
+    padding: 12px;
+    background: var(--vscode-inputValidation-errorBackground);
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.readonly-mermaid-source {
+    font-size: 13px;
+}
+
+.readonly-mermaid-source details {
+    margin-top: 8px;
+}
+
+.readonly-mermaid-source summary {
+    cursor: pointer;
+    color: var(--vscode-descriptionForeground);
+    padding: 4px 0;
+}
+
+.readonly-mermaid-source pre {
+    margin: 8px 0 0 0;
+    padding: 12px;
+    background: var(--vscode-textCodeBlock-background);
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 12px;
+    max-height: 200px;
+}
+
+/* Code block */
+.readonly-code {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.readonly-code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.readonly-code-block {
+    margin: 0;
+    padding: 12px;
+    background: var(--vscode-textCodeBlock-background);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.readonly-code-block code {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 13px;
+    color: var(--vscode-editor-foreground);
+}
+
+/* Math block */
+.readonly-math {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.readonly-math-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.math-source pre {
+    margin: 0;
+    padding: 12px;
+    background: var(--vscode-textCodeBlock-background);
+    border-radius: 4px;
+    font-family: var(--vscode-editor-font-family);
+    font-size: 13px;
+}
+
+/* Chart block */
+.readonly-chart {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.readonly-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.chart-json {
+    margin: 8px 0 0 0;
+    padding: 12px;
+    background: var(--vscode-textCodeBlock-background);
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 12px;
+    max-height: 200px;
+}
+
+/* Heading block */
+.readonly-heading {
+    padding: 12px 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.heading-content {
+    font-weight: 600;
+    color: var(--vscode-foreground);
+}
+
+.heading-level-1 {
+    font-size: 24px;
+}
+
+.heading-level-2 {
+    font-size: 20px;
+}
+
+.heading-level-3 {
+    font-size: 18px;
+}
+
+.heading-level-4 {
+    font-size: 16px;
+}
+
+.heading-level-5 {
+    font-size: 14px;
+}
+
+.heading-level-6 {
+    font-size: 13px;
+}
+
+/* Paragraph block */
+.readonly-paragraph {
+    padding: 12px 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.paragraph-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--vscode-foreground);
+}
+
+/* Callout block */
+.readonly-callout {
+    padding: 16px;
+    border-radius: 6px;
+    border-left: 4px solid var(--vscode-notificationsInfoIcon-foreground);
+    background: var(--vscode-textBlockQuote-background);
+}
+
+.callout-info {
+    border-left-color: var(--vscode-notificationsInfoIcon-foreground);
+}
+
+.callout-warning {
+    border-left-color: var(--vscode-notificationsWarningIcon-foreground);
+}
+
+.callout-error {
+    border-left-color: var(--vscode-notificationsErrorIcon-foreground);
+}
+
+.callout-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.callout-content {
+    font-size: 14px;
+    color: var(--vscode-foreground);
+}
+
+/* Table and checklist */
+.readonly-table,
+.readonly-checklist {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 12% 22%)));
+    border-radius: 6px;
+    background: var(--vscode-editor-background, hsl(var(--background, 0 0% 100%)));
+}
+
+.table-header,
+.checklist-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.table-columns,
+.checklist-content {
+    font-size: 14px;
+    color: var(--vscode-foreground, hsl(var(--foreground, 222 47% 11%)));
+}
+
+/* Tiptap table styles for ReadonlyBlockRenderer */
+.readonly-block-renderer table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8px 0;
+    table-layout: fixed;
+}
+
+.readonly-block-renderer th,
+.readonly-block-renderer td {
+    border: 1px solid var(--vscode-panel-border, hsl(var(--border, 220 13% 80%)));
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+    color: var(--vscode-foreground, hsl(var(--foreground, 222 47% 11%)));
+    background: var(--vscode-editor-background, hsl(var(--background, 0 0% 100%)));
+}
+
+.readonly-block-renderer th {
+    font-weight: 600;
+    background: var(--vscode-editor-selectionBackground, hsl(var(--muted, 220 14% 96%)));
+}
+
+.readonly-block-renderer tr:hover td {
+    background: var(--vscode-list-hoverBackground, hsl(var(--muted, 220 14% 96%) / 0.5));
+}
+
+/* Image block */
+.readonly-image {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.image-header {
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.readonly-image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+/* Generic block */
+.readonly-generic {
+    padding: 16px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+}
+
+.generic-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--vscode-foreground);
+}
+
+.generic-label {
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: var(--vscode-foreground);
+}
+
+.generic-content {
+    font-size: 13px;
+    color: var(--vscode-descriptionForeground);
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--vscode-textCodeBlock-background);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+/**
+ * Floating Search Bar Styles
+ * Positioned top-right, floating above content
+ */
+
+.jotx-search-bar {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  z-index: 1000;
+  
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  background: var(--jotx-backgroundSecondary, #ffffff);
+  border: 1px solid var(--jotx-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 8px 12px;
+  
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1),
+              0 2px 4px rgba(0, 0, 0, 0.05);
+  
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.jotx-search-bar:focus-within {
+  border-color: var(--jotx-primary, #4f46e5);
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.15),
+              0 2px 6px rgba(79, 70, 229, 0.1);
+}
+
+/* Search icon */
+.jotx-search-icon {
+  display: flex;
+  align-items: center;
+  color: var(--jotx-textSecondary, #64748b);
+  flex-shrink: 0;
+}
+
+/* Input field */
+.jotx-search-input {
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+  height: 28px;
+  padding: 0 8px;
+  
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--jotx-text, #111827);
+  
+  background: transparent;
+  border: none;
+  outline: none;
+  
+  transition: all 0.15s ease;
+}
+
+.jotx-search-input::placeholder {
+  color: var(--jotx-textSecondary, #94a3b8);
+}
+
+/* Match counter */
+.jotx-search-counter {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--jotx-textSecondary, #64748b);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+/* Navigation buttons */
+.jotx-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  
+  color: var(--jotx-textSecondary, #64748b);
+  cursor: pointer;
+  
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.jotx-search-btn:hover:not(:disabled) {
+  background: var(--jotx-background, #f8fafc);
+  color: var(--jotx-primary, #4f46e5);
+}
+
+.jotx-search-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.jotx-search-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Close button */
+.jotx-search-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-left: 4px;
+  
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  
+  color: var(--jotx-textSecondary, #64748b);
+  cursor: pointer;
+  
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.jotx-search-close:hover {
+  background: var(--jotx-danger, #ef4444);
+  color: #ffffff;
+}
+
+.jotx-search-close:active {
+  transform: scale(0.95);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .jotx-search-bar {
+    right: 12px;
+    top: 60px;
+  }
+  
+  .jotx-search-input {
+    min-width: 150px;
+    max-width: 200px;
+  }
+}
+
+/* Dark mode adjustments */
+body.vscode-dark .jotx-search-bar,
+body.vscode-high-contrast .jotx-search-bar {
+  background: var(--jotx-backgroundSecondary, #1e293b);
+  border-color: var(--jotx-border, #334155);
+}
+
+body.vscode-dark .jotx-search-btn:hover:not(:disabled),
+body.vscode-high-contrast .jotx-search-btn:hover:not(:disabled) {
+  background: var(--jotx-background, #0f172a);
+}
+
+
+
+
+/**
+ * Search Highlight Styles
+ * Yellow for all matches, Orange for current match
+ */
+
+/* All search matches - Yellow highlight */
+.jotx-search-match {
+  background-color: #fef08a;
+  color: inherit;
+  border-radius: 2px;
+  padding: 1px 0;
+  transition: background-color 0.15s ease;
+}
+
+/* Current match - Orange highlight + more prominent */
+.jotx-search-current {
+  background-color: #fb923c;
+  color: #000000;
+  border-radius: 2px;
+  padding: 1px 0;
+  font-weight: 500;
+  box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.3);
+  transition: all 0.15s ease;
+}
+
+/* Dark mode adjustments */
+body.vscode-dark .jotx-search-match,
+body.vscode-high-contrast .jotx-search-match {
+  background-color: #854d0e;
+  color: #fef08a;
+}
+
+body.vscode-dark .jotx-search-current,
+body.vscode-high-contrast .jotx-search-current {
+  background-color: #ea580c;
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.4);
+}
+
+/* Smooth scroll animation when jumping to matches */
+@media (prefers-reduced-motion: no-preference) {
+  .ProseMirror {
+    scroll-behavior: smooth;
+  }
+}
+
+
+
+
+/* Section Node - Collapsible section with title */
+.jotx-section {
+  margin: 1em 0;
+  border: 1px solid var(--vscode-panel-border, #e0e0e0);
+  border-radius: 6px;
+  background: var(--vscode-editor-background, #ffffff);
+  overflow: hidden;
+}
+
+.jotx-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--vscode-editorGroupHeader-tabsBackground, #f5f5f5);
+  border-bottom: 1px solid var(--vscode-panel-border, #e0e0e0);
+  cursor: pointer;
+}
+
+.jotx-section.is-collapsed .jotx-section-header {
+  border-bottom: none;
+}
+
+.jotx-section-chevron {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-foreground, #333);
+  transition: transform 0.15s ease;
+}
+
+.jotx-section-chevron:hover {
+  background: var(--vscode-list-hoverBackground, rgba(0, 0, 0, 0.05));
+  border-radius: 3px;
+}
+
+.jotx-section-title {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vscode-foreground, #333);
+  padding: 4px 6px;
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+
+.jotx-section-title:hover {
+  background: var(--vscode-input-background, rgba(255, 255, 255, 0.5));
+}
+
+.jotx-section-title:focus {
+  background: var(--vscode-input-background, #fff);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder, #007acc);
+}
+
+.jotx-section-content {
+  padding: 12px;
+}
+
+.jotx-section-content-inner {
+  /* Nested blocks */
+}
+
+.jotx-section.is-collapsed .jotx-section-content {
+  display: none;
+}
+
+/* Dark theme support */
+body[data-vscode-theme-kind="vscode-dark"] .jotx-section {
+  background: var(--vscode-editor-background, #1e1e1e);
+  border-color: var(--vscode-panel-border, #3c3c3c);
+}
+
+body[data-vscode-theme-kind="vscode-dark"] .jotx-section-header {
+  background: var(--vscode-editorGroupHeader-tabsBackground, #252526);
+  border-bottom-color: var(--vscode-panel-border, #3c3c3c);
+}
+
+body[data-vscode-theme-kind="vscode-dark"] .jotx-section-title {
+  color: var(--vscode-foreground, #ccc);
+}
+
+
+
+/**
+ * Slash Menu Styles - Beautiful, Notion-like
+ */
+
+.jotx-slash-menu {
+  position: fixed;
+  min-width: 320px;
+  max-width: 400px;
+  /* Use shadcn variables with fallbacks for VS Code webview */
+  background-color: var(--jotx-background, hsl(var(--popover, 220 15% 13%)));
+  border: 1px solid var(--jotx-border, hsl(var(--border, 220 10% 25%)));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  /* Very high to ensure it's above everything */
+  overflow: hidden;
+  animation: slideIn 0.15s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.jotx-slash-menu-header {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--jotx-textSecondary, hsl(var(--muted-foreground, 220 8% 55%)));
+  background-color: var(--jotx-backgroundSecondary, hsl(var(--muted, 220 12% 18%)));
+  border-bottom: 1px solid var(--jotx-border, hsl(var(--border, 220 10% 25%)));
+}
+
+.jotx-slash-menu-items {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.jotx-slash-menu-items::-webkit-scrollbar {
+  width: 8px;
+}
+
+.jotx-slash-menu-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jotx-slash-menu-items::-webkit-scrollbar-thumb {
+  background: var(--jotx-border);
+  border-radius: 4px;
+}
+
+.jotx-slash-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.jotx-slash-menu-item:hover,
+.jotx-slash-menu-item.selected {
+  background-color: var(--jotx-backgroundSecondary, hsl(var(--muted, 220 12% 18%)));
+}
+
+.jotx-slash-menu-item.selected {
+  box-shadow: inset 0 0 0 1px var(--jotx-primary, #14b8a6);
+}
+
+.jotx-slash-menu-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.jotx-slash-menu-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.jotx-slash-menu-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--jotx-text, hsl(var(--foreground, 0 0% 95%)));
+  margin-bottom: 2px;
+}
+
+.jotx-slash-menu-description {
+  font-size: 12px;
+  color: var(--jotx-textSecondary, hsl(var(--muted-foreground, 220 8% 55%)));
+  line-height: 1.4;
+}
+
+.jotx-slash-menu-footer {
+  padding: 8px 16px;
+  font-size: 11px;
+  color: var(--jotx-textMuted);
+  background-color: var(--jotx-backgroundSecondary);
+  border-top: 1px solid var(--jotx-border);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.jotx-slash-menu-footer kbd {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--jotx-textSecondary);
+  background-color: var(--jotx-backgroundTertiary);
+  border: 1px solid var(--jotx-border);
+  border-radius: 3px;
+}
+
+.jotx-slash-menu-empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--jotx-textSecondary);
+}
+/* SlideProperties NodeView Styles */
+
+.jotx-slideprops {
+    margin: 8px 0 16px 0;
+    border: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--vscode-editorWidget-background, #252526);
+}
+
+.jotx-slideprops-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--vscode-sideBarSectionHeader-background, #1e1e1e);
+    color: var(--vscode-foreground, #cccccc);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.jotx-slideprops-header:hover {
+    background: var(--vscode-list-hoverBackground, #2a2d2e);
+}
+
+.jotx-slideprops-title {
+    flex: 1;
+}
+
+.jotx-slideprops-body {
+    padding: 12px;
+    border-top: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
+}
+
+.jotx-slideprops-grid {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 8px 12px;
+    align-items: center;
+}
+
+.jotx-slideprops-label {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground, #888888);
+    text-align: right;
+}
+
+.jotx-slideprops-select,
+.jotx-slideprops-input {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid var(--vscode-input-border, #3c3c3c);
+    border-radius: 4px;
+    background: var(--vscode-input-background, #1e1e1e);
+    color: var(--vscode-input-foreground, #cccccc);
+    outline: none;
+}
+
+.jotx-slideprops-select:focus,
+.jotx-slideprops-input:focus {
+    border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.jotx-slideprops-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--vscode-foreground, #cccccc);
+    cursor: pointer;
+}
+
+.jotx-slideprops-checkbox-label input[type="checkbox"] {
+    accent-color: var(--vscode-focusBorder, #007acc);
+}
+
+/* Logo file picker row */
+.jotx-slideprops-logo-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.jotx-slideprops-logo-input {
+    flex: 1;
+    min-width: 0;
+    cursor: default;
+}
+
+.jotx-slideprops-logo-btn,
+.jotx-slideprops-logo-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 6px;
+    border: 1px solid var(--vscode-input-border, #3c3c3c);
+    border-radius: 4px;
+    background: var(--vscode-button-secondaryBackground, #3a3d41);
+    color: var(--vscode-button-secondaryForeground, #cccccc);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.jotx-slideprops-logo-btn:hover,
+.jotx-slideprops-logo-clear:hover {
+    background: var(--vscode-button-secondaryHoverBackground, #45494e);
+}
+
+.jotx-slideprops-logo-clear {
+    font-size: 14px;
+    font-weight: bold;
+    padding: 3px 6px;
+}
+/* Spell Check Styles */
+
+/* Red wavy underline for misspelled words */
+.spelling-error {
+    text-decoration: underline wavy #ef4444;
+    text-decoration-skip-ink: none;
+    text-underline-offset: 2px;
+}
+
+/* Make sure the underline is visible but not too intrusive */
+.spelling-error:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-radius: 2px;
+}
+
+/* Suggestions menu styling is inline in the extension */
+.jotx-table-toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  color: var(--jotx-text);
+  white-space: nowrap;
+}
+
+.jotx-table-toolbar-floating {
+  position: fixed;
+  z-index: 9999;
+}
+
+.jotx-table-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  color: var(--jotx-textSecondary);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.jotx-table-handle:hover {
+  color: var(--jotx-text);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 10px 26px rgba(99, 102, 241, 0.14);
+}
+
+.jotx-table-filter-input {
+  width: 180px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  outline: none;
+  font-size: 13px;
+}
+
+.jotx-table-filter-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.jotx-table-filter-select {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  outline: none;
+  font-size: 13px;
+}
+
+.jotx-table-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jotx-table-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.jotx-table-toolbar-row-secondary {
+  padding-top: 2px;
+}
+
+.jotx-table-toolbar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--jotx-textSecondary);
+  padding: 0 4px;
+}
+
+.jotx-table-toolbar-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 34px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+  cursor: pointer;
+}
+
+.jotx-table-toolbar-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.jotx-table-toolbar-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 18px rgba(99, 102, 241, 0.12);
+}
+
+.jotx-table-toolbar-danger {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.jotx-table-toolbar-danger:hover {
+  border-color: rgba(239, 68, 68, 0.65);
+  box-shadow: 0 8px 18px rgba(239, 68, 68, 0.14);
+}
+
+.jotx-table-toolbar-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--jotx-border);
+  opacity: 0.9;
+}
+.jotx-toggle {
+  border: 1px solid var(--jotx-border);
+  background: var(--jotx-backgroundSecondary);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 1em 0;
+}
+
+.jotx-toggle-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.jotx-toggle-chevron {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--jotx-textSecondary);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.jotx-toggle-chevron:hover {
+  background: var(--jotx-background);
+  color: var(--jotx-text);
+}
+
+.jotx-toggle-title {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--jotx-text);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+
+.jotx-toggle-title:focus {
+  background: var(--jotx-background);
+  box-shadow: 0 0 0 1px var(--jotx-border) inset;
+}
+
+.jotx-toggle-content-inner > *:first-child {
+  margin-top: 0;
+}
+
+
+
+/* View Options Styles */
+.jotx-view-options {
+    position: relative;
+    display: inline-block;
+}
+
+.jotx-view-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--vscode-dropdown-background);
+    border: 1px solid var(--vscode-dropdown-border);
+    border-radius: 4px;
+    padding: 12px;
+    min-width: 220px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+.jotx-view-header {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--vscode-descriptionForeground);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--vscode-widget-border);
+}
+
+.jotx-view-section {
+    margin-bottom: 16px;
+}
+
+.jotx-view-label {
+    display: block;
+    font-size: 12px;
+    color: var(--vscode-foreground);
+    margin-bottom: 8px;
+}
+
+.jotx-view-slider {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--vscode-input-background);
+    outline: none;
+    cursor: pointer;
+}
+
+.jotx-view-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--vscode-button-background);
+    cursor: pointer;
+}
+
+.jotx-view-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--vscode-button-background);
+    border: none;
+    cursor: pointer;
+}
+
+.jotx-view-divider {
+    height: 1px;
+    background: var(--vscode-widget-border);
+    margin: 12px 0;
+}
+
+.jotx-view-reset {
+    width: 100%;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--vscode-button-border);
+    border-radius: 3px;
+    color: var(--vscode-foreground);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.jotx-view-reset:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+/* ─── jotx CSS Variables (dark mode) ─── */
+:root {
+  --jotx-bg: #0e1117;
+  --jotx-bgSecondary: #161b22;
+  --jotx-bgTertiary: #1c2333;
+  --jotx-text: #e2e8f0;
+  --jotx-textSecondary: #94a3b8;
+  --jotx-textMuted: #64748b;
+  --jotx-border: rgba(255, 255, 255, 0.12);
+  --jotx-primary: #5EEAD4;
+  --jotx-primaryHover: #2DD4BF;
+  --jotx-editor-fontSize: 14px;
+  --jotx-editor-lineHeight: 1.6;
+  --jotx-editor-padding: 32px;
+  --jotx-editor-maxWidth: 900px;
+}
+
+/* ─── Table Cell Borders (Tiptap tables) ─── */
+.jotx-editor-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  overflow: hidden;
+  table-layout: fixed;
+}
+
+.jotx-editor-content table td,
+.jotx-editor-content table th {
+  border: 1px solid var(--jotx-border, rgba(255,255,255,0.12));
+  padding: 8px 12px;
+  position: relative;
+  vertical-align: top;
+  min-width: 80px;
+}
+
+.jotx-editor-content table th {
+  font-weight: 600;
+  background: var(--jotx-bgSecondary, #161b22);
+  text-transform: uppercase;
+  font-size: 0.75em;
+  letter-spacing: 0.05em;
+  color: var(--jotx-textSecondary, #94a3b8);
+}
+
+.jotx-editor-content table td {
+  background: transparent;
+}
+
+.jotx-editor-content table .selectedCell {
+  background: rgba(94, 234, 212, 0.1);
+}
+
+.jotx-editor-content table .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 2px solid var(--jotx-primary, #5EEAD4);
+}
