@@ -656,10 +656,10 @@ const config = defineConfig(({ mode, command }) => {
             /process\.env\.HERMES_API_URL/g,
             JSON.stringify(hermesApiUrl),
           )
-          result = result.replace(
-            /process\.env\.HERMES_API_TOKEN/g,
-            JSON.stringify(env.HERMES_API_TOKEN || ''),
-          )
+          // Intentionally NOT replacing process.env.HERMES_API_TOKEN here:
+          // HERMES_API_TOKEN is a server→agent bearer and must never be
+          // baked into client bundles. Server routes reach for it via
+          // process.env at runtime; client code must not reference it.
           result = result.replace(
             /process\.env\.NODE_ENV/g,
             JSON.stringify(mode),

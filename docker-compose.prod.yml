@@ -1,0 +1,60 @@
+# Hermes Studio — Production Compose
+#
+# Deploy on a VPS with Ubuntu 22/24, Docker + Compose plugin installed.
+# See deploy/README.md for the full procedure.
+#
+# Topology:
+#   Caddy (443) → web:3000
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml logs -f
+#   docker compose -f docker-compose.prod.yml down
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hermes-studio-web:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HERMES_WORKSPACE_DIR: /workspace
+    volumes:
+      - /opt/hermes/workspace:/workspace
+    expose:
+      - "3000"
+    networks:
+      - hermes
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - hermes
+    depends_on:
+      - web
+
+networks:
+  hermes:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

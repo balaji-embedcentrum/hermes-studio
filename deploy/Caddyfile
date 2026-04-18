@@ -1,0 +1,34 @@
+# Caddy TLS + reverse proxy for Hermes Studio.
+# Auto-provisions Let's Encrypt cert on first run (HTTP-01 challenge —
+# requires port 80 reachable and DNS pointing at this box with
+# Cloudflare proxy mode OFF).
+
+hermes-studio.com {
+	encode gzip
+
+	# Security headers
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+		# Remove server fingerprint
+		-Server
+	}
+
+	# Proxy to the Node SSR container. flush_interval -1 disables Caddy's
+	# response buffering so Server-Sent Events stream in real time.
+	reverse_proxy web:3000 {
+		flush_interval -1
+		transport http {
+			read_timeout 300s
+			write_timeout 300s
+		}
+	}
+}
+
+# www → apex redirect
+www.hermes-studio.com {
+	redir https://hermes-studio.com{uri} permanent
+}

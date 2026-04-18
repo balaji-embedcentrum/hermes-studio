@@ -2,4 +2,9 @@ node_modules
 .next
 dist
 .git
-.env
+.output
+.vinxi
+.nitro
+.tanstack
+*.log
+.DS_Store
