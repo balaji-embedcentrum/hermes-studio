@@ -42,6 +42,12 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # Explicit DNS so ACME (Let's Encrypt) can resolve its endpoints.
+    # Without this, Ubuntu hosts pass 127.0.0.53 (systemd-resolved stub)
+    # into the container, which isn't routable from inside Docker.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
