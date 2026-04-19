@@ -117,27 +117,28 @@ export const Route = createFileRoute('/api/auth/callback')({
         const isHttps = url.protocol === 'https:'
         const secure = isHttps ? '; Secure' : ''
         const encodedAT = encodeURIComponent(access_token)
-        const encodedRT = encodeURIComponent(refresh_token ?? '')
-        const cookies = [
-          `sb-access-token=${encodedAT}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${expires_in}`,
-          `sb-refresh-token=${encodedRT}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30}`,
-          `hermes_pkce_verifier=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`,
-          `hermes_force_reauth=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`,
-        ]
 
-        console.info('[auth/callback] Login successful for user:', user.id)
+        // NARROWED TO A SINGLE SET-COOKIE to work around a runtime that
+        // collapses repeated Set-Cookie headers into one comma-merged header.
+        // The PKCE verifier expires on its own (Max-Age=600 from github.ts).
+        // Refresh token flow is not wired yet; session currently lasts
+        // expires_in (typically 1h from Supabase).
+        const sessionCookie = `sb-access-token=${encodedAT}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${expires_in}`
 
-        // Array-of-pairs header format. Using `new Headers()` + `.append('Set-Cookie')`
-        // can produce a single comma-merged Set-Cookie header in some runtimes
-        // (h3/Nitro/Vinxi underlying TanStack Start have historically collapsed
-        // repeated header appends). Array pairs unambiguously emit one
-        // Set-Cookie header per entry, which is what browsers need.
-        const responseHeaders: Array<[string, string]> = [
-          ['Location', new URL('/agents', url).toString()],
-          ...cookies.map((c) => ['Set-Cookie', c] as [string, string]),
-        ]
+        console.info(
+          '[auth/callback] Login successful for user:',
+          user.id,
+          '| setting cookie length:',
+          sessionCookie.length,
+        )
 
-        return new Response(null, { status: 302, headers: responseHeaders })
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: new URL('/agents', url).toString(),
+            'Set-Cookie': sessionCookie,
+          },
+        })
       },
     },
   },

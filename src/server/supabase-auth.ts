@@ -21,7 +21,17 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY!
 export async function requireAuth(request: Request): Promise<{ userId: string; profile: Profile }> {
   const token = extractToken(request)
   if (!token) {
-    console.warn('[auth] No token found in request')
+    // Diagnostic: show what cookies and headers DID arrive, so we can tell
+    // whether the browser isn't sending the cookie at all vs. the server
+    // not parsing it.
+    const cookieHeader = request.headers.get('cookie')
+    const urlForLog = new URL(request.url).pathname
+    console.warn(
+      '[auth] No token found in request',
+      urlForLog,
+      '| cookie header:',
+      cookieHeader ? `${cookieHeader.length} chars: ${cookieHeader.slice(0, 300)}` : 'MISSING',
+    )
     throw unauthorizedResponse()
   }
 
