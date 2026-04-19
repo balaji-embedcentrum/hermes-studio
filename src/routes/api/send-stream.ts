@@ -387,26 +387,39 @@ export const Route = createFileRoute('/api/send-stream')({
             : agentWorkspaceRoot
           const githubLogin = segments[1] || 'unknown'
           const repoName = segments[2] || ''
+          // IMPORTANT: this note is prepended as a system message on EVERY
+          // turn, so the current project context always overrides whatever
+          // the agent might remember from prior conversations.
           workspaceContextNote =
-            `You are assisting user "${githubLogin}". This is a NEW session — ignore any prior conversation history.\n` +
+            `=== ACTIVE PROJECT CONTEXT (overrides all prior state) ===\n` +
             `\n` +
-            `WORKSPACE: ${absWorkspacePath}\n` +
+            `CURRENT PROJECT: ${repoName}\n` +
+            `PROJECT ROOT: ${absWorkspacePath}\n` +
             `USER: ${githubLogin}\n` +
-            `PROJECT: ${repoName}\n` +
             `\n` +
-            `You have your full set of tools, skills, and capabilities available — use them freely to help the user.\n` +
-            `The only restriction is the DIRECTORY SCOPE for file operations:\n` +
+            `This is the ONLY project you are working on right now. If you\n` +
+            `previously worked on a different project in this chat history,\n` +
+            `discard that context — the user has switched projects.\n` +
             `\n` +
-            `FILE ACCESS BOUNDARY:\n` +
-            `- When reading, writing, listing, or searching files, stay within ${absWorkspacePath}.\n` +
-            `- Do NOT read, list, or search paths outside ${absWorkspacePath} (e.g., /opt/workspaces/, /opt/data/, /root/, /home/).\n` +
-            `- Do NOT list parent directories or enumerate other users' workspaces.\n` +
-            `- If asked "what projects do you have", ONLY look inside ${absWorkspacePath}.\n` +
-            `- If the workspace is empty or doesn't exist, say "No projects found in your workspace."\n` +
+            `STRICT FILE ACCESS RULES:\n` +
+            `1. Every file read / write / list / search / grep MUST be inside\n` +
+            `   ${absWorkspacePath}.\n` +
+            `2. You may NOT traverse to sibling project directories, parent\n` +
+            `   directories, other users' workspaces, /opt/, /root/, /home/,\n` +
+            `   or anywhere else on the filesystem.\n` +
+            `3. If a tool call would leave ${absWorkspacePath}, refuse it and\n` +
+            `   explain the boundary to the user.\n` +
+            `4. When asked about "the project", "this repo", "the codebase",\n` +
+            `   or similar, it refers ONLY to ${repoName} at\n` +
+            `   ${absWorkspacePath} — not any other project you may recall.\n` +
+            `5. If asked "what projects do I have", do NOT list sibling\n` +
+            `   directories. Only reply about ${repoName}.\n` +
             `\n` +
             `After modifying files: git add -A && git commit -m "agent: <description>" && git push\n` +
             `\n` +
-            `The file access boundary is for privacy — other directories belong to other users.`
+            `Use your full tool, skill, and reasoning capabilities to help\n` +
+            `within ${absWorkspacePath}. The directory scope is the only\n` +
+            `restriction.`
         }
 
         // Create streaming response using the SHARED server connection
