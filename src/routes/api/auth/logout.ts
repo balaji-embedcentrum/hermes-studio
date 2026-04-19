@@ -7,6 +7,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getAuthUser } from '../../../server/supabase-auth'
 import { endAllUserSessions } from '../../../server/agent-sessions'
+import { getPublicUrl } from '../../../server/request-url'
 
 export const Route = createFileRoute('/api/auth/logout')({
   server: {
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/api/auth/logout')({
           await endAllUserSessions(auth.userId, 'logout').catch(() => {})
         }
 
-        const isHttps = new URL(request.url).protocol === 'https:'
+        const isHttps = getPublicUrl(request).protocol === 'https:'
         const secure = isHttps ? '; Secure' : ''
         const expire = (name: string) =>
           `${name}=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`

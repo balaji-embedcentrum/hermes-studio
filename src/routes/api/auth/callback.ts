@@ -11,6 +11,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { provisionProfile } from '../../../server/supabase-auth'
+import { getPublicUrl } from '../../../server/request-url'
 
 const SUPABASE_URL = process.env.SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!
@@ -25,7 +26,7 @@ export const Route = createFileRoute('/api/auth/callback')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const url = new URL(request.url)
+        const url = getPublicUrl(request)
         const code = url.searchParams.get('code')
 
         if (!code) {
