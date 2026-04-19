@@ -18,11 +18,8 @@ function detectPlatform(): Platform {
 }
 
 function getSetupSteps(
-  platform: Platform,
+  _platform: Platform,
 ): Array<{ title: string; command: string; note?: string }> {
-  const pip = platform === 'windows' ? 'pip' : 'pip3'
-  const python = platform === 'windows' ? 'python' : 'python3'
-
   return [
     {
       title: 'Use any OpenAI-compatible backend',
@@ -30,23 +27,25 @@ function getSetupSteps(
       note: 'Portable chat works with any backend that exposes /v1/chat/completions (Ollama, LiteLLM, vLLM, etc.)',
     },
     {
-      title: 'Optional: run a Hermes gateway locally',
-      command: 'git clone https://github.com/outsourc-e/hermes-agent.git',
-      note: 'Hermes gateway APIs unlock sessions, skills, memory, and other workspace extras automatically',
+      title: 'Install hermes-adapter (one command)',
+      command:
+        'curl -fsSL https://raw.githubusercontent.com/balaji-embedcentrum/hermes-adapter/main/scripts/install.sh | bash',
+      note: 'Installs hermes-agent + hermes-adapter in an isolated venv at ~/.hermes-venv and scaffolds ~/.hermes-adapter/agents.yaml.',
     },
     {
-      title: 'Install the gateway',
-      command: `cd hermes-agent && ${python} -m venv .venv && ${platform === 'windows' ? '.venv\\Scripts\\activate' : 'source .venv/bin/activate'} && ${pip} install -e .`,
+      title: 'Activate the venv in your shell',
+      command: 'source ~/.hermes-venv/bin/activate',
     },
     {
-      title: 'Enable the HTTP API server',
-      command: 'echo "API_SERVER_ENABLED=true" >> ~/.hermes/.env',
-      note: 'The gateway HTTP API is opt-in. Without this, the gateway serves messaging platforms but does not expose port 8642 for the workspace.',
+      title: 'Add your first agent',
+      command:
+        'hermes-adapter agent add alpha --model anthropic/claude-sonnet-4.6 --prompt-key',
+      note: 'Paste your provider API key when prompted. Swap the model for openai/gpt-5, openrouter/…, google/gemini-2.0-flash, etc.',
     },
     {
-      title: 'Start the gateway',
-      command: `cd hermes-agent && ${platform === 'windows' ? '.venv\\Scripts\\activate' : 'source .venv/bin/activate'} && hermes --gateway`,
-      note: 'Or use Auto-Start below if hermes-agent is already installed locally',
+      title: 'Start the stack',
+      command: 'hermes-adapter up',
+      note: 'Exposes the unified gateway at http://127.0.0.1:9001 — paste that URL into the Local Hermes Agent field below.',
     },
   ]
 }
@@ -330,7 +329,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
                   at any OpenAI-compatible backend:
                 </p>
                 <pre className="mt-2 overflow-x-auto font-mono text-xs text-white/60">
-                  HERMES_API_URL=http://your-server:8642 pnpm dev
+                  HERMES_API_URL=http://127.0.0.1:9001 pnpm dev
                 </pre>
               </div>
             </div>

@@ -271,7 +271,7 @@ function AgentsPage() {
 function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
   const localHermesUrl = useWorkspaceStore(s => s.localHermesUrl)
   const setLocalHermesUrl = useWorkspaceStore(s => s.setLocalHermesUrl)
-  const [url, setUrl] = useState(localHermesUrl ?? 'http://localhost:8642')
+  const [url, setUrl] = useState(localHermesUrl ?? 'http://127.0.0.1:9001')
   const [testing, setTesting] = useState(false)
   const [status, setStatus] = useState<'idle' | 'connected' | 'error'>('idle')
 
@@ -366,7 +366,7 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
           type="text"
           value={url}
           onChange={e => setUrl(e.target.value)}
-          placeholder="http://localhost:8642"
+          placeholder="http://127.0.0.1:9001"
           className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
           style={{
             background: 'var(--theme-bg)',
@@ -374,6 +374,25 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
             color: 'var(--theme-text)',
           }}
         />
+      </div>
+
+      {/* Browser compatibility warning.
+          Safari blocks mixed content (https page → http://127.0.0.1) even
+          for localhost — browsers need the target origin to be HTTPS or to
+          special-case localhost (Chrome/Firefox/Edge do, Safari doesn't). */}
+      <div
+        className="flex items-start gap-2 text-[11px] mb-3 p-2 rounded-lg"
+        style={{
+          background: 'rgba(251,191,36,0.08)',
+          border: '1px solid rgba(251,191,36,0.2)',
+          color: '#fbbf24',
+        }}
+      >
+        <span>⚠</span>
+        <span>
+          Local agents only work in <strong>Chrome, Edge, Firefox, Brave, Arc, or Opera</strong>.
+          Safari blocks connections from this HTTPS page to <code>http://127.0.0.1</code>.
+        </span>
       </div>
 
       <div className="flex items-center gap-2">
@@ -418,12 +437,17 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
       )}
       {isEnabled && status === 'error' && (
         <div className="text-xs mt-3" style={{ color: '#ef4444' }}>
-          Cannot reach {localHermesUrl}. Make sure Hermes is running: <code className="text-[11px]">hermes --gateway</code>
+          Cannot reach {localHermesUrl}. Make sure the adapter is running: <code className="text-[11px]">hermes-adapter up</code>
         </div>
       )}
 
       <div className="text-[11px] mt-3 leading-relaxed" style={{ color: 'var(--theme-muted)' }}>
-        Start Hermes locally: <code className="px-1 py-0.5 rounded" style={{ background: 'var(--theme-bg)' }}>cd hermes-agent && hermes --gateway</code>
+        First time?{' '}
+        <code className="px-1 py-0.5 rounded" style={{ background: 'var(--theme-bg)' }}>
+          curl -fsSL https://raw.githubusercontent.com/balaji-embedcentrum/hermes-adapter/main/scripts/install.sh | bash
+        </code>
+        <br />
+        Then: <code className="px-1 py-0.5 rounded" style={{ background: 'var(--theme-bg)' }}>hermes-adapter agent add alpha --model anthropic/claude-sonnet-4.6 --prompt-key && hermes-adapter up</code>
       </div>
     </div>
   )
