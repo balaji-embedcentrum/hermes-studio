@@ -127,10 +127,17 @@ export const Route = createFileRoute('/api/auth/callback')({
 
         console.info('[auth/callback] Login successful for user:', user.id)
 
-        const headers = new Headers({ Location: new URL('/agents', url).toString() })
-        for (const c of cookies) headers.append('Set-Cookie', c)
+        // Array-of-pairs header format. Using `new Headers()` + `.append('Set-Cookie')`
+        // can produce a single comma-merged Set-Cookie header in some runtimes
+        // (h3/Nitro/Vinxi underlying TanStack Start have historically collapsed
+        // repeated header appends). Array pairs unambiguously emit one
+        // Set-Cookie header per entry, which is what browsers need.
+        const responseHeaders: Array<[string, string]> = [
+          ['Location', new URL('/agents', url).toString()],
+          ...cookies.map((c) => ['Set-Cookie', c] as [string, string]),
+        ]
 
-        return new Response(null, { status: 302, headers })
+        return new Response(null, { status: 302, headers: responseHeaders })
       },
     },
   },

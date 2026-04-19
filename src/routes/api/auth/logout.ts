@@ -23,13 +23,14 @@ export const Route = createFileRoute('/api/auth/logout')({
         const expire = (name: string) =>
           `${name}=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`
 
-        const headers = new Headers({ 'Content-Type': 'application/json' })
-        headers.append('Set-Cookie', expire('sb-access-token'))
-        headers.append('Set-Cookie', expire('sb-refresh-token'))
-        headers.append(
-          'Set-Cookie',
-          `hermes_force_reauth=1; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=600`,
-        )
+        // Array-of-pairs (see callback.ts for rationale) — ensures each
+        // Set-Cookie becomes its own header line rather than comma-merged.
+        const headers: Array<[string, string]> = [
+          ['Content-Type', 'application/json'],
+          ['Set-Cookie', expire('sb-access-token')],
+          ['Set-Cookie', expire('sb-refresh-token')],
+          ['Set-Cookie', `hermes_force_reauth=1; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=600`],
+        ]
 
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers })
       },
