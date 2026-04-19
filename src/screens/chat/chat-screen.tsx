@@ -316,7 +316,11 @@ function isRetryableQueuedMessage(message: ChatMessage): boolean {
   if ((message.role || '') !== 'user') return false
   const raw = message as Record<string, unknown>
   const status = normalizeMessageValue(raw.status)
-  return status === 'error'
+  // Retry button is shown both for 'error' (explicit failure) and
+  // 'sending' (stuck-sending — message-item flags after 30s). The retry
+  // handler must accept both, otherwise clicking Retry on a stuck-sending
+  // message silently does nothing.
+  return status === 'error' || status === 'sending'
 }
 
 const commandHelpers: ChatComposerHelpers = {

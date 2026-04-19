@@ -237,12 +237,18 @@ async function fetchModels(): Promise<{
       }
     }
   } catch {
-    // Fall back to /v1/models
+    // Fall back to /v1/models — only if HERMES_API_URL is a real origin.
+    // In split-tier deploys HERMES_API_URL is a placeholder or doesn't
+    // resolve from the browser; skip the fallback to avoid console 404s.
   }
 
-  const response = await fetch(`${HERMES_API_URL}/v1/models`)
-  if (!response.ok) {
-    throw new Error(`Hermes models request failed (${response.status})`)
+  if (!HERMES_API_URL || HERMES_API_URL.startsWith('http://127.')) {
+    return { ok: false }
+  }
+
+  const response = await fetch(`${HERMES_API_URL}/v1/models`).catch(() => null)
+  if (!response || !response.ok) {
+    return { ok: false }
   }
 
   const payload = (await response.json()) as
