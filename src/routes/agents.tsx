@@ -441,33 +441,40 @@ function WorkspaceFolderDialog({
   onCancel: () => void
 }) {
   const localHermesUrl = useWorkspaceStore(s => s.localHermesUrl)
+  const savedLocalRoot = useWorkspaceStore(s => s.localWorkspaceRoot)
   const setLocalWorkspaceRoot = useWorkspaceStore(s => s.setLocalWorkspaceRoot)
-  const [workspaceRoot, setWorkspaceRoot] = useState('')
+  const [workspaceRoot, setWorkspaceRoot] = useState(savedLocalRoot ?? '')
   const [projects, setProjects] = useState<WorkspaceEntry[]>([])
   const [scanning, setScanning] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [autoDiscoveryFailed, setAutoDiscoveryFailed] = useState(false)
 
-  // Fetch workspace info from the local Hermes agent's /ws endpoint
+  // Try the local Hermes agent's /ws endpoint for auto-discovery. Older
+  // Hermes versions don't expose /ws — we fall back to manual folder entry.
   useEffect(() => {
     if (!localHermesUrl) return
     setScanning(true)
-    setError(null)
+    setAutoDiscoveryFailed(false)
     fetch(`${localHermesUrl}/ws`, { signal: AbortSignal.timeout(10_000) })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`ws endpoint returned ${r.status}`)
+        return r.json()
+      })
       .then((data: { root?: string; workspaces?: WorkspaceEntry[] }) => {
-        setWorkspaceRoot(data.root ?? '')
+        if (data.root) setWorkspaceRoot(data.root)
         setProjects(data.workspaces ?? [])
       })
-      .catch(() => setError('Could not reach local agent'))
+      .catch(() => setAutoDiscoveryFailed(true))
       .finally(() => setScanning(false))
   }, [localHermesUrl])
 
   const handleConfirm = () => {
-    if (workspaceRoot) {
-      setLocalWorkspaceRoot(workspaceRoot)
-    }
+    const trimmed = workspaceRoot.trim().replace(/\/$/, '')
+    if (!trimmed) return
+    setLocalWorkspaceRoot(trimmed)
     onConfirm()
   }
+
+  const canConfirm = workspaceRoot.trim().length > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -487,23 +494,36 @@ function WorkspaceFolderDialog({
           Your local Hermes agent stores projects here:
         </p>
 
-        {/* Workspace root from agent */}
-        <div
-          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm mb-4"
-          style={{ background: 'var(--theme-bg)', border: '1px solid var(--theme-border)', color: 'var(--theme-text)' }}
-        >
-          <span style={{ color: 'var(--theme-muted)' }}>Folder:</span>
-          <span className="font-mono">{workspaceRoot || '...'}</span>
-        </div>
+        {/* Workspace folder — editable. Auto-discovered from Hermes /ws if
+            the endpoint exists; otherwise the user types an absolute path. */}
+        <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--theme-muted)' }}>
+          Folder (absolute path)
+        </label>
+        <input
+          type="text"
+          value={workspaceRoot}
+          onChange={(e) => setWorkspaceRoot(e.target.value)}
+          placeholder="/Users/you/hermes-workspaces"
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          className="w-full px-3 py-2.5 rounded-lg text-sm mb-4 font-mono"
+          style={{
+            background: 'var(--theme-bg)',
+            border: '1px solid var(--theme-border)',
+            color: 'var(--theme-text)',
+            outline: 'none',
+          }}
+        />
 
         {scanning && (
           <div className="flex items-center gap-2 mb-4 text-xs" style={{ color: 'var(--theme-muted)' }}>
             <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />
-            Scanning workspace...
+            Looking up workspace from local agent...
           </div>
         )}
 
-        {/* Existing projects */}
+        {/* Existing projects (only shown if auto-discovery worked) */}
         {projects.length > 0 && (
           <div className="mb-4">
             <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--theme-muted)' }}>
@@ -527,14 +547,10 @@ function WorkspaceFolderDialog({
           </div>
         )}
 
-        {!scanning && projects.length === 0 && !error && (
-          <p className="text-xs mb-4" style={{ color: 'var(--theme-muted)' }}>
-            No projects yet. Clone a GitHub repo to get started.
-          </p>
-        )}
-
-        {error && (
-          <p className="text-xs mb-4" style={{ color: '#ef4444' }}>{error}</p>
+        {autoDiscoveryFailed && (
+          <div className="text-[11px] mb-4 leading-relaxed rounded-lg px-3 py-2" style={{ color: 'var(--theme-muted)', background: 'var(--theme-bg)', border: '1px solid var(--theme-border)' }}>
+            Your local Hermes agent doesn{"'"}t expose the workspace listing endpoint. Type the absolute path to your workspace folder above — this is the same value as <code className="px-1 py-0.5 rounded" style={{ background: 'var(--theme-card)' }}>HERMES_WORKSPACE_DIR</code> in <code className="px-1 py-0.5 rounded" style={{ background: 'var(--theme-card)' }}>~/.hermes/.env</code> (or <code className="px-1 py-0.5 rounded" style={{ background: 'var(--theme-card)' }}>~/.hermes</code> if unset).
+          </div>
         )}
 
         <div className="text-[11px] mb-5 leading-relaxed" style={{ color: 'var(--theme-muted)' }}>
@@ -551,7 +567,8 @@ function WorkspaceFolderDialog({
           </button>
           <button
             onClick={handleConfirm}
-            className="px-6 py-2 rounded-lg text-sm font-semibold"
+            disabled={!canConfirm}
+            className="px-6 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: 'var(--theme-accent)', color: '#fff' }}
           >
             Open Projects →
