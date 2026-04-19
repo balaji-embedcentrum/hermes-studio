@@ -342,7 +342,7 @@ export function ChatPanel() {
                   className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center backdrop-blur-sm z-10"
                   style={{ background: 'rgba(0,0,0,0.6)' }}
                 >
-                  <div className="text-5xl">\uD83D\uDD12</div>
+                  <div className="text-5xl">🔒</div>
                   <div>
                     <div className="text-base font-semibold mb-1" style={{ color: 'var(--theme-text)' }}>
                       No active session
