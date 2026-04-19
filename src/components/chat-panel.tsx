@@ -176,8 +176,24 @@ export function ChatPanel() {
     // 3. Clear pending send state
     resetPendingSend()
 
-    // 4. Clear portable chat localStorage
-    try { window.localStorage.removeItem('hermes_portable_chat_main') } catch {}
+    // 4. Clear portable chat localStorage + all pending messages
+    //    (hermes_pending_msg_* for old sessions; missing this caused the
+    //    previous chat's last user bubble to appear at the top of a new chat)
+    try {
+      const lsKeys: string[] = []
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i)
+        if (!key) continue
+        if (
+          key === 'hermes_portable_chat_main' ||
+          key.startsWith('hermes_pending_msg_') ||
+          key.startsWith('hermes_portable_chat_')
+        ) {
+          lsKeys.push(key)
+        }
+      }
+      for (const key of lsKeys) window.localStorage.removeItem(key)
+    } catch {}
 
     // 5. Clear sessionStorage streaming state
     try {
