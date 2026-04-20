@@ -1047,7 +1047,9 @@ export function ChatScreen({
         }
         const errorMessage = `Failed to send message. ${messageText}`
         setError(errorMessage)
-        toast('Failed to send message', { type: 'error' })
+        // showErrorToast already renders a classified pill — don't also
+        // fire a generic toast on top, otherwise users see two stacked
+        // notifications for a single failure.
         showErrorToast(messageText)
         setPendingGeneration(false)
         setWaitingForResponse(false)

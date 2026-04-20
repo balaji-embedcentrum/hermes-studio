@@ -35,11 +35,22 @@ function classifyError(raw: string): string {
   ) {
     return 'Model error — the provider is having issues'
   }
+  // Only flag as a network/connection issue when there's a clear network
+  // signal. Bare "timeout" / "stream error" can come from server-side
+  // bookkeeping (e.g. an idle bookkeeping timer firing after the assistant
+  // already finished) and was producing false "Connection lost" toasts on
+  // long responses where the connection was actually fine.
   if (
-    lower.includes('network') ||
-    lower.includes('timeout') ||
     lower.includes('failed to fetch') ||
-    lower.includes('connection')
+    lower.includes('networkerror') ||
+    lower.includes('err_network') ||
+    lower.includes('err_connection') ||
+    lower.includes('econnreset') ||
+    lower.includes('econnrefused') ||
+    lower.includes('socket hang up') ||
+    lower.includes('network request failed') ||
+    lower.includes('the network connection was lost') ||
+    (typeof navigator !== 'undefined' && navigator.onLine === false)
   ) {
     return 'Connection lost — retrying…'
   }
