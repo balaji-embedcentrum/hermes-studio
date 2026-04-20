@@ -180,12 +180,20 @@ export async function openaiChat(
   const targetUrl = `${apiUrl}/v1/chat/completions`
   console.info(`[openai-chat] POST ${targetUrl} model=${effectiveOptions.model ?? 'default'} stream=${options.stream ?? false}`)
 
-  // Combine caller abort signal with a 60s timeout for remote agents
-  const timeoutMs = 60_000
-  const timeoutSignal = AbortSignal.timeout(timeoutMs)
+  // Apply a timeout to the INITIAL connection only (until response headers
+  // arrive). Once the agent starts streaming, let the body run as long as
+  // the model needs — thinking models on long prompts easily exceed any
+  // fixed per-request budget. The caller's own AbortSignal (user navigates
+  // away, hits stop, etc.) still terminates the stream cleanly.
+  const CONNECT_TIMEOUT_MS = 30_000
+  const connectController = new AbortController()
+  const connectTimer = setTimeout(
+    () => connectController.abort(new DOMException('Connect timeout', 'TimeoutError')),
+    CONNECT_TIMEOUT_MS,
+  )
   const combinedSignal = options.signal
-    ? AbortSignal.any([options.signal, timeoutSignal])
-    : timeoutSignal
+    ? AbortSignal.any([options.signal, connectController.signal])
+    : connectController.signal
 
   let response: Response
   try {
@@ -196,13 +204,17 @@ export async function openaiChat(
       signal: combinedSignal,
     })
   } catch (err) {
+    clearTimeout(connectTimer)
     const reason = err instanceof Error ? err.message : String(err)
     console.error(`[openai-chat] Fetch failed for ${targetUrl}: ${reason}`)
     if (reason.includes('abort') || reason.includes('timeout')) {
-      throw new Error(`Agent at ${apiUrl} did not respond within ${timeoutMs / 1000}s`)
+      throw new Error(`Agent at ${apiUrl} did not respond within ${CONNECT_TIMEOUT_MS / 1000}s`)
     }
     throw new Error(`Failed to connect to agent at ${apiUrl}: ${reason}`)
   }
+  // Headers arrived — cancel the connect-timeout so it does not fire later
+  // and abort the body stream mid-flight.
+  clearTimeout(connectTimer)
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')
