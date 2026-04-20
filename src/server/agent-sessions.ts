@@ -10,10 +10,10 @@
 import { getSupabaseServer } from '../lib/supabase'
 
 // ── Constants ────────────────────────────────────────────────────────
-export const SESSION_DURATION_MS = 60 * 60 * 1000        // 1 hour
-export const SESSION_WARNING_MS = 55 * 60 * 1000         // warn at 55 min
-export const COOLDOWN_MS = 2 * 60 * 1000                 // 2 min cooldown
-export const IDLE_TIMEOUT_MS = 15 * 60 * 1000            // 15 min idle = session end
+export const SESSION_DURATION_MS = 30 * 60 * 1000        // 30 min
+export const SESSION_WARNING_MS = 25 * 60 * 1000         // warn at 25 min (5 min before end)
+export const COOLDOWN_MS = 30 * 1000                     // 30 sec cooldown
+export const IDLE_TIMEOUT_MS = 10 * 60 * 1000            // 10 min idle = session end
 export const HEALTH_CHECK_INTERVAL_MS = 60 * 1000        // ping every 60s
 export const HEALTH_FAIL_THRESHOLD = 3                    // 3 fails = unavailable
 
