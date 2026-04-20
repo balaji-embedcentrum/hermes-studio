@@ -905,13 +905,19 @@ export const Route = createFileRoute('/api/send-stream')({
                 },
               )
 
-              // Set a timeout to close the stream if no completion event
-              setTimeout(() => {
-                if (!streamClosed) {
-                  sendEvent('error', { message: 'Stream timeout' })
-                  closeStream()
-                }
-              }, SEND_STREAM_RUN_TIMEOUT_MS)
+              // streamChat resolved — upstream stream is fully consumed.
+              // If no event triggered closeStream() (i.e. upstream finished
+              // without an explicit run.completed/error), emit a clean done
+              // so the client doesn't sit waiting for the SSE to close, and
+              // never surface this as a phantom "Stream timeout" error.
+              if (!streamClosed) {
+                sendEvent('done', {
+                  state: 'complete',
+                  sessionKey,
+                  runId: activeRunId ?? undefined,
+                })
+                closeStream()
+              }
             } catch (err) {
               // Only send error if stream hasn't already completed successfully
               if (!streamClosed) {
