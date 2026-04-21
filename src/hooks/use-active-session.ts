@@ -44,20 +44,22 @@ export function useActiveSession() {
     check()
   }, [check])
 
-  // Realtime — update when session row changes
-  const handleRealtimeChange = useCallback((row: { status?: string } | null) => {
-    if (!row || row.status !== 'active') {
-      setSession(null)
-      setHasSession(false)
-    } else {
-      setHasSession(true)
-      // Fetch full session data (realtime row doesn't include agent name)
-      fetch('/api/agent-sessions/status')
-        .then(r => r.json())
-        .then((data: { session: SessionInfo | null }) => {
-          setSession(data.session)
-        })
-        .catch(() => {})
+  // Realtime — re-query the authoritative status endpoint on ANY change
+  // to this user's agent_sessions rows. Do NOT trust the pushed row:
+  // switching agents fires an UPDATE (old session → ended) followed by an
+  // INSERT (new session → active). Treating the first event as
+  // "user has no active session" flips hasSession=false while the second
+  // event's active row is the current truth. If that second event is ever
+  // delayed or dropped (realtime/RLS edge case), the lock sticks.
+  const handleRealtimeChange = useCallback(async () => {
+    try {
+      const data = (await fetch('/api/agent-sessions/status').then((r) =>
+        r.json(),
+      )) as { session: SessionInfo | null }
+      setSession(data.session)
+      setHasSession(Boolean(data.session))
+    } catch {
+      /* keep current state on transient network error */
     }
   }, [])
   useSessionRealtime(userId, handleRealtimeChange)
