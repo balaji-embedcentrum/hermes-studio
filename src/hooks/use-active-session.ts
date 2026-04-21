@@ -21,18 +21,30 @@ export function useActiveSession() {
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
-  // Initial fetch
+  // Initial fetch. Auth-check and session-status are independent —
+  // previously they were wrapped in Promise.all, so a transient failure
+  // on /api/auth-check (network blip, 500, non-JSON) would reject the
+  // whole block and flip hasSession=false even when the session endpoint
+  // returned a perfectly valid active session. That produced the
+  // "timer counts down, but lock overlay is stuck up" symptom.
+  // Run them as independent promises so they can't cross-contaminate.
   const check = useCallback(async () => {
     if (localHermesUrl) {
       setHasSession(true)
       return
     }
+    void fetch('/api/auth-check')
+      .then((r) => r.json())
+      .then((data: { userId?: string }) => {
+        if (data.userId) setUserId(data.userId)
+      })
+      .catch(() => {
+        /* auth-check failure must not affect session state */
+      })
     try {
-      const [authRes, sessRes] = await Promise.all([
-        fetch('/api/auth-check').then(r => r.json()),
-        fetch('/api/agent-sessions/status').then(r => r.json()),
-      ])
-      if (authRes.userId) setUserId(authRes.userId)
+      const sessRes = (await fetch('/api/agent-sessions/status').then((r) =>
+        r.json(),
+      )) as { session: SessionInfo | null }
       setSession(sessRes.session)
       setHasSession(Boolean(sessRes.session))
     } catch {
