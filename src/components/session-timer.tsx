@@ -59,23 +59,25 @@ export function SessionTimer() {
     return () => { cancelled = true }
   }, [])
 
-  // Realtime subscription — server pushes session changes instantly
-  const handleRealtimeChange = useCallback(async (row: { id: string; expires_at: string; agent_id: string } | null) => {
-    if (!row) {
-      // Session ended or expired
-      setSession(null)
-      setEnded(true)
-      return
-    }
-    // Fetch fresh data to get agentName (realtime row doesn't include joined data)
+  // Realtime — re-query the authoritative status endpoint on ANY change
+  // to this user's agent_sessions rows. Switching agents fires two
+  // events in order (old session ended, new session inserted); processing
+  // only the first would wrongly clear the timer while a new session is
+  // already active. Let the server decide.
+  const handleRealtimeChange = useCallback(async () => {
     try {
       const res = await fetch('/api/agent-sessions/status')
-      const data = await res.json() as { session: SessionData | null }
+      const data = (await res.json()) as { session: SessionData | null }
       if (data.session) {
         setSession(data.session)
         setEnded(false)
+      } else {
+        setSession(null)
+        setEnded(true)
       }
-    } catch {}
+    } catch {
+      /* keep current state on transient network error */
+    }
   }, [])
   useSessionRealtime(userId, handleRealtimeChange)
 
