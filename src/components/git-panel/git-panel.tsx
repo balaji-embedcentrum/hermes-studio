@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { ChangesTab } from './changes-tab'
 import { LogTab } from './log-tab'
+import { BranchesTab } from './branches-tab'
 import type { GitDiffSelection } from './diff-view'
 
 type SubTab = 'changes' | 'log' | 'branches'
@@ -56,16 +57,9 @@ export function GitPanel({ onOpenDiff }: GitPanelProps = {}) {
       <div className="min-h-0 flex-1">
         {tab === 'changes' && <ChangesTab onOpenDiff={onOpenDiff} />}
         {tab === 'log' && <LogTab onOpenDiff={onOpenDiff} />}
-        {tab === 'branches' && <Placeholder name="Branches" />}
+        {tab === 'branches' && <BranchesTab />}
       </div>
     </div>
   )
 }
 
-function Placeholder({ name }: { name: string }) {
-  return (
-    <div className="flex h-full items-center justify-center px-4 text-center text-xs text-[var(--theme-muted)]">
-      {name} view — coming in a later phase.
-    </div>
-  )
-}
