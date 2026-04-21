@@ -76,6 +76,7 @@ import { FileExplorerSidebar } from '@/components/file-explorer'
 import { SEARCH_MODAL_EVENTS } from '@/hooks/use-search-modal'
 import { SIDEBAR_TOGGLE_EVENT } from '@/hooks/use-global-shortcuts'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import { useActiveSession } from '@/hooks/use-active-session'
 import { TerminalPanel } from '@/components/terminal-panel'
 import { InspectorPanel } from '@/components/inspector/inspector-panel'
 import { useTerminalPanelStore } from '@/stores/terminal-panel-store'
@@ -451,6 +452,13 @@ export function ChatScreen({
   const setChatFocusMode = useWorkspaceStore((s) => s.setChatFocusMode)
   const activeWorkspacePath = useWorkspaceStore((s) => s.activeWorkspacePath)
   const localHermesUrl = useWorkspaceStore((s) => s.localHermesUrl)
+  // Disable the composer when there's no active cloud-agent session.
+  // Local-agent mode is always allowed (no session needed). `hasSession`
+  // is null during the initial fetch — keep the composer enabled so
+  // users don't see a flash of disabled state on every page load.
+  const { hasSession: hasCloudSession } = useActiveSession()
+  const noActiveSession =
+    !localHermesUrl && hasCloudSession === false
   const localWorkspaceRoot = useWorkspaceStore((s) => s.localWorkspaceRoot)
   const queryClient = useQueryClient()
   const [sending, setSending] = useState(false)
@@ -2622,7 +2630,7 @@ export function ChatScreen({
               onSubmit={send}
               onAbort={handleAbortStreaming}
               isLoading={sending || waitingForResponse}
-              disabled={sending || hideUi}
+              disabled={sending || hideUi || noActiveSession}
               sessionKey={
                 isNewChat
                   ? undefined
