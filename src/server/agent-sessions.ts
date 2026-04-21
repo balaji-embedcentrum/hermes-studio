@@ -112,12 +112,17 @@ export async function startSession(userId: string, agentId: string): Promise<Sta
   }
 
   // 4. Create session + update agent status
+  // NB: `status: 'active'` is set explicitly — every read path filters
+  // `.eq('status', 'active')`, so if the DB column lacks a default the
+  // insert lands as NULL and the UI permanently shows "No active session".
   const expiresAt = new Date(now.getTime() + SESSION_DURATION_MS)
   const { data: session, error: sessErr } = await db
     .from('agent_sessions')
     .insert({
       user_id: userId,
       agent_id: agentId,
+      status: 'active',
+      started_at: now.toISOString(),
       expires_at: expiresAt.toISOString(),
       last_activity_at: now.toISOString(),
     })
@@ -315,6 +320,8 @@ export async function validateSession(userId: string): Promise<
         .insert({
           user_id: userId,
           agent_id: agentId,
+          status: 'active',
+          started_at: now.toISOString(),
           expires_at: newExpiresAt.toISOString(),
           last_activity_at: now.toISOString(),
         })
