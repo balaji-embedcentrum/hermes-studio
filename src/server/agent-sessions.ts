@@ -386,9 +386,13 @@ export async function runHealthChecks(): Promise<{ checked: number; unavailable:
     if (agent.agent_status === 'in_use') continue
 
     try {
-      const res = await fetch(`${agent.api_url}/health`, {
-        signal: AbortSignal.timeout(5_000),
-      })
+      // Agents in the fleet expose health under different paths depending
+      // on which server is bound to a given route prefix — the hermes
+      // OpenAI-compat gateway uses /v1/health, while a plain A2A adapter
+      // has no /health at all but bounces /v1/health to its aiohttp peer.
+      // Probe /health first, fall back to /v1/health, and only mark the
+      // agent unhealthy if both fail.
+      const res = await probeAgentHealth(agent.api_url)
       if (res.ok) {
         // Healthy — reset fail count, recover if was unavailable
         if (agent.agent_status === 'unavailable') {
@@ -470,6 +474,39 @@ export async function endAllUserSessions(userId: string, reason: SessionEndReaso
       cooldown_until: cooldownUntil.toISOString(),
     }).eq('id', session.agent_id)
   }
+}
+
+// ── Health Probe ─────────────────────────────────────────────────────
+
+const HEALTH_PROBE_PATHS = ['/health', '/v1/health'] as const
+const HEALTH_PROBE_TIMEOUT_MS = 5_000
+
+/**
+ * Probe an agent's health across the known paths. Returns the first
+ * response that reports `ok`; if none do, returns the last response (or
+ * a synthetic 0-status result if every path threw). Callers only need
+ * to check `res.ok`.
+ *
+ * Rationale: agents in the Akela fleet run two servers side-by-side
+ * behind a path-prefix reverse proxy. The hermes OpenAI-compat gateway
+ * exposes /v1/health, while the A2A adapter has no /health at all. A
+ * single-path probe produces a false-negative whenever the probe hits
+ * the A2A side — try both so the check is robust across configs.
+ */
+async function probeAgentHealth(agentUrl: string): Promise<{ ok: boolean; status: number }> {
+  let lastStatus = 0
+  for (const path of HEALTH_PROBE_PATHS) {
+    try {
+      const res = await fetch(`${agentUrl}${path}`, {
+        signal: AbortSignal.timeout(HEALTH_PROBE_TIMEOUT_MS),
+      })
+      if (res.ok) return { ok: true, status: res.status }
+      lastStatus = res.status
+    } catch {
+      // Network / timeout — try the next path.
+    }
+  }
+  return { ok: false, status: lastStatus }
 }
 
 // ── Workspace Isolation Helpers ──────────────────────────────────────
