@@ -14,8 +14,19 @@
  */
 export type GitStatusCode = string
 
+/**
+ * Per-file status. Mirrors `git status --porcelain` columns X (index) and
+ * Y (worktree). `status` is a back-compat convenience — the "most interesting"
+ * single char (worktree prioritized over index) for callers that don't care
+ * about the split.
+ */
 export interface GitFileStatus {
   path: string
+  /** Staged column (X). Single char or ' ' when nothing staged for this path. */
+  index: string
+  /** Unstaged column (Y). Single char or ' ' when nothing unstaged for this path. */
+  worktree: string
+  /** @deprecated Use `index`/`worktree` for staged vs unstaged. */
   status: GitStatusCode
 }
 
