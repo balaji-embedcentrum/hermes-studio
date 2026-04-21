@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { ChangesTab } from './changes-tab'
+import type { GitDiffSelection } from './diff-view'
 
 type SubTab = 'changes' | 'log' | 'branches'
 
@@ -16,7 +17,11 @@ const TABS: { key: SubTab; label: string }[] = [
   { key: 'branches', label: 'Branches' },
 ]
 
-export function GitPanel() {
+interface GitPanelProps {
+  onOpenDiff?: (selection: GitDiffSelection) => void
+}
+
+export function GitPanel({ onOpenDiff }: GitPanelProps = {}) {
   const [tab, setTab] = useState<SubTab>('changes')
 
   return (
@@ -48,7 +53,7 @@ export function GitPanel() {
         })}
       </div>
       <div className="min-h-0 flex-1">
-        {tab === 'changes' && <ChangesTab />}
+        {tab === 'changes' && <ChangesTab onOpenDiff={onOpenDiff} />}
         {tab === 'log' && <Placeholder name="Log" />}
         {tab === 'branches' && <Placeholder name="Branches" />}
       </div>

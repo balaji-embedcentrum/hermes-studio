@@ -14,7 +14,7 @@ import {
   Upload01Icon,
 } from '@hugeicons/core-free-icons'
 import FilePreviewDialog from './file-preview-dialog'
-import { GitPanel } from '../git-panel'
+import { GitPanel, type GitDiffSelection } from '../git-panel'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import {
@@ -53,6 +53,7 @@ type FileExplorerSidebarProps = {
   onToggle: () => void
   onInsertReference: (reference: string) => void
   onOpenFile?: (entry: FileEntry) => void
+  onOpenDiff?: (selection: GitDiffSelection) => void
   selectedPath?: string
   initialPath?: string
   hidden?: boolean
@@ -141,6 +142,7 @@ export function FileExplorerSidebar({
   onToggle,
   onInsertReference,
   onOpenFile,
+  onOpenDiff,
   selectedPath = '',
   initialPath = '',
   hidden = false,
@@ -619,7 +621,7 @@ export function FileExplorerSidebar({
 
       {sidebarTab === 'git' && (
         <div className="min-h-0 flex-1">
-          <GitPanel />
+          <GitPanel onOpenDiff={onOpenDiff} />
         </div>
       )}
 

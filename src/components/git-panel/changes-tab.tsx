@@ -19,6 +19,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { useGit } from '../../hooks/use-git'
 import type { GitFileStatus } from '../../types/git'
+import type { GitDiffSelection } from './diff-view'
 import { Button } from '../ui/button'
 
 function statusLabel(code: string): { label: string; color: string } {
@@ -52,7 +53,11 @@ function isUntracked(f: GitFileStatus): boolean {
   return f.index === '?' && f.worktree === '?'
 }
 
-export function ChangesTab() {
+interface ChangesTabProps {
+  onOpenDiff?: (selection: GitDiffSelection) => void
+}
+
+export function ChangesTab({ onOpenDiff }: ChangesTabProps) {
   const {
     ready,
     status,
@@ -235,6 +240,16 @@ export function ChangesTab() {
                 actionTitle="Unstage"
                 actionPending={unstage.isPending}
                 fileColumn="index"
+                onOpenDiff={
+                  onOpenDiff
+                    ? (path) =>
+                        onOpenDiff({
+                          path,
+                          source: 'Staged',
+                          options: { path, staged: true },
+                        })
+                    : undefined
+                }
               />
             )}
             {unstaged.length > 0 && (
@@ -262,6 +277,16 @@ export function ChangesTab() {
                   pending: discard.isPending,
                 }}
                 fileColumn="worktree"
+                onOpenDiff={
+                  onOpenDiff
+                    ? (path) =>
+                        onOpenDiff({
+                          path,
+                          source: 'Unstaged',
+                          options: { path },
+                        })
+                    : undefined
+                }
               />
             )}
             {untracked.length > 0 && (
@@ -303,6 +328,8 @@ interface SectionProps {
   }
   /** Which porcelain column to display the status letter from. */
   fileColumn: 'index' | 'worktree'
+  /** When provided, clicking a row fires the diff-open callback. */
+  onOpenDiff?: (path: string) => void
 }
 
 function Section({
@@ -315,6 +342,7 @@ function Section({
   actionPending,
   secondaryAction,
   fileColumn,
+  onOpenDiff,
 }: SectionProps) {
   return (
     <div className="mb-1">
@@ -342,10 +370,13 @@ function Section({
       {files.map((f) => {
         const code = f[fileColumn]
         const s = statusLabel(code)
+        const clickable = !!onOpenDiff
         return (
           <div
             key={`${title}-${f.path}`}
-            className="group flex items-center gap-2 px-3 py-1 text-xs hover:bg-white/5"
+            role={clickable ? 'button' : undefined}
+            onClick={clickable ? () => onOpenDiff!(f.path) : undefined}
+            className={`group flex items-center gap-2 px-3 py-1 text-xs hover:bg-white/5 ${clickable ? 'cursor-pointer' : ''}`}
             style={{ color: 'var(--theme-text)' }}
           >
             <span
@@ -365,7 +396,10 @@ function Section({
                 <Button
                   size="icon-sm"
                   variant="ghost"
-                  onClick={() => secondaryAction.onAction([f.path])}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    secondaryAction.onAction([f.path])
+                  }}
                   disabled={secondaryAction.pending}
                   title={secondaryAction.title}
                 >
@@ -375,7 +409,10 @@ function Section({
               <Button
                 size="icon-sm"
                 variant="ghost"
-                onClick={() => onAction([f.path])}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onAction([f.path])
+                }}
                 disabled={actionPending}
                 title={actionTitle}
               >
