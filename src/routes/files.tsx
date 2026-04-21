@@ -7,6 +7,7 @@ import { resolveTheme, useSettings } from '@/hooks/use-settings'
 import { JotxFileEditor } from '@/components/jotx-editor/JotxFileEditor'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { SessionTimer } from '@/components/session-timer'
+import { GitDiffView, type GitDiffSelection } from '@/components/git-panel'
 
 function isJotxFile(name: string): boolean {
   return name.endsWith('.jot')
@@ -85,6 +86,7 @@ function FilesRoute() {
   const [fileExplorerCollapsed, setFileExplorerCollapsed] = useState(false)
   const [editorValue, setEditorValue] = useState(INITIAL_EDITOR_VALUE)
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null)
+  const [selectedDiff, setSelectedDiff] = useState<GitDiffSelection | null>(null)
   const resolvedTheme = resolveTheme(settings.theme)
   const setActiveWorkspacePath = useWorkspaceStore((s) => s.setActiveWorkspacePath)
 
@@ -117,6 +119,7 @@ function FilesRoute() {
     const ext = entry.name.includes('.')
       ? entry.name.slice(entry.name.lastIndexOf('.'))
       : ''
+    setSelectedDiff(null)
     setSelectedFile({ path: entry.path, name: entry.name, ext })
     if (!isJotxFile(entry.name)) {
       try {
@@ -131,6 +134,11 @@ function FilesRoute() {
     }
   }, [])
 
+  const handleOpenDiff = useCallback((selection: GitDiffSelection) => {
+    setSelectedFile(null)
+    setSelectedDiff(selection)
+  }, [])
+
   return (
     <div className="h-full min-h-0 overflow-hidden bg-surface text-primary-900">
       <div className="flex h-full min-h-0 overflow-hidden">
@@ -141,11 +149,17 @@ function FilesRoute() {
           }}
           onInsertReference={handleInsertReference}
           onOpenFile={handleOpenFile}
+          onOpenDiff={handleOpenDiff}
           selectedPath={selectedFile?.path ?? ''}
           initialPath={initialPath || ''}
         />
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {selectedFile && isJotxFile(selectedFile.name) ? (
+          {selectedDiff ? (
+            <GitDiffView
+              selection={selectedDiff}
+              onClose={() => setSelectedDiff(null)}
+            />
+          ) : selectedFile && isJotxFile(selectedFile.name) ? (
             <JotxFileEditor
               filePath={selectedFile.path}
               fileName={selectedFile.name}
