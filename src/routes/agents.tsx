@@ -114,18 +114,38 @@ function AgentsPage() {
           Connect a local Hermes agent (free) or select a cloud-hosted agent.
         </p>
 
-        {/* Local Hermes Agent — Free */}
-        <LocalHermesSection onConnected={() => setSelectedId(null)} />
-
-        {/* Remote Agents — Paid */}
-        <div className="flex items-center gap-2 mt-10 mb-3">
-          <h2 className="text-lg font-semibold">Cloud Agents</h2>
-          <span
-            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-            style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6' }}
-          >
-            Pro
-          </span>
+        {/* Cloud Agents — Paid */}
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">Cloud Agents</h2>
+            <span
+              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+              style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6' }}
+            >
+              Pro
+            </span>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              onClick={handleContinue}
+              disabled={!hasSelection}
+              className="px-5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+              style={{
+                background: hasSelection ? 'var(--theme-accent)' : 'var(--theme-card)',
+                color: hasSelection ? '#fff' : 'var(--theme-muted)',
+                border: hasSelection ? 'none' : '1px solid var(--theme-border)',
+                opacity: hasSelection ? 1 : 0.6,
+                cursor: hasSelection ? 'pointer' : 'not-allowed',
+              }}
+            >
+              Continue to Projects →
+            </button>
+            {!hasSelection && (
+              <p className="text-[10px]" style={{ color: 'var(--theme-muted)' }}>
+                Select an agent to continue
+              </p>
+            )}
+          </div>
         </div>
         <p className="text-xs mb-4" style={{ color: 'var(--theme-muted)' }}>
           Managed Hermes agents in the cloud. No local setup required.
@@ -228,28 +248,10 @@ function AgentsPage() {
           </div>
         )}
 
-        {/* Continue to Projects */}
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={handleContinue}
-            disabled={!hasSelection}
-            className="px-8 py-3 rounded-xl text-sm font-semibold transition-all"
-            style={{
-              background: hasSelection ? 'var(--theme-accent)' : 'var(--theme-card)',
-              color: hasSelection ? '#fff' : 'var(--theme-muted)',
-              border: hasSelection ? 'none' : '1px solid var(--theme-border)',
-              opacity: hasSelection ? 1 : 0.6,
-              cursor: hasSelection ? 'pointer' : 'not-allowed',
-            }}
-          >
-            Continue to Projects →
-          </button>
+        {/* Local Hermes Agent — Free */}
+        <div className="mt-10">
+          <LocalHermesSection onConnected={() => setSelectedId(null)} />
         </div>
-        {!hasSelection && (
-          <p className="text-center text-xs mt-2" style={{ color: 'var(--theme-muted)' }}>
-            Select an agent above to continue
-          </p>
-        )}
       </div>
 
       {/* Workspace Folder Dialog */}
