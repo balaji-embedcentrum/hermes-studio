@@ -124,14 +124,11 @@ function AgentsPage() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold mb-1">Choose Your Agent</h1>
         <p className="text-sm mb-8" style={{ color: 'var(--theme-muted)' }}>
-          Connect a local Hermes agent (free) or select a cloud-hosted agent.
+          Pick a cloud agent below, or connect a local Hermes adapter at the bottom.
         </p>
 
-        {/* Local Hermes Agent — Free */}
-        <LocalHermesSection onConnected={() => setSelectedId(null)} />
-
-        {/* Remote Agents — Paid */}
-        <div className="flex items-center gap-2 mt-10 mb-3">
+        {/* Remote Agents — Paid (top, primary) */}
+        <div className="flex items-center gap-2 mb-3">
           <h2 className="text-lg font-semibold">Cloud Agents</h2>
           <span
             className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -263,6 +260,12 @@ function AgentsPage() {
             Select an agent above to continue
           </p>
         )}
+
+        {/* Local Hermes Agent — Free, advanced. Collapsed by default to
+            keep the cloud-agent grid above the fold. */}
+        <div className="mt-12">
+          <LocalHermesSection onConnected={() => setSelectedId(null)} />
+        </div>
       </div>
 
       {/* Workspace Folder Dialog */}
@@ -287,6 +290,9 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
   const [url, setUrl] = useState(localHermesUrl ?? 'http://127.0.0.1:9001')
   const [testing, setTesting] = useState(false)
   const [status, setStatus] = useState<'idle' | 'connected' | 'error'>('idle')
+  // Default open only when already connected — otherwise collapse to
+  // give cloud agents the screen real estate.
+  const [expanded, setExpanded] = useState(localHermesUrl !== null)
 
   useEffect(() => {
     if (localHermesUrl) {
@@ -333,7 +339,12 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
           : '1px solid var(--theme-border)',
       }}
     >
-      <div className="flex items-center gap-3 mb-1">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-3 w-full text-left"
+        aria-expanded={expanded}
+      >
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
           style={{ background: 'rgba(20,184,166,0.12)', color: '#14b8a6' }}
@@ -350,6 +361,12 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
               style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}
             >
               Free
+            </span>
+            <span
+              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+              style={{ background: 'rgba(148,163,184,0.12)', color: 'var(--theme-muted)' }}
+            >
+              Advanced
             </span>
           </div>
           <div className="text-xs" style={{ color: 'var(--theme-muted)' }}>
@@ -372,7 +389,19 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
             unreachable
           </span>
         )}
-      </div>
+        <span
+          aria-hidden
+          className="text-sm transition-transform"
+          style={{
+            color: 'var(--theme-muted)',
+            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}
+        >
+          ›
+        </span>
+      </button>
+
+      {!expanded ? null : <>
 
       <div className="flex items-center gap-2 mt-3 mb-3">
         <input
@@ -462,6 +491,7 @@ function LocalHermesSection({ onConnected }: { onConnected: () => void }) {
         <br />
         Then: <code className="px-1 py-0.5 rounded" style={{ background: 'var(--theme-bg)' }}>hermes-adapter agent add alpha --model anthropic/claude-sonnet-4.6 --prompt-key && hermes-adapter up</code>
       </div>
+      </>}
     </div>
   )
 }
