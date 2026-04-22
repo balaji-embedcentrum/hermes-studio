@@ -1,4 +1,10 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import {
+  HeadContent,
+  Scripts,
+  createRootRoute,
+  useLocation,
+  useNavigate,
+} from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import appCss from '../styles.css?url'
@@ -10,6 +16,8 @@ import { Toaster } from '@/components/ui/toast'
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
 import { KeyboardShortcutsModal } from '@/components/keyboard-shortcuts-modal'
 import { initializeSettingsAppearance } from '@/hooks/use-settings'
+import { useActiveSession } from '@/hooks/use-active-session'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 const APP_CSP = [
   "default-src 'self'",
@@ -216,6 +224,7 @@ function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <SessionEndRedirect />
       <GlobalShortcutListener />
       <TerminalShortcutListener />
       <Toaster />
@@ -225,6 +234,35 @@ function RootLayout() {
       <KeyboardShortcutsModal />
     </QueryClientProvider>
   )
+}
+
+// ── Session End Redirect ─────────────────────────────────────────────
+// Global watcher: whenever the user loses their agent session (End
+// button, idle reclaim, or expiry), bounce them to /agents no matter
+// which route they're on. Previously this lived in /chat/$sessionKey,
+// which only covered ending a session while already on the chat page;
+// ending from the SessionTimer in the /files header left the user
+// stranded on /files with a broken chat panel.
+//
+// Skip routes where the redirect would be wrong:
+//   - /agents           — already where we want to be
+//   - /settings/*       — user is configuring, don't kick them out
+//   - /                 — landing / login flow
+const ROUTES_EXEMPT_FROM_SESSION_REDIRECT = /^\/(agents|settings|)(\/|$)/
+function SessionEndRedirect() {
+  const { hasSession } = useActiveSession()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const localHermesUrl = useWorkspaceStore((s) => s.localHermesUrl)
+
+  useEffect(() => {
+    if (localHermesUrl) return // local mode has no cloud session
+    if (hasSession !== false) return // null (still loading) or true
+    if (ROUTES_EXEMPT_FROM_SESSION_REDIRECT.test(location.pathname)) return
+    navigate({ to: '/agents', replace: true })
+  }, [hasSession, localHermesUrl, location.pathname, navigate])
+
+  return null
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
