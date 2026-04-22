@@ -1072,6 +1072,21 @@ function ChatComposerComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey, isMobileViewport])
 
+  // When `disabled` transitions from true → false (e.g. the user just
+  // started/restored a session and the composer becomes interactive),
+  // pull focus into the prompt so they can type immediately. Without
+  // this they had to click the textarea before each session — the
+  // focusKey-driven effect above doesn't fire because focusKey hasn't
+  // changed across the disabled toggle.
+  const wasDisabledRef = useRef(disabled)
+  useLayoutEffect(() => {
+    if (isMobileViewport) return
+    if (wasDisabledRef.current && !disabled) {
+      focusPrompt()
+    }
+    wasDisabledRef.current = disabled
+  }, [disabled, isMobileViewport, focusPrompt])
+
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     const media = window.matchMedia('(max-width: 767px)')
