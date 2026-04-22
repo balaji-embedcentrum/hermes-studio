@@ -87,6 +87,19 @@ function AgentsPage() {
       if (data.ok) {
         setSelectedId(agent.id)
         refreshAgents() // refresh to show updated statuses
+        // Tell every other component (chat panel, $sessionKey route,
+        // session timer, …) that session state just changed so they
+        // re-fetch /api/agent-sessions/status without waiting on the
+        // Supabase Realtime push (which can be lost / throttled).
+        // Same-tab: window event. Cross-tab: storage event listener.
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('hermes:session-changed'))
+          try {
+            localStorage.setItem('hermes:session-changed', String(Date.now()))
+          } catch {
+            /* private mode etc. */
+          }
+        }
       } else {
         setSessionError(data.error ?? 'Failed to start session')
       }
