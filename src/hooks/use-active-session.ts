@@ -8,11 +8,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useSessionRealtime } from '@/hooks/use-session-realtime'
 
-const DBG = '[useActiveSession]'
-const log = (...args: unknown[]) => {
-  if (typeof console !== 'undefined') console.log(DBG, ...args)
-}
-
 type SessionInfo = {
   sessionId: string
   agentName: string
@@ -26,65 +21,57 @@ export function useActiveSession() {
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
-  const setHasSessionLogged = useCallback(
-    (next: boolean | null, source: string) => {
-      log('setHasSession', { next, source })
-      setHasSession(next)
-    },
-    [],
-  )
-
+  // Initial fetch. Auth-check and session-status are independent —
+  // wrapping them in Promise.all let a transient auth-check failure
+  // (network blip, 500, non-JSON) flip hasSession=false even when the
+  // session endpoint returned a perfectly valid active session. Run
+  // them as independent promises so they can't cross-contaminate.
   const check = useCallback(async () => {
-    log('check() start', { localHermesUrl })
     if (localHermesUrl) {
-      setHasSessionLogged(true, 'check:localHermesUrl')
+      setHasSession(true)
       return
     }
     void fetch('/api/auth-check')
       .then((r) => r.json())
       .then((data: { userId?: string }) => {
-        log('auth-check ok', { userId: data.userId })
         if (data.userId) setUserId(data.userId)
       })
-      .catch((err) => {
-        log('auth-check FAILED (ignored)', err)
+      .catch(() => {
+        /* auth-check failure must not affect session state */
       })
     try {
-      const raw = await fetch('/api/agent-sessions/status')
-      log('status fetch returned', {
-        ok: raw.ok,
-        status: raw.status,
-        contentType: raw.headers.get('content-type'),
-      })
-      const sessRes = (await raw.json()) as { session: SessionInfo | null }
-      log('status body', sessRes)
+      const sessRes = (await fetch('/api/agent-sessions/status').then((r) =>
+        r.json(),
+      )) as { session: SessionInfo | null }
       setSession(sessRes.session)
-      setHasSessionLogged(Boolean(sessRes.session), 'check:status-ok')
-    } catch (err) {
-      log('status FAILED (catch)', err)
-      setHasSessionLogged(false, 'check:status-catch')
+      setHasSession(Boolean(sessRes.session))
+    } catch {
+      setHasSession(false)
     }
-  }, [localHermesUrl, setHasSessionLogged])
+  }, [localHermesUrl])
 
   useEffect(() => {
-    log('mount + check effect', { hasSession, userId })
     check()
-    return () => log('unmount')
   }, [check])
 
+  // Realtime — re-query the authoritative status endpoint on ANY change
+  // to this user's agent_sessions rows. Do NOT trust the pushed row:
+  // switching agents fires an UPDATE (old session → ended) followed by
+  // an INSERT (new session → active). Treating the first event as
+  // "no active session" flips hasSession=false while the second event's
+  // active row is the real current state. If that second event is
+  // delayed or dropped (realtime/RLS edge case), the lock sticks.
   const handleRealtimeChange = useCallback(async () => {
-    log('realtime fired — re-fetching status')
     try {
-      const raw = await fetch('/api/agent-sessions/status')
-      log('realtime status fetch', { ok: raw.ok, status: raw.status })
-      const data = (await raw.json()) as { session: SessionInfo | null }
-      log('realtime status body', data)
+      const data = (await fetch('/api/agent-sessions/status').then((r) =>
+        r.json(),
+      )) as { session: SessionInfo | null }
       setSession(data.session)
-      setHasSessionLogged(Boolean(data.session), 'realtime:status-ok')
-    } catch (err) {
-      log('realtime status FAILED (kept state)', err)
+      setHasSession(Boolean(data.session))
+    } catch {
+      /* keep current state on transient network error */
     }
-  }, [setHasSessionLogged])
+  }, [])
   useSessionRealtime(userId, handleRealtimeChange)
 
   return { hasSession, session, refresh: check }
