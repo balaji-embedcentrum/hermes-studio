@@ -1,10 +1,12 @@
 /**
  * useSessionActivity — tracks user activity and pings the server
- * to keep the agent session alive. If the user is idle for 15+ min,
- * the server will end the session on the next check.
+ * to keep the agent session alive. If the user is idle for IDLE_TIMEOUT_MS,
+ * the server's validateSession() will end the session on the next write.
  *
- * Also handles: beforeunload (tab close), visibilitychange (tab hidden).
- * Sends session end request when user navigates away.
+ * Does NOT end the session on tab close or refresh — beforeunload fires
+ * on every browser refresh / navigation, which would (and did) destroy
+ * the user's session every time they reloaded the page. Lifecycle is
+ * server-managed: idle reclaim, expires_at, or explicit user End click.
  */
 import { useEffect, useRef } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -12,7 +14,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 const ACTIVITY_PING_INTERVAL = 60_000 // ping every 60s when active
 
 export function useSessionActivity() {
-  const localHermesUrl = useWorkspaceStore(s => s.localHermesUrl)
+  const localHermesUrl = useWorkspaceStore((s) => s.localHermesUrl)
   const lastActivityRef = useRef(Date.now())
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -21,7 +23,9 @@ export function useSessionActivity() {
     if (localHermesUrl) return
 
     // Track user activity
-    const markActive = () => { lastActivityRef.current = Date.now() }
+    const markActive = () => {
+      lastActivityRef.current = Date.now()
+    }
 
     window.addEventListener('mousemove', markActive, { passive: true })
     window.addEventListener('keydown', markActive, { passive: true })
@@ -37,22 +41,11 @@ export function useSessionActivity() {
       }
     }, ACTIVITY_PING_INTERVAL)
 
-    // End session on tab close / navigate away
-    const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable delivery during page unload
-      navigator.sendBeacon(
-        '/api/agent-sessions/end',
-        new Blob([JSON.stringify({ reason: 'user_ended' })], { type: 'application/json' }),
-      )
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
     return () => {
       window.removeEventListener('mousemove', markActive)
       window.removeEventListener('keydown', markActive)
       window.removeEventListener('click', markActive)
       window.removeEventListener('scroll', markActive)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current)
     }
   }, [localHermesUrl])
