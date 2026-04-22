@@ -62,6 +62,8 @@ export type AgentInstance = {
   model_name: string | null
   api_key: string | null
   skills: string[] | null
+  owner_user_id: string | null
+  deployment_type: 'cloud_fleet' | 'user_vps' | 'user_tunnel'
 }
 
 export type Workspace = {
