@@ -378,7 +378,13 @@ export async function validateSession(userId: string): Promise<
 }
 
 // ── Health Check All Agents ──────────────────────────────────────────
-export async function runHealthChecks(): Promise<{ checked: number; unavailable: number; recovered: number }> {
+export async function runHealthChecks(): Promise<{
+  checked: number
+  unavailable: number
+  recovered: number
+  sweptExpired: number
+  sweptIdle: number
+}> {
   const db = getSupabaseServer()
   const now = new Date()
   let unavailable = 0
@@ -389,7 +395,9 @@ export async function runHealthChecks(): Promise<{ checked: number; unavailable:
     .select('id, api_url, agent_status, health_fail_count')
     .not('api_url', 'is', null)
 
-  if (!agents) return { checked: 0, unavailable: 0, recovered: 0 }
+  if (!agents) {
+    return { checked: 0, unavailable: 0, recovered: 0, sweptExpired: 0, sweptIdle: 0 }
+  }
 
   for (const agent of agents) {
     if (!agent.api_url) continue
@@ -446,7 +454,62 @@ export async function runHealthChecks(): Promise<{ checked: number; unavailable:
     .eq('agent_status', 'cooling_down')
     .lt('cooldown_until', now.toISOString())
 
-  return { checked: agents.length, unavailable, recovered }
+  // Sweep expired + idle active sessions. Without this, sessions that
+  // the user never touches again (closed laptop, idle tab, expired
+  // without a chat send) stay forever at status='active', keeping
+  // their agent marked in_use and blocking the user from starting a
+  // new session. validateSession() only runs on write paths, so we
+  // need a timer-driven sweep for the fully-idle case.
+  const sweptExpired = await sweepExpiredSessions(db, now)
+  const sweptIdle = await sweepIdleSessions(db, now)
+
+  return {
+    checked: agents.length,
+    unavailable,
+    recovered,
+    sweptExpired,
+    sweptIdle,
+  }
+}
+
+// Returns how many active rows were flipped to ended.
+type SupabaseServerClient = ReturnType<typeof getSupabaseServer>
+async function sweepExpiredSessions(
+  db: SupabaseServerClient,
+  now: Date,
+): Promise<number> {
+  const { data: rows } = await db
+    .from('agent_sessions')
+    .select('id, user_id, agent_id')
+    .eq('status', 'active')
+    .lt('expires_at', now.toISOString())
+
+  if (!rows || rows.length === 0) return 0
+  for (const row of rows) {
+    await endSession(row.user_id, 'expired')
+  }
+  return rows.length
+}
+
+async function sweepIdleSessions(
+  db: SupabaseServerClient,
+  now: Date,
+): Promise<number> {
+  const cutoff = new Date(now.getTime() - IDLE_TIMEOUT_MS).toISOString()
+  const { data: rows } = await db
+    .from('agent_sessions')
+    .select('id, user_id, agent_id, expires_at')
+    .eq('status', 'active')
+    .lt('last_activity_at', cutoff)
+    // Expired rows are already handled by sweepExpiredSessions; avoid
+    // double-ending and reporting the same row twice.
+    .gte('expires_at', now.toISOString())
+
+  if (!rows || rows.length === 0) return 0
+  for (const row of rows) {
+    await endSession(row.user_id, 'idle')
+  }
+  return rows.length
 }
 
 // ── End All Sessions for User (logout / delete) ──────────────────────
