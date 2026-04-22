@@ -62,6 +62,17 @@ function ChatRoute() {
   const queryClient = useQueryClient()
   const { hasSession } = useActiveSession()
   const navigate = useNavigate()
+
+  // When there's no active session (just-ended, idle-reclaimed, or
+  // first visit), bounce the user to /agents instead of stranding
+  // them on a dead chat page. The lock overlay is kept as a fallback
+  // for the brief moment between hasSession flipping false and the
+  // navigation taking effect.
+  useEffect(() => {
+    if (hasSession === false) {
+      navigate({ to: '/agents', replace: true })
+    }
+  }, [hasSession, navigate])
   const [forcedSession, setForcedSession] = useState<{
     friendlyId: string
     sessionKey: string
