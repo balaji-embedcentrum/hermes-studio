@@ -211,6 +211,18 @@ export async function endSession(
 }
 
 // ── Get Session Status ───────────────────────────────────────────────
+//
+// READ-ONLY. Must not mutate. The previous implementation called
+// endSession() inline whenever it observed an expired or idle row,
+// which meant the act of *looking* at session state could destroy it.
+// The chat UI calls /api/agent-sessions/status on every page load via
+// useActiveSession; reloading after >IDLE_TIMEOUT_MS of debugging
+// would silently kill the session and surface as a "permanently
+// locked" UI even though the user had just started one.
+//
+// Lifecycle enforcement (kicking idle/expired sessions) belongs to
+// validateSession(), which is called from the chat-send and file-op
+// paths and intentionally has write semantics.
 export async function getSessionStatus(userId: string): Promise<SessionInfo | null> {
   const db = getSupabaseServer()
   const now = new Date()
@@ -226,18 +238,10 @@ export async function getSessionStatus(userId: string): Promise<SessionInfo | nu
 
   const expiresAt = new Date(session.expires_at)
 
-  // Check if expired
-  if (expiresAt <= now) {
-    await endSession(userId, 'expired')
-    return null
-  }
-
-  // Check idle timeout
-  const lastActivity = new Date(session.last_activity_at)
-  if (now.getTime() - lastActivity.getTime() > IDLE_TIMEOUT_MS) {
-    await endSession(userId, 'idle')
-    return null
-  }
+  // Hide expired rows from the UI (they're already past their wall-clock
+  // life), but do not end them here — let validateSession do that on the
+  // next write.
+  if (expiresAt <= now) return null
 
   // Get agent name
   const { data: agent } = await db
