@@ -54,6 +54,29 @@ export function useActiveSession() {
     check()
   }, [check])
 
+  // Re-check whenever the tab regains focus or visibility. Realtime
+  // is supposed to push session changes instantly, but it can be lost
+  // when a row is INSERTed while another tab is the active window
+  // (Supabase Realtime + RLS occasionally drops events under those
+  // transitions). Re-checking on focus/visibility means: click an
+  // agent on /agents in tab A, come back to /chat in tab B, and the
+  // lock clears within one render frame instead of staying stuck.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onFocus = () => {
+      check()
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check()
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [check])
+
   // Realtime — re-query the authoritative status endpoint on ANY change
   // to this user's agent_sessions rows. Do NOT trust the pushed row:
   // switching agents fires an UPDATE (old session → ended) followed by
