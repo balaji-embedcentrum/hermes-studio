@@ -8,6 +8,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useSessionRealtime } from '@/hooks/use-session-realtime'
 
+const DBG = '[useActiveSession]'
+const log = (...args: unknown[]) => {
+  if (typeof console !== 'undefined') console.log(DBG, ...args)
+}
+
 type SessionInfo = {
   sessionId: string
   agentName: string
@@ -16,64 +21,70 @@ type SessionInfo = {
 }
 
 export function useActiveSession() {
-  const localHermesUrl = useWorkspaceStore(s => s.localHermesUrl)
+  const localHermesUrl = useWorkspaceStore((s) => s.localHermesUrl)
   const [hasSession, setHasSession] = useState<boolean | null>(null)
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
-  // Initial fetch. Auth-check and session-status are independent —
-  // previously they were wrapped in Promise.all, so a transient failure
-  // on /api/auth-check (network blip, 500, non-JSON) would reject the
-  // whole block and flip hasSession=false even when the session endpoint
-  // returned a perfectly valid active session. That produced the
-  // "timer counts down, but lock overlay is stuck up" symptom.
-  // Run them as independent promises so they can't cross-contaminate.
+  const setHasSessionLogged = useCallback(
+    (next: boolean | null, source: string) => {
+      log('setHasSession', { next, source })
+      setHasSession(next)
+    },
+    [],
+  )
+
   const check = useCallback(async () => {
+    log('check() start', { localHermesUrl })
     if (localHermesUrl) {
-      setHasSession(true)
+      setHasSessionLogged(true, 'check:localHermesUrl')
       return
     }
     void fetch('/api/auth-check')
       .then((r) => r.json())
       .then((data: { userId?: string }) => {
+        log('auth-check ok', { userId: data.userId })
         if (data.userId) setUserId(data.userId)
       })
-      .catch(() => {
-        /* auth-check failure must not affect session state */
+      .catch((err) => {
+        log('auth-check FAILED (ignored)', err)
       })
     try {
-      const sessRes = (await fetch('/api/agent-sessions/status').then((r) =>
-        r.json(),
-      )) as { session: SessionInfo | null }
+      const raw = await fetch('/api/agent-sessions/status')
+      log('status fetch returned', {
+        ok: raw.ok,
+        status: raw.status,
+        contentType: raw.headers.get('content-type'),
+      })
+      const sessRes = (await raw.json()) as { session: SessionInfo | null }
+      log('status body', sessRes)
       setSession(sessRes.session)
-      setHasSession(Boolean(sessRes.session))
-    } catch {
-      setHasSession(false)
+      setHasSessionLogged(Boolean(sessRes.session), 'check:status-ok')
+    } catch (err) {
+      log('status FAILED (catch)', err)
+      setHasSessionLogged(false, 'check:status-catch')
     }
-  }, [localHermesUrl])
+  }, [localHermesUrl, setHasSessionLogged])
 
   useEffect(() => {
+    log('mount + check effect', { hasSession, userId })
     check()
+    return () => log('unmount')
   }, [check])
 
-  // Realtime — re-query the authoritative status endpoint on ANY change
-  // to this user's agent_sessions rows. Do NOT trust the pushed row:
-  // switching agents fires an UPDATE (old session → ended) followed by an
-  // INSERT (new session → active). Treating the first event as
-  // "user has no active session" flips hasSession=false while the second
-  // event's active row is the current truth. If that second event is ever
-  // delayed or dropped (realtime/RLS edge case), the lock sticks.
   const handleRealtimeChange = useCallback(async () => {
+    log('realtime fired — re-fetching status')
     try {
-      const data = (await fetch('/api/agent-sessions/status').then((r) =>
-        r.json(),
-      )) as { session: SessionInfo | null }
+      const raw = await fetch('/api/agent-sessions/status')
+      log('realtime status fetch', { ok: raw.ok, status: raw.status })
+      const data = (await raw.json()) as { session: SessionInfo | null }
+      log('realtime status body', data)
       setSession(data.session)
-      setHasSession(Boolean(data.session))
-    } catch {
-      /* keep current state on transient network error */
+      setHasSessionLogged(Boolean(data.session), 'realtime:status-ok')
+    } catch (err) {
+      log('realtime status FAILED (kept state)', err)
     }
-  }, [])
+  }, [setHasSessionLogged])
   useSessionRealtime(userId, handleRealtimeChange)
 
   return { hasSession, session, refresh: check }
