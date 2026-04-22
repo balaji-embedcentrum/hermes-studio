@@ -69,11 +69,27 @@ export function useActiveSession() {
     const onVisible = () => {
       if (document.visibilityState === 'visible') check()
     }
+    // Same-window: agents.tsx and session-timer.tsx fire this event
+    // immediately after a successful start/end so the chat panel and
+    // every other useActiveSession consumer re-checks instantly,
+    // without depending on the Supabase Realtime push (which gets
+    // dropped when the receiving tab is backgrounded or RLS context
+    // is in flux).
+    const onSessionChanged = () => check()
+    // Cross-tab: storage event fires in OTHER tabs of the same origin
+    // when localStorage is written in this tab.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'hermes:session-changed') check()
+    }
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('hermes:session-changed', onSessionChanged)
+    window.addEventListener('storage', onStorage)
     return () => {
       window.removeEventListener('focus', onFocus)
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('hermes:session-changed', onSessionChanged)
+      window.removeEventListener('storage', onStorage)
     }
   }, [check])
 
