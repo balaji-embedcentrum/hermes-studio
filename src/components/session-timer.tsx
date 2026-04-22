@@ -104,6 +104,16 @@ export function SessionTimer() {
       // Realtime subscription will fire and update state, but set immediately for snappy UX
       setSession(null)
       setEnded(true)
+      // Notify the rest of the UI to re-check session state instead of
+      // waiting on the realtime UPDATE push (which can be dropped).
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('hermes:session-changed'))
+        try {
+          localStorage.setItem('hermes:session-changed', String(Date.now()))
+        } catch {
+          /* private mode etc. */
+        }
+      }
     } catch {}
   }
 
