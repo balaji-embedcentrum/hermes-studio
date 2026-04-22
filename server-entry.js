@@ -144,3 +144,26 @@ const httpServer = createServer(async (req, res) => {
 httpServer.listen(port, host, () => {
   console.log(`Hermes Workspace running at http://${host}:${port}`)
 })
+
+// Periodic maintenance — run every 60s so expired/idle agent sessions
+// get cleaned up even when no client has the app open. Without this,
+// sessions stay at status='active' forever if the user never touches
+// the chat send / file op paths that call validateSession(). Self-call
+// via HTTP keeps the work inside the request-handler surface (same
+// logging, same error paths) without needing to import the built SSR
+// bundle twice.
+const MAINTENANCE_INTERVAL_MS = 60_000
+setInterval(() => {
+  fetch(`http://127.0.0.1:${port}/api/agent-sessions/health-check`)
+    .then((r) => r.ok ? r.json() : null)
+    .then((result) => {
+      if (result && (result.sweptExpired > 0 || result.sweptIdle > 0)) {
+        console.log(
+          `[maintenance] swept ${result.sweptExpired} expired + ${result.sweptIdle} idle sessions`,
+        )
+      }
+    })
+    .catch((err) => {
+      console.error('[maintenance] tick failed:', err?.message ?? err)
+    })
+}, MAINTENANCE_INTERVAL_MS).unref()
