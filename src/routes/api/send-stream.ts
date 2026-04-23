@@ -10,7 +10,7 @@ import {
   registerActiveSendRun,
   unregisterActiveSendRun,
 } from '../../server/send-run-tracker'
-import { getChatMode } from '../../server/gateway-capabilities'
+import { getAgentConfig, getChatMode } from '../../server/gateway-capabilities'
 import { validateSession } from '../../server/agent-sessions'
 import {
   
@@ -372,54 +372,102 @@ export const Route = createFileRoute('/api/send-stream')({
         }
 
         // Build workspace context string to inject into the system message.
-        // The frontend workspace path is {userId}/{githubLogin}/{repo}.
-        // Strip the userId (first segment) — agent sees {root}/{githubLogin}/{repo}.
+        //
+        // The boundary fires in TWO layers:
+        //   1) Workspace root — the agent's per-user view, e.g.
+        //      /opt/workspaces/active-<agent>. ALWAYS injected for
+        //      cloud-fleet users so the agent refuses to walk above this
+        //      even when no project is selected (the screenshot bug:
+        //      agent searched /opt/workspaces and found another user's dir).
+        //   2) Project — when the user has opened a specific project,
+        //      add tighter rules scoping to that repo.
+        //
+        // Both rules are injected as a system message on every turn, so
+        // they override anything the agent might recall from history.
         let workspaceContextNote: string | undefined
-        if (workspaceRelPath) {
-          const agentWorkspaceRoot = (
-            process.env.HERMES_AGENT_WORKSPACE_ROOT || '/opt/workspaces'
-          ).trim()
-          const segments = workspaceRelPath.replace(/\\/g, '/').split('/')
-          // segments[0]=userId, segments[1]=githubLogin, segments[2]=repo, ...
-          const agentRelPath = segments.slice(1).join('/')
-          const absWorkspacePath = agentRelPath
-            ? `${agentWorkspaceRoot}/${agentRelPath}`
-            : agentWorkspaceRoot
-          const githubLogin = segments[1] || 'unknown'
-          const repoName = segments[2] || ''
-          // IMPORTANT: this note is prepended as a system message on EVERY
-          // turn, so the current project context always overrides whatever
-          // the agent might remember from prior conversations.
-          workspaceContextNote =
-            `=== ACTIVE PROJECT CONTEXT (overrides all prior state) ===\n` +
-            `\n` +
-            `CURRENT PROJECT: ${repoName}\n` +
-            `PROJECT ROOT: ${absWorkspacePath}\n` +
-            `USER: ${githubLogin}\n` +
-            `\n` +
-            `This is the ONLY project you are working on right now. If you\n` +
-            `previously worked on a different project in this chat history,\n` +
-            `discard that context — the user has switched projects.\n` +
-            `\n` +
-            `STRICT FILE ACCESS RULES:\n` +
-            `1. Every file read / write / list / search / grep MUST be inside\n` +
-            `   ${absWorkspacePath}.\n` +
-            `2. You may NOT traverse to sibling project directories, parent\n` +
-            `   directories, other users' workspaces, /opt/, /root/, /home/,\n` +
-            `   or anywhere else on the filesystem.\n` +
-            `3. If a tool call would leave ${absWorkspacePath}, refuse it and\n` +
-            `   explain the boundary to the user.\n` +
-            `4. When asked about "the project", "this repo", "the codebase",\n` +
-            `   or similar, it refers ONLY to ${repoName} at\n` +
-            `   ${absWorkspacePath} — not any other project you may recall.\n` +
-            `5. If asked "what projects do I have", do NOT list sibling\n` +
-            `   directories. Only reply about ${repoName}.\n` +
-            `\n` +
-            `After modifying files: git add -A && git commit -m "agent: <description>" && git push\n` +
-            `\n` +
-            `Use your full tool, skill, and reasoning capabilities to help\n` +
-            `within ${absWorkspacePath}. The directory scope is the only\n` +
-            `restriction.`
+
+        const agentWorkspaceRoot = (
+          process.env.HERMES_AGENT_WORKSPACE_ROOT || '/opt/workspaces'
+        ).trim()
+
+        // Derive the per-agent workspace root from the user's selected
+        // agent URL (e.g. https://.../agent-isabelle  →  active-isabelle).
+        // Falls back to plain agent root if URL doesn't match the pattern
+        // (e.g. BYO agents on user_vps / user_tunnel which are single-tenant).
+        let perAgentWorkspaceRoot: string | null = null
+        if (authUserForSession?.userId) {
+          try {
+            const cfg = await getAgentConfig(authUserForSession.userId)
+            const m = cfg.url.match(/\/agent-([a-z0-9][a-z0-9_-]*)\/?$/)
+            if (m) {
+              perAgentWorkspaceRoot = `${agentWorkspaceRoot}/active-${m[1]}`
+            }
+          } catch {
+            /* getAgentConfig may throw — boundary just falls back to project-only */
+          }
+        }
+
+        const segments = workspaceRelPath
+          ? workspaceRelPath.replace(/\\/g, '/').split('/')
+          : []
+        // segments[0]=userId, segments[1]=githubLogin, segments[2]=repo, ...
+        const githubLogin = segments[1] || ''
+        const repoName = segments[2] || ''
+        const agentRelPath = segments.slice(1).join('/')
+        const absWorkspacePath = agentRelPath
+          ? `${agentWorkspaceRoot}/${agentRelPath}`
+          : null
+
+        if (perAgentWorkspaceRoot || absWorkspacePath) {
+          const lines: string[] = []
+          lines.push(`=== AGENT EXECUTION CONTEXT (overrides all prior state) ===`)
+          lines.push(``)
+
+          if (perAgentWorkspaceRoot) {
+            lines.push(`AGENT WORKSPACE ROOT (hard boundary): ${perAgentWorkspaceRoot}`)
+            lines.push(``)
+            lines.push(`This is a SHARED, MULTI-TENANT host. The directory above`)
+            lines.push(`your workspace root is mounted but contains OTHER USERS'`)
+            lines.push(`files — you must never read, list, search, grep, cd into,`)
+            lines.push(`or otherwise touch anything outside ${perAgentWorkspaceRoot}/.`)
+            lines.push(`Specifically forbidden, regardless of mount permissions:`)
+            lines.push(`  - ${agentWorkspaceRoot} (parent dir — sibling user dirs live here)`)
+            lines.push(`  - any other ${agentWorkspaceRoot}/active-* symlink`)
+            lines.push(`  - /etc, /root, /home, /var, /tmp/<other>, /proc, /sys`)
+            lines.push(`If asked to "search the entire workspace", "list everything",`)
+            lines.push(`"find sibling projects", or anything that would walk above`)
+            lines.push(`${perAgentWorkspaceRoot}/ — REFUSE and explain that this is`)
+            lines.push(`a multi-tenant playground and other users' files are off-limits.`)
+            lines.push(`Use your terminal tool with cwd= inside the workspace. Never cd ..`)
+            lines.push(`above it. Tools may make this mechanically possible; you must not.`)
+            lines.push(``)
+          }
+
+          if (absWorkspacePath && repoName) {
+            lines.push(`CURRENT PROJECT: ${repoName}`)
+            lines.push(`PROJECT ROOT:    ${absWorkspacePath}`)
+            if (githubLogin) lines.push(`USER:            ${githubLogin}`)
+            lines.push(``)
+            lines.push(`This is the ONLY project you are working on right now. If you`)
+            lines.push(`previously worked on a different project in this chat history,`)
+            lines.push(`discard that context — the user has switched projects.`)
+            lines.push(``)
+            lines.push(`Project-scope rules (in addition to the workspace root rules above):`)
+            lines.push(`1. Every file read / write / list / search / grep MUST be inside`)
+            lines.push(`   ${absWorkspacePath}.`)
+            lines.push(`2. When asked about "the project", "this repo", "the codebase",`)
+            lines.push(`   it refers ONLY to ${repoName} at ${absWorkspacePath}.`)
+            lines.push(`3. If asked "what projects do I have", do NOT list sibling`)
+            lines.push(`   directories. Only reply about ${repoName}.`)
+            lines.push(``)
+            lines.push(`After modifying files: git add -A && git commit -m "agent: <description>" && git push`)
+            lines.push(``)
+            lines.push(`Use your full tool, skill, and reasoning capabilities to help`)
+            lines.push(`within ${absWorkspacePath}. The directory scope is the only`)
+            lines.push(`restriction.`)
+          }
+
+          workspaceContextNote = lines.join('\n')
         }
 
         // Create streaming response using the SHARED server connection
