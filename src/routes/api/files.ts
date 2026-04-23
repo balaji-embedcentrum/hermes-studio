@@ -38,8 +38,13 @@ function parseWorkspacePath(relPath: string) {
   return {
     userId: parts[0],
     githubLogin: parts[1],
-    repo: `${parts[1]}/${parts[2]}`,   // "login/repo" — scoped to user directory
-    repoName: parts[2],                 // just "repo" — for display
+    // Per-agent symlink isolation: the agent's HERMES_WORKSPACE_DIR
+    // already points at /opt/workspaces/active-<agent>, which resolves
+    // to the current user's directory. So the agent's /ws/<repo>/...
+    // API expects just the repo name — no `<login>/<repo>` prefix.
+    // Pre-isolation deployments used `login/repo`; that path now 404s.
+    repo: parts[2],
+    repoName: parts[2],
     relInRepo: parts.slice(3).join('/'),
   }
 }
