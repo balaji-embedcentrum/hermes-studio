@@ -65,6 +65,17 @@ function LandingPage() {
             Sign in with GitHub
           </button>
         </div>
+        <p style={{ fontSize: 13, color: textMuted, marginTop: 20, lineHeight: 1.6, maxWidth: 540, marginLeft: 'auto', marginRight: 'auto' }}>
+          Experimental playground for trying Hermes agents — provided as is. By signing in
+          you agree to the{' '}
+          <a
+            href="/terms"
+            style={{ color: accent, textDecoration: 'underline' }}
+          >
+            Terms &amp; Conditions
+          </a>
+          . For private workspaces, host your own agent.
+        </p>
       </section>
 
       <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 96px' }}>
