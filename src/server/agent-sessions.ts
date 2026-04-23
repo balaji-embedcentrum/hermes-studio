@@ -586,24 +586,43 @@ async function probeAgentHealth(agentUrl: string): Promise<{ ok: boolean; status
 // ── Workspace Isolation Helpers ──────────────────────────────────────
 
 /**
+ * Derive the agent's lowercase key from its api_url. Used as the suffix
+ * for the per-agent active-workspace symlink (`active-{key}`) so the
+ * shared fleet adapter can keep N concurrent users isolated, one per
+ * agent. For URLs of the form `https://host/agent-isabelle`, returns
+ * `isabelle`. For BYO agents whose URL doesn't include the `/agent-X`
+ * suffix, returns `primary` — those adapters are single-tenant anyway,
+ * so the symlink name is a constant.
+ */
+function deriveAgentKey(apiUrl: string): string {
+  const match = apiUrl.match(/\/agent-([a-z0-9][a-z0-9_-]*)\/?$/)
+  return match ? match[1] : 'primary'
+}
+
+/**
  * Activate a user's workspace on the agent.
- * Creates a symlink: {HERMES_WORKSPACE_DIR}/active → {HERMES_WORKSPACE_DIR}/{githubLogin}
- * The agent can only see files under the "active" symlink.
+ * The adapter creates a symlink `{workspaces}/active-{agentKey}` →
+ * `{workspaces}/{githubLogin}` (relative target). The agent's
+ * HERMES_WORKSPACE_DIR is set to that per-agent symlink path so each
+ * agent only ever sees the currently-bound user's files, and N agents
+ * can serve N different users concurrently without racing on a
+ * single shared `active` link.
  */
 async function activateWorkspace(agentUrl: string, apiKey: string | null, githubLogin: string): Promise<void> {
+  const agentKey = deriveAgentKey(agentUrl)
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
     const res = await fetch(`${agentUrl}/ws/activate`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ user: githubLogin }),
+      body: JSON.stringify({ user: githubLogin, agent: agentKey }),
       signal: AbortSignal.timeout(5_000),
     })
     if (!res.ok) {
-      console.error(`[sessions] Failed to activate workspace for ${githubLogin}: ${res.status}`)
+      console.error(`[sessions] Failed to activate workspace for ${githubLogin} on agent=${agentKey}: ${res.status}`)
     } else {
-      console.info(`[sessions] Activated workspace for ${githubLogin} on ${agentUrl}`)
+      console.info(`[sessions] Activated workspace for ${githubLogin} on ${agentUrl} (agent=${agentKey})`)
     }
   } catch (e) {
     console.error(`[sessions] Error activating workspace:`, e)
@@ -611,22 +630,24 @@ async function activateWorkspace(agentUrl: string, apiKey: string | null, github
 }
 
 /**
- * Deactivate the workspace on the agent.
- * Removes the "active" symlink so the agent cannot see any user's files.
+ * Deactivate the workspace on the agent — removes the per-agent
+ * active symlink so the agent immediately stops seeing the user's files.
  */
 async function deactivateWorkspace(agentUrl: string, apiKey: string | null): Promise<void> {
+  const agentKey = deriveAgentKey(agentUrl)
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
     const res = await fetch(`${agentUrl}/ws/deactivate`, {
       method: 'POST',
       headers,
+      body: JSON.stringify({ agent: agentKey }),
       signal: AbortSignal.timeout(5_000),
     })
     if (!res.ok) {
-      console.error(`[sessions] Failed to deactivate workspace: ${res.status}`)
+      console.error(`[sessions] Failed to deactivate workspace on agent=${agentKey}: ${res.status}`)
     } else {
-      console.info(`[sessions] Deactivated workspace on ${agentUrl}`)
+      console.info(`[sessions] Deactivated workspace on ${agentUrl} (agent=${agentKey})`)
     }
   } catch (e) {
     console.error(`[sessions] Error deactivating workspace:`, e)
