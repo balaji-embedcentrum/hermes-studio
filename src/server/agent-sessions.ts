@@ -111,7 +111,47 @@ export async function startSession(userId: string, agentId: string): Promise<Sta
     return { ok: false, error: statusMsg[agent.agent_status] ?? 'Agent unavailable', code: 'agent_unavailable' }
   }
 
-  // 4. Create session + update agent status
+  // 4. Claim the agent FIRST — this bind-mounts the user's workspace
+  // into the agent container (kernel-enforced isolation) and waits for
+  // /v1/health to come back up. Must succeed before we create a session
+  // row, otherwise we'd hand the user a "valid" session pointing at an
+  // agent that can't serve them.
+  if (agent.api_url && profile.github_login) {
+    const claim = await claimAgent(
+      agent.api_url,
+      agent.api_key,
+      profile.github_login,
+    )
+    if (!claim.ok) {
+      // Mark the agent unavailable so it stops showing up as selectable
+      // on /agents. An admin (or the periodic health check) will flip
+      // it back to available once the underlying issue is fixed.
+      await db
+        .from('agent_instances')
+        .update({
+          agent_status: 'unavailable',
+          health_fail_count: HEALTH_FAIL_THRESHOLD,
+          last_health_check: now.toISOString(),
+        })
+        .eq('id', agentId)
+
+      const human: Record<string, string> = {
+        unreachable: `${agent.persona_name} is unreachable right now. Try another agent.`,
+        timeout: `${agent.persona_name} didn't respond in time. Try another agent.`,
+        auth_failed: `${agent.persona_name} rejected our credentials. An admin has been notified.`,
+        conflict: `${agent.persona_name} is currently being claimed by another user. Try another agent.`,
+        health_timeout: `${agent.persona_name} restarted but didn't come back healthy. Try another agent.`,
+        server_error: `${agent.persona_name} failed to start. Try another agent.`,
+      }
+      return {
+        ok: false,
+        error: human[claim.reason] ?? `Failed to claim ${agent.persona_name}.`,
+        code: 'agent_unavailable',
+      }
+    }
+  }
+
+  // 5. Create session + update agent status
   // NB: `status: 'active'` is set explicitly — every read path filters
   // `.eq('status', 'active')`, so if the DB column lacks a default the
   // insert lands as NULL and the UI permanently shows "No active session".
@@ -131,19 +171,20 @@ export async function startSession(userId: string, agentId: string): Promise<Sta
 
   if (sessErr || !session) {
     console.error('[sessions] Failed to create session:', sessErr?.message)
+    // Try to unclaim so the agent doesn't sit with a bind mount
+    // belonging to a user who has no session.
+    if (agent.api_url) {
+      unclaimAgent(agent.api_url, agent.api_key).catch(() => {})
+    }
     return { ok: false, error: 'Failed to create session', code: 'agent_unavailable' }
   }
 
-  // Mark agent as in_use
+  // Mark agent as in_use (session authoritative — unused agents never
+  // transition here, so the status reflects reality).
   await db.from('agent_instances').update({
     agent_status: 'in_use',
     cooldown_until: null,
   }).eq('id', agentId)
-
-  // Activate user workspace on the agent (symlink isolation)
-  if (agent.api_url && profile.github_login) {
-    await activateWorkspace(agent.api_url, agent.api_key, profile.github_login)
-  }
 
   // Increment sessions used
   await db.from('profiles').update({
@@ -600,56 +641,156 @@ function deriveAgentKey(apiUrl: string): string {
 }
 
 /**
- * Activate a user's workspace on the agent.
- * The adapter creates a symlink `{workspaces}/active-{agentKey}` →
- * `{workspaces}/{githubLogin}` (relative target). The agent's
- * HERMES_WORKSPACE_DIR is set to that per-agent symlink path so each
- * agent only ever sees the currently-bound user's files, and N agents
- * can serve N different users concurrently without racing on a
- * single shared `active` link.
+ * Derive the fleet base URL from an agent URL. The fleet control plane
+ * (/fleet/claim etc.) lives at the root of the agents VPS, not under
+ * any per-agent prefix. Agent api_url is of the form
+ * `https://agents-akela.example.com/agent-isabelle`; fleet base is
+ * `https://agents-akela.example.com`. For BYO agents whose URL
+ * doesn't include an `/agent-<name>` suffix, the base is the api_url
+ * itself and agentKey falls back to `primary`.
  */
-async function activateWorkspace(agentUrl: string, apiKey: string | null, githubLogin: string): Promise<void> {
+function deriveFleetBase(apiUrl: string): string {
+  return apiUrl.replace(/\/agent-[a-z0-9][a-z0-9_-]*\/?$/, '')
+}
+
+export type ClaimResult =
+  | { ok: true }
+  | {
+      ok: false
+      reason:
+        | 'unreachable'
+        | 'timeout'
+        | 'auth_failed'
+        | 'conflict'
+        | 'health_timeout'
+        | 'server_error'
+      message: string
+      status?: number
+    }
+
+/**
+ * Claim a cloud-fleet agent for the given user. Asks the fleet control
+ * plane to swap the agent container's workspace bind mount to the
+ * user's directory and force-recreate it. Blocks until the agent's
+ * `/v1/health` comes back up (the adapter does the health wait before
+ * returning).
+ *
+ * Kernel-enforced isolation: after a successful claim the agent can
+ * only see the claimed user's files at /opt/workspaces. Any previous
+ * user's data is no longer mounted. No symlink tricks, no escape via
+ * absolute paths — the mount point is the only filesystem the container
+ * has.
+ *
+ * BYO agents (user_vps, user_tunnel) are single-tenant and don't need
+ * to be claimed — their URL won't match the `/agent-<name>` pattern,
+ * so deriveFleetBase returns the apiUrl itself. For those, this call
+ * is a no-op that still succeeds, so callers don't have to branch.
+ */
+async function claimAgent(
+  agentUrl: string,
+  apiKey: string | null,
+  githubLogin: string,
+): Promise<ClaimResult> {
   const agentKey = deriveAgentKey(agentUrl)
+  // BYO / single-tenant: no fleet plane to call, treat as success.
+  if (agentKey === 'primary') {
+    return { ok: true }
+  }
+
+  const fleetBase = deriveFleetBase(agentUrl)
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+
   try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
-    const res = await fetch(`${agentUrl}/ws/activate`, {
+    // Fleet claim = docker compose force-recreate + health wait. Takes
+    // 2-10s typically. Timeout well above that so we don't abandon a
+    // successful recreate and leave the fleet in a weird state.
+    const res = await fetch(`${fleetBase}/fleet/claim`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ user: githubLogin, agent: agentKey }),
-      signal: AbortSignal.timeout(5_000),
+      body: JSON.stringify({ agent: agentKey, user: githubLogin }),
+      signal: AbortSignal.timeout(45_000),
     })
-    if (!res.ok) {
-      console.error(`[sessions] Failed to activate workspace for ${githubLogin} on agent=${agentKey}: ${res.status}`)
-    } else {
-      console.info(`[sessions] Activated workspace for ${githubLogin} on ${agentUrl} (agent=${agentKey})`)
+    if (res.ok) {
+      console.info(
+        `[sessions] Claimed agent=${agentKey} for ${githubLogin} on ${fleetBase}`,
+      )
+      return { ok: true }
     }
+    const body = await res.text().catch(() => '')
+    let reason: ClaimResult & { ok: false } = {
+      ok: false,
+      reason: 'server_error',
+      message: body || res.statusText,
+      status: res.status,
+    }
+    if (res.status === 401 || res.status === 403) {
+      reason = { ok: false, reason: 'auth_failed', message: 'fleet control bearer rejected', status: res.status }
+    } else if (res.status === 409) {
+      reason = { ok: false, reason: 'conflict', message: 'agent is busy', status: res.status }
+    } else if (res.status === 504) {
+      reason = { ok: false, reason: 'health_timeout', message: 'agent did not become healthy after recreate', status: res.status }
+    }
+    console.error(
+      `[sessions] Claim failed agent=${agentKey} user=${githubLogin} status=${res.status} reason=${reason.reason} body=${body.slice(0, 500)}`,
+    )
+    return reason
   } catch (e) {
-    console.error(`[sessions] Error activating workspace:`, e)
+    const msg = e instanceof Error ? e.message : String(e)
+    const isTimeout = msg.includes('timed out') || msg.includes('AbortError')
+    console.error(`[sessions] Claim network error agent=${agentKey}:`, msg)
+    return {
+      ok: false,
+      reason: isTimeout ? 'timeout' : 'unreachable',
+      message: msg,
+    }
   }
 }
 
 /**
- * Deactivate the workspace on the agent — removes the per-agent
- * active symlink so the agent immediately stops seeing the user's files.
+ * Release the agent — tears down the user-specific bind mount. The
+ * container stays running with the sentinel (empty) mount so it keeps
+ * heartbeating and can be claimed by the next user later.
+ *
+ * Fire-and-forget semantics: failures are logged but don't block the
+ * session-end path. If the unclaim genuinely fails, the next claim
+ * will force-recreate and fix it.
  */
-async function deactivateWorkspace(agentUrl: string, apiKey: string | null): Promise<void> {
+async function unclaimAgent(agentUrl: string, apiKey: string | null): Promise<void> {
   const agentKey = deriveAgentKey(agentUrl)
+  if (agentKey === 'primary') return // BYO — nothing to unclaim
+
+  const fleetBase = deriveFleetBase(agentUrl)
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
-    const res = await fetch(`${agentUrl}/ws/deactivate`, {
+    const res = await fetch(`${fleetBase}/fleet/unclaim`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ agent: agentKey }),
-      signal: AbortSignal.timeout(5_000),
+      signal: AbortSignal.timeout(30_000),
     })
     if (!res.ok) {
-      console.error(`[sessions] Failed to deactivate workspace on agent=${agentKey}: ${res.status}`)
+      console.error(`[sessions] Unclaim failed agent=${agentKey}: ${res.status}`)
     } else {
-      console.info(`[sessions] Deactivated workspace on ${agentUrl} (agent=${agentKey})`)
+      console.info(`[sessions] Unclaimed agent=${agentKey} on ${fleetBase}`)
     }
   } catch (e) {
-    console.error(`[sessions] Error deactivating workspace:`, e)
+    console.error(`[sessions] Unclaim network error agent=${agentKey}:`, e)
   }
+}
+
+// Back-compat shims so existing callers don't churn until we clean up
+// the callsites. New code should call claimAgent / unclaimAgent.
+async function activateWorkspace(agentUrl: string, apiKey: string | null, githubLogin: string): Promise<void> {
+  const result = await claimAgent(agentUrl, apiKey, githubLogin)
+  if (!result.ok) {
+    // Preserve the legacy "log and continue" behavior here — startSession
+    // handles the claim call directly with proper error propagation.
+    console.error(`[sessions] activateWorkspace wrapper: claim failed reason=${result.reason} message=${result.message}`)
+  }
+}
+
+async function deactivateWorkspace(agentUrl: string, apiKey: string | null): Promise<void> {
+  await unclaimAgent(agentUrl, apiKey)
 }
