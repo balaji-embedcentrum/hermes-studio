@@ -226,7 +226,7 @@ function AgentsPage() {
           </button>
           {!canContinue && (
             <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>
-              {mode === 'cloud' && 'Pick a cloud agent to continue'}
+              {mode === 'cloud' && 'Pick a playground agent to continue'}
               {mode === 'vps' && 'Register your VPS agent to continue'}
               {mode === 'tunnel' && 'Register your tunnel agent to continue'}
               {mode === 'local' && 'Connect your local Hermes adapter to continue'}
@@ -251,7 +251,7 @@ function AgentsPage() {
 /* ── Mode Radio Strip ──────────────────────────────────────────────── */
 
 const MODE_META: Record<Mode, { label: string; sub: string; icon: string; pill: string; pillColor: string }> = {
-  cloud:  { label: 'Hermes Cloud',     sub: 'Managed fleet',     icon: '☁',  pill: 'Pro',   pillColor: '#8b5cf6' },
+  cloud:  { label: 'Cloud Playground', sub: 'Shared, experimental',  icon: '☁',  pill: 'Try',   pillColor: '#8b5cf6' },
   vps:    { label: 'Your VPS',         sub: 'On your server',    icon: '🌐', pill: 'BYO',   pillColor: '#10b981' },
   tunnel: { label: 'Local via Tunnel', sub: 'Cloudflare tunnel', icon: '🔗', pill: 'BYO',   pillColor: '#10b981' },
   local:  { label: 'Local Direct',     sub: 'Chrome/Edge/FF',    icon: '💻', pill: 'Free',  pillColor: '#14b8a6' },
