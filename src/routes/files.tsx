@@ -5,6 +5,10 @@ import { usePageTitle } from '@/hooks/use-page-title'
 import { FileExplorerSidebar, type FileEntry } from '@/components/file-explorer'
 import { resolveTheme, useSettings } from '@/hooks/use-settings'
 import { JotxFileEditor } from '@/components/jotx-editor/JotxFileEditor'
+import {
+  SylangFileEditor,
+  isSylangFile,
+} from '@/components/sylang-editor/SylangFileEditor'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { SessionTimer } from '@/components/session-timer'
 
@@ -118,7 +122,7 @@ function FilesRoute() {
       ? entry.name.slice(entry.name.lastIndexOf('.'))
       : ''
     setSelectedFile({ path: entry.path, name: entry.name, ext })
-    if (!isJotxFile(entry.name)) {
+    if (!isJotxFile(entry.name) && !isSylangFile(entry.name)) {
       try {
         const res = await fetch(`/api/files?action=read&path=${encodeURIComponent(entry.path)}`)
         if (res.ok) {
@@ -147,6 +151,11 @@ function FilesRoute() {
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {selectedFile && isJotxFile(selectedFile.name) ? (
             <JotxFileEditor
+              filePath={selectedFile.path}
+              fileName={selectedFile.name}
+            />
+          ) : selectedFile && isSylangFile(selectedFile.name) ? (
+            <SylangFileEditor
               filePath={selectedFile.path}
               fileName={selectedFile.name}
             />
