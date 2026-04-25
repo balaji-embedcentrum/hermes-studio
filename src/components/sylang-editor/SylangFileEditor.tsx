@@ -41,6 +41,16 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>(null)
   const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Original raw text from disk. Used as the safety baseline so we never
+  // overwrite a file with significantly less content than it had — e.g.
+  // when a parser/serializer round-trip drops blocks the editor schema
+  // didn't recognize.
+  const originalContentRef = useRef<string>('')
+  // Until the user has actually focused/typed in the editor, we treat the
+  // doc as read-only and refuse to write anything. TipTap's content
+  // normalization can fire onUpdate during schema validation; without this
+  // gate that would auto-save a possibly-mangled doc back to disk.
+  const userHasEditedRef = useRef<boolean>(false)
   const localAgentUrl = useWorkspaceStore((s) => s.localHermesUrl)
   const activeWorkspacePath = useWorkspaceStore((s) => s.activeWorkspacePath)
 
@@ -48,6 +58,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
     let cancelled = false
     setLoading(true)
     setError(null)
+    userHasEditedRef.current = false
     console.log('[sylang]', { filePath, fileName, fileExtension, localAgentUrl, activeWorkspacePath })
 
     async function load() {
@@ -59,8 +70,9 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
         } else {
           const res = await fetch(`/api/files?action=read&path=${encodeURIComponent(filePath)}`)
           if (!res.ok) throw new Error(`Cannot read file: HTTP ${res.status}`)
-          const data = (await res.json()) as { content: string }
-          rawContent = data.content
+          const data = (await res.json()) as { content?: string; type?: string; path?: string }
+          console.log('[sylang] read response (raw)', data)
+          rawContent = data.content ?? ''
         }
 
         const content = rawContent ?? ''
@@ -71,6 +83,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
         console.log('[sylang] parsed tiptap doc', { blockCount, doc: tiptapDoc })
 
         if (!cancelled) {
+          originalContentRef.current = content
           setDoc(tiptapDoc)
           setLoading(false)
         }
@@ -91,13 +104,53 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
 
   const handleChange = (next: SylangTiptapDocument) => {
     setDoc(next)
+
+    // Hard guard: don't write anything until the user has actually edited.
+    // TipTap can fire onUpdate during initial content normalization; that is
+    // not a user edit and must not trigger a save. The user-edit flag is
+    // flipped by onEditor below the first time the editor receives focus or
+    // input.
+    if (!userHasEditedRef.current) {
+      console.log('[sylang] skipping save — change happened before user interaction (likely TipTap normalization)')
+      return
+    }
+
     setSaveStatus('unsaved')
     if (pendingSave.current) clearTimeout(pendingSave.current)
 
     pendingSave.current = setTimeout(async () => {
+      const original = originalContentRef.current
+      let text: string
+      try {
+        text = serializeToDSL(next, fileExtension)
+      } catch (e) {
+        console.error('[sylang] serializeToDSL threw — refusing to save', e)
+        setSaveStatus('unsaved')
+        return
+      }
+
+      // Safety: never write content that is dramatically smaller than the
+      // original. This catches parser/serializer round-trips that silently
+      // drop blocks (e.g. unsupported schema nodes stripped by TipTap).
+      if (original.length > 50 && text.length < original.length * 0.5) {
+        console.warn('[sylang] refusing to save — serialized content is dramatically smaller than original', {
+          originalLength: original.length,
+          newLength: text.length,
+          previewOriginal: original.slice(0, 80),
+          previewNew: text.slice(0, 80),
+        })
+        setSaveStatus('unsaved')
+        return
+      }
+
+      // Skip no-op writes.
+      if (text === original) {
+        setSaveStatus('saved')
+        return
+      }
+
       setSaveStatus('saving')
       try {
-        const text = serializeToDSL(next, fileExtension)
         if (localAgentUrl && activeWorkspacePath) {
           await localWriteFile(localAgentUrl, activeWorkspacePath, filePath, text)
         } else {
@@ -107,12 +160,23 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
             body: JSON.stringify({ action: 'write', path: filePath, content: text }),
           })
         }
+        originalContentRef.current = text
         setSaveStatus('saved')
       } catch (e) {
-        console.error('[sylang] Save failed:', e)
+        console.error('[sylang] save failed:', e)
         setSaveStatus('unsaved')
       }
     }, 1500)
+  }
+
+  const handleEditor = (editor: import('@tiptap/react').Editor | null) => {
+    if (!editor) return
+    const markEdited = () => {
+      userHasEditedRef.current = true
+    }
+    editor.on('focus', markEdited)
+    editor.view.dom.addEventListener('keydown', markEdited, { once: true })
+    editor.view.dom.addEventListener('input', markEdited, { once: true })
   }
 
   const docBlockCount = doc && Array.isArray(doc.content) ? doc.content.length : 0
@@ -214,6 +278,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
               document={doc}
               fileExtension={fileExtension}
               onChange={handleChange}
+              onEditor={handleEditor}
               className="prose max-w-none"
             />
           )}
