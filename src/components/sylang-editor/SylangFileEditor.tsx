@@ -25,7 +25,11 @@ interface Props {
 
 function getFileExtension(name: string): string {
   const idx = name.lastIndexOf('.')
-  return idx >= 0 ? name.slice(idx + 1) : ''
+  // Returns the dotted extension (".req", not "req") because that's the
+  // format sylang-core's SYLANG_FILE_TYPES table is keyed on. Without the
+  // leading dot, getFileTypeKeywords() returns undefined and
+  // parseDSLToTiptap() emits an empty document — i.e. a blank editor.
+  return idx >= 0 ? name.slice(idx) : ''
 }
 
 export { isSylangFile }
