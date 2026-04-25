@@ -116,7 +116,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
             sylang
           </span>
           <span className="text-xs uppercase" style={{ color: 'var(--theme-muted)' }}>
-            .{fileExtension}
+            {fileExtension}
           </span>
         </div>
         <div className="w-px h-5 shrink-0" style={{ background: 'var(--theme-border)' }} />
