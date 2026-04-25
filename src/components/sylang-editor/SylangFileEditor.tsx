@@ -44,6 +44,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
     let cancelled = false
     setLoading(true)
     setError(null)
+    console.log('[sylang]', { filePath, fileName, fileExtension, localAgentUrl, activeWorkspacePath })
 
     async function load() {
       try {
@@ -59,13 +60,18 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
         }
 
         const content = rawContent ?? ''
+        console.log('[sylang] read content', { length: content.length, preview: content.slice(0, 200) })
+
         const tiptapDoc = parseDSLToTiptap(content, fileExtension)
+        const blockCount = Array.isArray(tiptapDoc.content) ? tiptapDoc.content.length : 0
+        console.log('[sylang] parsed tiptap doc', { blockCount, doc: tiptapDoc })
 
         if (!cancelled) {
           setDoc(tiptapDoc)
           setLoading(false)
         }
       } catch (e) {
+        console.error('[sylang] load/parse failed:', e)
         if (!cancelled) {
           setError(e instanceof Error ? e.message : String(e))
           setLoading(false)
@@ -77,7 +83,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
     return () => {
       cancelled = true
     }
-  }, [filePath, fileExtension, localAgentUrl, activeWorkspacePath])
+  }, [filePath, fileName, fileExtension, localAgentUrl, activeWorkspacePath])
 
   const handleChange = (next: SylangTiptapDocument) => {
     setDoc(next)
@@ -105,8 +111,33 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
     }, 1500)
   }
 
+  const docBlockCount = doc && Array.isArray(doc.content) ? doc.content.length : 0
+  const status: string = error
+    ? `error: ${error}`
+    : loading
+      ? 'loading'
+      : doc
+        ? `doc: ${docBlockCount} blocks`
+        : 'idle'
+
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div
+      className="flex flex-col h-full min-h-0"
+      style={{ background: 'var(--theme-bg)', color: 'var(--theme-text)' }}
+    >
+      {/* Diagnostic banner — remove after editor is verified working */}
+      <div
+        style={{
+          background: '#fef3c7',
+          color: '#78350f',
+          padding: '4px 12px',
+          fontFamily: 'monospace',
+          fontSize: 11,
+          borderBottom: '1px solid #fcd34d',
+        }}
+      >
+        SYLANG · file={fileName} · ext={fileExtension} · {status}
+      </div>
       <div
         className="flex items-center gap-3 px-4 py-1.5 border-b shrink-0"
         style={{ background: 'var(--theme-sidebar)', borderColor: 'var(--theme-border)' }}
@@ -153,13 +184,35 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
       )}
 
       {doc && !loading && !error && (
-        <div className="flex-1 min-h-0 overflow-auto p-4" style={{ background: 'var(--theme-bg)' }}>
-          <SylangEditor
-            document={doc}
-            fileExtension={fileExtension}
-            onChange={handleChange}
-            className="prose max-w-none"
-          />
+        <div
+          className="flex-1 min-h-0 overflow-auto p-4"
+          style={{ background: 'var(--theme-bg)', minHeight: 200 }}
+        >
+          {docBlockCount === 0 ? (
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: '#9ca3af',
+                whiteSpace: 'pre-wrap',
+                padding: 12,
+                border: '1px dashed #4b5563',
+                borderRadius: 8,
+              }}
+            >
+              parseDSLToTiptap returned an empty document for extension &quot;{fileExtension}&quot;.
+              {'\n'}
+              This usually means the extension isn&apos;t in SYLANG_FILE_TYPES or the file
+              parser doesn&apos;t recognize the content. Open the console for details.
+            </div>
+          ) : (
+            <SylangEditor
+              document={doc}
+              fileExtension={fileExtension}
+              onChange={handleChange}
+              className="prose max-w-none"
+            />
+          )}
         </div>
       )}
     </div>
