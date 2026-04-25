@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TerminalRouteImport } from './routes/terminal'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -85,6 +86,7 @@ import { Route as ApiGithubReposRouteImport } from './routes/api/github/repos'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthGithubRouteImport } from './routes/api/auth/github'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
+import { Route as ApiAgentsTestRouteImport } from './routes/api/agents/test'
 import { Route as ApiAgentsSelectRouteImport } from './routes/api/agents/select'
 import { Route as ApiAgentsListRouteImport } from './routes/api/agents/list'
 import { Route as ApiAgentsAddRouteImport } from './routes/api/agents/add'
@@ -95,6 +97,11 @@ import { Route as ApiAgentSessionsEndRouteImport } from './routes/api/agent-sess
 import { Route as ApiSessionsSessionKeyStatusRouteImport } from './routes/api/sessions/$sessionKey.status'
 import { Route as ApiSessionsSessionKeyActiveRunRouteImport } from './routes/api/sessions/$sessionKey.active-run'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TerminalRoute = TerminalRouteImport.update({
   id: '/terminal',
   path: '/terminal',
@@ -475,6 +482,11 @@ const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => ApiAuthRoute,
 } as any)
+const ApiAgentsTestRoute = ApiAgentsTestRouteImport.update({
+  id: '/api/agents/test',
+  path: '/api/agents/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAgentsSelectRoute = ApiAgentsSelectRouteImport.update({
   id: '/api/agents/select',
   path: '/api/agents/select',
@@ -537,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteWithChildren
   '/skills': typeof SkillsRoute
   '/terminal': typeof TerminalRoute
+  '/terms': typeof TermsRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
@@ -576,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/api/agents/add': typeof ApiAgentsAddRoute
   '/api/agents/list': typeof ApiAgentsListRoute
   '/api/agents/select': typeof ApiAgentsSelectRoute
+  '/api/agents/test': typeof ApiAgentsTestRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/github': typeof ApiAuthGithubRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -623,6 +637,7 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsRoute
   '/skills': typeof SkillsRoute
   '/terminal': typeof TerminalRoute
+  '/terms': typeof TermsRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
@@ -662,6 +677,7 @@ export interface FileRoutesByTo {
   '/api/agents/add': typeof ApiAgentsAddRoute
   '/api/agents/list': typeof ApiAgentsListRoute
   '/api/agents/select': typeof ApiAgentsSelectRoute
+  '/api/agents/test': typeof ApiAgentsTestRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/github': typeof ApiAuthGithubRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -711,6 +727,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteWithChildren
   '/skills': typeof SkillsRoute
   '/terminal': typeof TerminalRoute
+  '/terms': typeof TermsRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
@@ -750,6 +767,7 @@ export interface FileRoutesById {
   '/api/agents/add': typeof ApiAgentsAddRoute
   '/api/agents/list': typeof ApiAgentsListRoute
   '/api/agents/select': typeof ApiAgentsSelectRoute
+  '/api/agents/test': typeof ApiAgentsTestRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/github': typeof ApiAuthGithubRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -800,6 +818,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/skills'
     | '/terminal'
+    | '/terms'
     | '/api/auth'
     | '/api/auth-check'
     | '/api/chat-events'
@@ -839,6 +858,7 @@ export interface FileRouteTypes {
     | '/api/agents/add'
     | '/api/agents/list'
     | '/api/agents/select'
+    | '/api/agents/test'
     | '/api/auth/callback'
     | '/api/auth/github'
     | '/api/auth/logout'
@@ -886,6 +906,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/skills'
     | '/terminal'
+    | '/terms'
     | '/api/auth'
     | '/api/auth-check'
     | '/api/chat-events'
@@ -925,6 +946,7 @@ export interface FileRouteTypes {
     | '/api/agents/add'
     | '/api/agents/list'
     | '/api/agents/select'
+    | '/api/agents/test'
     | '/api/auth/callback'
     | '/api/auth/github'
     | '/api/auth/logout'
@@ -973,6 +995,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/skills'
     | '/terminal'
+    | '/terms'
     | '/api/auth'
     | '/api/auth-check'
     | '/api/chat-events'
@@ -1012,6 +1035,7 @@ export interface FileRouteTypes {
     | '/api/agents/add'
     | '/api/agents/list'
     | '/api/agents/select'
+    | '/api/agents/test'
     | '/api/auth/callback'
     | '/api/auth/github'
     | '/api/auth/logout'
@@ -1061,6 +1085,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRouteWithChildren
   SkillsRoute: typeof SkillsRoute
   TerminalRoute: typeof TerminalRoute
+  TermsRoute: typeof TermsRoute
   ApiAuthRoute: typeof ApiAuthRouteWithChildren
   ApiAuthCheckRoute: typeof ApiAuthCheckRoute
   ApiChatEventsRoute: typeof ApiChatEventsRoute
@@ -1097,6 +1122,7 @@ export interface RootRouteChildren {
   ApiAgentsAddRoute: typeof ApiAgentsAddRoute
   ApiAgentsListRoute: typeof ApiAgentsListRoute
   ApiAgentsSelectRoute: typeof ApiAgentsSelectRoute
+  ApiAgentsTestRoute: typeof ApiAgentsTestRoute
   ApiGithubReposRoute: typeof ApiGithubReposRoute
   ApiHermesProxySplatRoute: typeof ApiHermesProxySplatRoute
   ApiKnowledgeGraphRoute: typeof ApiKnowledgeGraphRoute
@@ -1121,6 +1147,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terminal': {
       id: '/terminal'
       path: '/terminal'
@@ -1653,6 +1686,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthCallbackRouteImport
       parentRoute: typeof ApiAuthRoute
     }
+    '/api/agents/test': {
+      id: '/api/agents/test'
+      path: '/api/agents/test'
+      fullPath: '/api/agents/test'
+      preLoaderRoute: typeof ApiAgentsTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/agents/select': {
       id: '/api/agents/select'
       path: '/api/agents/select'
@@ -1825,6 +1865,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRouteWithChildren,
   SkillsRoute: SkillsRoute,
   TerminalRoute: TerminalRoute,
+  TermsRoute: TermsRoute,
   ApiAuthRoute: ApiAuthRouteWithChildren,
   ApiAuthCheckRoute: ApiAuthCheckRoute,
   ApiChatEventsRoute: ApiChatEventsRoute,
@@ -1861,6 +1902,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAgentsAddRoute: ApiAgentsAddRoute,
   ApiAgentsListRoute: ApiAgentsListRoute,
   ApiAgentsSelectRoute: ApiAgentsSelectRoute,
+  ApiAgentsTestRoute: ApiAgentsTestRoute,
   ApiGithubReposRoute: ApiGithubReposRoute,
   ApiHermesProxySplatRoute: ApiHermesProxySplatRoute,
   ApiKnowledgeGraphRoute: ApiKnowledgeGraphRoute,
