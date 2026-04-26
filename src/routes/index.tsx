@@ -95,8 +95,14 @@ function LandingPage() {
       {/* ---------- Hero screenshot ---------- */}
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="rounded-lg overflow-hidden border border-primary-200/60 shadow-2xl shadow-black/40">
+          {/*
+            Hero asset. Placeholder is /landing-hero.svg (a stylized
+            two-pane mockup so the layout works out of the box). Drop a
+            real PNG screenshot at /landing-hero.png and change the src
+            below to swap it in.
+          */}
           <img
-            src="/landing-hero.png"
+            src="/landing-hero.svg"
             alt="Hermes Studio interface — chat with the agent on the left, code editor with the agent's edits on the right."
             className="w-full block"
             loading="eager"
