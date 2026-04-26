@@ -8,6 +8,7 @@
  * serialized DSL back when the editor reports a content change.
  */
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { localReadFile, localWriteFile } from '@/lib/local-file-ops'
 import {
@@ -40,8 +41,15 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>(null)
   const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null)
   const originalContentRef = useRef<string>('')
+  const postRef = useRef<((msg: unknown) => void) | null>(null)
   const localAgentUrl = useWorkspaceStore((s) => s.localHermesUrl)
   const activeWorkspacePath = useWorkspaceStore((s) => s.activeWorkspacePath)
+  const navigate = useNavigate()
+
+  // Workspace prefix is the first three path segments: <userId>/<login>/<repo>.
+  // Used to scope iframe-side requests (symbol lookups etc.) to the right
+  // workspace and to translate symbol-id navigation back into a file path.
+  const workspacePrefix = filePath.split('/').filter(Boolean).slice(0, 3).join('/')
 
   useEffect(() => {
     let cancelled = false
@@ -192,6 +200,103 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
             relativePath={filePath}
             onChange={handleChange}
             bundleUrl="/sylang-editor/main.html"
+            theme="dark"
+            onReady={(post) => {
+              postRef.current = post
+            }}
+            onMessage={(raw) => {
+              const msg = raw as
+                | {
+                    type?: string
+                    requestId?: string
+                    symbolId?: string
+                    fileUri?: string
+                    path?: string
+                    [k: string]: unknown
+                  }
+                | null
+              if (!msg || typeof msg !== 'object') return
+              const reply = (result: unknown, ok = true, error?: string) => {
+                if (!msg.requestId) return
+                postRef.current?.({ requestId: msg.requestId, ok, result, error })
+              }
+
+              switch (msg.type) {
+                case 'log':
+                  // forward iframe debug logs to the host console
+                  console.info('[sylang]', msg)
+                  return
+
+                // ── Navigation ──────────────────────────────────────────────
+                case 'openSymbolById': {
+                  // Symbol click. We don't yet have a server-side symbol index
+                  // so we can only navigate when the iframe also gives us a
+                  // fileUri. Otherwise this is a no-op (graceful degradation).
+                  const target = msg.fileUri
+                  if (typeof target === 'string' && target) {
+                    void navigate({
+                      to: '/files',
+                      search: { path: target },
+                    } as never)
+                  }
+                  return
+                }
+                case 'openFile': {
+                  if (typeof msg.path === 'string' && msg.path) {
+                    void navigate({
+                      to: '/files',
+                      search: { path: msg.path },
+                    } as never)
+                  }
+                  return
+                }
+
+                // ── Stub responses (so the iframe doesn't hang) ─────────────
+                // These would normally be backed by /api/sylang/* endpoints
+                // (port pending). Replying with empty results is enough to
+                // close the loading spinners — features will light up once
+                // the corresponding server routes land.
+                case 'getDiagram':
+                case 'getVariantMatrix':
+                  reply(null, false, 'Not yet implemented in @sylang-core')
+                  return
+                case 'getSymbolDetails':
+                  reply({ symbol: null })
+                  return
+                case 'getSlashCompletions':
+                  reply({ items: [] })
+                  return
+                case 'getPropertySchema':
+                  reply({ schema: [] })
+                  return
+                case 'getBacklinks':
+                  reply([])
+                  return
+                case 'pickAttachment':
+                case 'pickReqAttachment':
+                  reply(null)
+                  return
+                case 'resolveDocAsset':
+                case 'resolveReqAsset':
+                  reply({ webviewUri: '' })
+                  return
+                case 'requestDocument':
+                  // The iframe is asking for the doc again; resend it.
+                  postRef.current?.({
+                    type: 'init',
+                    document: doc,
+                    fileExtension,
+                    fileName,
+                    relativePath: filePath,
+                    colorPalette: 'teal',
+                    disabledBlockIds: [],
+                  })
+                  return
+
+                default:
+                  return
+              }
+            }}
           />
         </div>
       )}
