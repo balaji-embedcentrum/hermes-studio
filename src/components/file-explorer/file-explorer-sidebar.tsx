@@ -14,6 +14,7 @@ import {
   Upload01Icon,
 } from '@hugeicons/core-free-icons'
 import FilePreviewDialog from './file-preview-dialog'
+import { GitPanel, type GitDiffSelection } from '../git-panel'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import {
@@ -52,6 +53,7 @@ type FileExplorerSidebarProps = {
   onToggle: () => void
   onInsertReference: (reference: string) => void
   onOpenFile?: (entry: FileEntry) => void
+  onOpenDiff?: (selection: GitDiffSelection) => void
   selectedPath?: string
   initialPath?: string
   hidden?: boolean
@@ -140,6 +142,7 @@ export function FileExplorerSidebar({
   onToggle,
   onInsertReference,
   onOpenFile,
+  onOpenDiff,
   selectedPath = '',
   initialPath = '',
   hidden = false,
@@ -535,6 +538,7 @@ export function FileExplorerSidebar({
 
   // Resizable sidebar width
   const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [sidebarTab, setSidebarTab] = useState<'files' | 'git'>('files')
   const isDraggingSidebar = useRef(false)
 
   const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
@@ -581,6 +585,48 @@ export function FileExplorerSidebar({
           className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-[var(--theme-accent)] transition-colors"
         />
       )}
+
+      {/* Top-level tab bar: Files | Git */}
+      <div
+        className="flex border-b border-primary-200"
+        style={{ borderColor: 'var(--theme-border)' }}
+      >
+        {(['files', 'git'] as const).map((t) => {
+          const active = sidebarTab === t
+          return (
+            <button
+              key={t}
+              onClick={() => setSidebarTab(t)}
+              className="flex-1 px-2 py-1.5 text-xs font-medium transition-colors"
+              style={{
+                color: active ? 'var(--theme-text)' : 'var(--theme-muted)',
+                borderBottom: active
+                  ? '2px solid var(--theme-accent)'
+                  : '2px solid transparent',
+                marginBottom: '-1px',
+              }}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                {t === 'files' ? (
+                  <HugeiconsIcon icon={Folder01Icon} size={14} />
+                ) : (
+                  <HugeiconsIcon icon={GitBranchIcon} size={14} />
+                )}
+                {t === 'files' ? 'Files' : 'Git'}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {sidebarTab === 'git' && (
+        <div className="min-h-0 flex-1">
+          <GitPanel onOpenDiff={onOpenDiff} />
+        </div>
+      )}
+
+      {sidebarTab === 'files' && (
+        <>
       <div className="flex items-center justify-between h-12 px-3 border-b border-primary-200">
         <div className="text-sm font-semibold text-primary-900">
           {ROOT_LABEL}
@@ -715,6 +761,8 @@ export function FileExplorerSidebar({
         </ScrollAreaScrollbar>
         <ScrollAreaCorner />
       </ScrollAreaRoot>
+        </>
+      )}
 
       <input
         ref={uploadInputRef}
