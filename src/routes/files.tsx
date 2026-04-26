@@ -87,6 +87,13 @@ function FilesRoute() {
   const [editorValue, setEditorValue] = useState(INITIAL_EDITOR_VALUE)
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null)
   const [selectedDiff, setSelectedDiff] = useState<GitDiffSelection | null>(null)
+  // Save-state tracking. ``loadedContent`` is what we last read from disk
+  // for ``loadedPath``; comparing against ``editorValue`` gives us "dirty"
+  // without needing a separate dirty flag the user has to remember to set.
+  const [loadedContent, setLoadedContent] = useState('')
+  const [loadedPath, setLoadedPath] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [savedOk, setSavedOk] = useState(false)
   const resolvedTheme = resolveTheme(settings.theme)
   const setActiveWorkspacePath = useWorkspaceStore((s) => s.setActiveWorkspacePath)
 
@@ -121,12 +128,15 @@ function FilesRoute() {
       : ''
     setSelectedDiff(null)
     setSelectedFile({ path: entry.path, name: entry.name, ext })
+    setSavedOk(false)
     if (!isJotxFile(entry.name)) {
       try {
         const res = await fetch(`/api/files?action=read&path=${encodeURIComponent(entry.path)}`)
         if (res.ok) {
           const { content } = await res.json() as { content: string }
           setEditorValue(content)
+          setLoadedContent(content)
+          setLoadedPath(entry.path)
         }
       } catch {
         // keep existing editor value
@@ -138,6 +148,57 @@ function FilesRoute() {
     setSelectedFile(null)
     setSelectedDiff(selection)
   }, [])
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Save flow
+  //
+  // ``dirty`` is computed, not stored — true when the editor's value diverges
+  // from what was last loaded from disk for the SAME path. The path check
+  // matters because handleOpenFile sets selectedFile + editorValue + loaded*
+  // in sequence; without it we'd briefly compute dirty=true during a
+  // file-switch and the auto-save effect would race the load.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const dirty =
+    !!selectedFile &&
+    loadedPath === selectedFile.path &&
+    editorValue !== loadedContent
+
+  const commitSave = useCallback(async (path: string, value: string) => {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/files', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'write', path, content: value }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setLoadedContent(value)
+      setLoadedPath(path)
+      setSavedOk(true)
+      setTimeout(() => setSavedOk(false), 2000)
+    } catch {
+      // Silent failure for now; user can retry via the Save button.
+      // TODO: surface via toast when toast system lands.
+    } finally {
+      setSaving(false)
+    }
+  }, [])
+
+  const handleSave = useCallback(() => {
+    if (!selectedFile || !dirty) return
+    void commitSave(selectedFile.path, editorValue)
+  }, [selectedFile, dirty, editorValue, commitSave])
+
+  // Auto-save: 1.5s after the user stops typing. Cancels on next edit, file
+  // switch, or while a save is in flight.
+  useEffect(() => {
+    if (!selectedFile || !dirty || saving) return
+    const handle = setTimeout(() => {
+      void commitSave(selectedFile.path, editorValue)
+    }, 1500)
+    return () => clearTimeout(handle)
+  }, [selectedFile, dirty, saving, editorValue, commitSave])
 
   return (
     <div className="h-full min-h-0 overflow-hidden bg-surface text-primary-900">
@@ -176,6 +237,43 @@ function FilesRoute() {
                 <span style={{ color: 'var(--theme-muted)' }}>
                   {guessLanguage(selectedFile.ext)}
                 </span>
+                {/* Save state — auto-save fires 1.5s after edits stop. */}
+                <span
+                  className="text-[11px] font-medium tabular-nums"
+                  style={{
+                    color: saving
+                      ? 'var(--theme-muted)'
+                      : savedOk
+                        ? '#10b981'
+                        : dirty
+                          ? '#f59e0b'
+                          : 'transparent',
+                  }}
+                  aria-live="polite"
+                >
+                  {saving
+                    ? 'Saving…'
+                    : savedOk
+                      ? '✓ Saved'
+                      : dirty
+                        ? 'Unsaved'
+                        : '·'}
+                </span>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!dirty || saving}
+                  className="rounded px-2 py-0.5 text-[11px] font-medium disabled:opacity-40"
+                  style={{
+                    background: dirty && !saving ? 'var(--theme-accent)' : 'transparent',
+                    color: dirty && !saving ? '#fff' : 'var(--theme-muted)',
+                    border: '1px solid var(--theme-border)',
+                  }}
+                  title="Save now (auto-saves after 1.5s anyway)"
+                >
+                  Save
+                </button>
               </div>
               <div className="min-h-0 flex-1">
                 <CodeMirrorEditor
