@@ -236,3 +236,210 @@ export async function localGitPush(
   )
   if (!res.ok) throw new Error('Git push failed')
 }
+
+// ---------------------------------------------------------------------------
+// Git read endpoints (require hermes-adapter PR #10)
+// ---------------------------------------------------------------------------
+
+import type {
+  GitStatus,
+  GitCommit,
+  GitBranches,
+  GitShowResult,
+  GitDiffResult,
+  GitDiffOptions,
+  GitCommitInput,
+  GitCheckoutInput,
+  GitBranchInput,
+} from '../types/git'
+
+async function gitFetch<T>(
+  agentUrl: string,
+  repo: string,
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const res = await fetch(
+    `${agentUrl}/ws/${encodeURIComponent(repo)}/git/${path}`,
+    { signal: AbortSignal.timeout(30_000), ...init },
+  )
+  const data = (await res.json().catch(() => ({}))) as {
+    status?: string
+    message?: string
+  } & Record<string, unknown>
+  if (!res.ok || data.status !== 'ok') {
+    throw new Error(data.message ?? `Git ${path} failed (${res.status})`)
+  }
+  return data as unknown as T
+}
+
+export async function localGitStatus(
+  agentUrl: string,
+  rootPath: string,
+): Promise<GitStatus> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  const { changed, ahead, behind } = await gitFetch<{
+    changed: GitStatus['changed']
+    ahead: number
+    behind: number
+  }>(agentUrl, repo, 'status')
+  return { changed, ahead, behind }
+}
+
+export async function localGitLog(
+  agentUrl: string,
+  rootPath: string,
+  limit = 50,
+): Promise<GitCommit[]> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  const { commits } = await gitFetch<{ commits: GitCommit[] }>(
+    agentUrl,
+    repo,
+    `log?limit=${limit}`,
+  )
+  return commits
+}
+
+export async function localGitBranches(
+  agentUrl: string,
+  rootPath: string,
+): Promise<GitBranches> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  return gitFetch<GitBranches>(agentUrl, repo, 'branches')
+}
+
+export async function localGitDiff(
+  agentUrl: string,
+  rootPath: string,
+  opts: GitDiffOptions = {},
+): Promise<GitDiffResult> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  const params = new URLSearchParams()
+  if (opts.path) params.set('path', opts.path)
+  if (opts.staged) params.set('staged', 'true')
+  if (opts.ref) params.set('ref', opts.ref)
+  const qs = params.toString()
+  return gitFetch<GitDiffResult>(agentUrl, repo, `diff${qs ? `?${qs}` : ''}`)
+}
+
+export async function localGitShow(
+  agentUrl: string,
+  rootPath: string,
+  sha: string,
+): Promise<GitShowResult> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  return gitFetch<GitShowResult>(
+    agentUrl,
+    repo,
+    `show/${encodeURIComponent(sha)}`,
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Git write endpoints (require hermes-adapter PR #11)
+// ---------------------------------------------------------------------------
+
+export async function localGitStage(
+  agentUrl: string,
+  rootPath: string,
+  paths: string[],
+): Promise<void> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  await gitFetch(agentUrl, repo, 'stage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paths }),
+  })
+}
+
+export async function localGitUnstage(
+  agentUrl: string,
+  rootPath: string,
+  paths: string[],
+): Promise<void> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  await gitFetch(agentUrl, repo, 'unstage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paths }),
+  })
+}
+
+export async function localGitDiscard(
+  agentUrl: string,
+  rootPath: string,
+  paths: string[],
+): Promise<void> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  await gitFetch(agentUrl, repo, 'discard', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paths }),
+  })
+}
+
+export async function localGitCheckout(
+  agentUrl: string,
+  rootPath: string,
+  input: GitCheckoutInput,
+): Promise<void> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  await gitFetch(agentUrl, repo, 'checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export async function localGitCreateBranch(
+  agentUrl: string,
+  rootPath: string,
+  input: GitBranchInput,
+): Promise<void> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  await gitFetch(agentUrl, repo, 'branch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export async function localGitFetch(
+  agentUrl: string,
+  rootPath: string,
+): Promise<void> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  await gitFetch(agentUrl, repo, 'fetch', { method: 'POST' })
+}
+
+/**
+ * Commit variant that supports selective staging via `auto_stage: false`.
+ * `localGitCommit` (above) preserves the legacy stage-everything behavior.
+ */
+export async function localGitCommitWithOptions(
+  agentUrl: string,
+  rootPath: string,
+  input: GitCommitInput,
+): Promise<void> {
+  const repo = extractRepoName(rootPath)
+  if (!repo) throw new Error('Invalid path')
+  await gitFetch(agentUrl, repo, 'commit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: input.message,
+      auto_stage: input.autoStage ?? true,
+    }),
+  })
+}
