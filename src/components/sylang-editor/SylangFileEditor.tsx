@@ -256,9 +256,16 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
                 // (port pending). Replying with empty results is enough to
                 // close the loading spinners — features will light up once
                 // the corresponding server routes land.
+                //
+                // getDiagram is special: the webview doesn't use requestId
+                // for it. It waits for a *type-keyed* reply { type:
+                // 'diagramData', data, diagramType }. Sending data: null
+                // terminates the spinner and shows the empty-state.
                 case 'getDiagram':
+                  postRef.current?.({ type: 'diagramData', data: null, diagramType: null })
+                  return
                 case 'getVariantMatrix':
-                  reply(null, false, 'Not yet implemented in @sylang-core')
+                  postRef.current?.({ type: 'variantMatrixData', data: null })
                   return
                 case 'getSymbolDetails':
                   reply({ symbol: null })
