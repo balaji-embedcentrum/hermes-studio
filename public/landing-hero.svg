@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Hermes Studio interface placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0e1422"/>
+      <stop offset="100%" stop-color="#070a14"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1600" height="44" fill="#10182a"/>
+  <circle cx="22" cy="22" r="6" fill="#3a4257"/>
+  <circle cx="44" cy="22" r="6" fill="#3a4257"/>
+  <circle cx="66" cy="22" r="6" fill="#3a4257"/>
+
+  <!-- Left rail (chat) -->
+  <rect x="0" y="44" width="640" height="856" fill="#0c1222"/>
+  <rect x="0" y="44" width="640" height="856" fill="url(#accent)"/>
+
+  <!-- Chat bubbles (faint) -->
+  <rect x="28" y="80" width="220" height="14" rx="3" fill="#1d2740" opacity="0.7"/>
+  <rect x="28" y="104" width="380" height="14" rx="3" fill="#1d2740" opacity="0.5"/>
+  <rect x="28" y="128" width="290" height="14" rx="3" fill="#1d2740" opacity="0.5"/>
+
+  <rect x="28" y="180" width="540" height="86" rx="6" fill="#15203a" stroke="#1f2c4a" stroke-width="1"/>
+  <rect x="42" y="200" width="120" height="10" rx="2" fill="#9ca3c8" opacity="0.8"/>
+  <rect x="42" y="222" width="480" height="9" rx="2" fill="#5d6788" opacity="0.6"/>
+  <rect x="42" y="240" width="420" height="9" rx="2" fill="#5d6788" opacity="0.6"/>
+
+  <rect x="28" y="296" width="540" height="68" rx="6" fill="#15203a" stroke="#1f2c4a" stroke-width="1"/>
+  <rect x="42" y="316" width="180" height="10" rx="2" fill="#9ca3c8" opacity="0.8"/>
+  <rect x="42" y="338" width="460" height="9" rx="2" fill="#5d6788" opacity="0.6"/>
+
+  <!-- Tool call chip -->
+  <rect x="28" y="394" width="240" height="28" rx="14" fill="#1a2342" stroke="#2e3b65" stroke-width="1"/>
+  <rect x="46" y="406" width="200" height="6" rx="2" fill="#6366f1" opacity="0.6"/>
+
+  <!-- Vertical divider -->
+  <rect x="640" y="44" width="1" height="856" fill="#1f2c4a"/>
+
+  <!-- Right pane (editor) -->
+  <rect x="641" y="44" width="959" height="44" fill="#10182a"/>
+  <!-- file tab -->
+  <rect x="660" y="56" width="160" height="22" rx="3" fill="#15203a"/>
+  <rect x="676" y="64" width="120" height="6" rx="2" fill="#5d6788"/>
+
+  <!-- Gutter -->
+  <rect x="641" y="88" width="50" height="812" fill="#0a0f1d"/>
+
+  <!-- Code lines -->
+  <g font-family="ui-monospace, monospace" font-size="13" fill="#5d6788">
+    <text x="668" y="120" text-anchor="end">1</text>
+    <text x="668" y="142" text-anchor="end">2</text>
+    <text x="668" y="164" text-anchor="end">3</text>
+    <text x="668" y="186" text-anchor="end">4</text>
+    <text x="668" y="208" text-anchor="end">5</text>
+    <text x="668" y="230" text-anchor="end">6</text>
+    <text x="668" y="252" text-anchor="end">7</text>
+    <text x="668" y="274" text-anchor="end">8</text>
+    <text x="668" y="296" text-anchor="end">9</text>
+    <text x="668" y="318" text-anchor="end">10</text>
+  </g>
+
+  <g>
+    <rect x="710" y="110" width="280" height="9" rx="2" fill="#9ca3c8" opacity="0.7"/>
+    <rect x="710" y="132" width="540" height="9" rx="2" fill="#7a89c4" opacity="0.6"/>
+    <rect x="730" y="154" width="420" height="9" rx="2" fill="#5d6788" opacity="0.6"/>
+    <rect x="730" y="176" width="380" height="9" rx="2" fill="#5d6788" opacity="0.6"/>
+    <rect x="710" y="198" width="200" height="9" rx="2" fill="#9ca3c8" opacity="0.7"/>
+    <rect x="730" y="220" width="500" height="9" rx="2" fill="#5d6788" opacity="0.6"/>
+    <rect x="710" y="242" width="640" height="9" rx="2" fill="#7a89c4" opacity="0.5"/>
+    <rect x="730" y="264" width="320" height="9" rx="2" fill="#5d6788" opacity="0.5"/>
+    <rect x="730" y="286" width="460" height="9" rx="2" fill="#5d6788" opacity="0.5"/>
+    <rect x="710" y="308" width="160" height="9" rx="2" fill="#9ca3c8" opacity="0.6"/>
+  </g>
+
+  <!-- Subtle "placeholder" text -->
+  <text x="800" y="500" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" fill="#3a4768" text-anchor="middle" letter-spacing="0.1em">
+    SCREENSHOT PLACEHOLDER
+  </text>
+  <text x="800" y="522" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" fill="#2a324a" text-anchor="middle">
+    Drop a real PNG at /landing-hero.png to replace
+  </text>
+</svg>
