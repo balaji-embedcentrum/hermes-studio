@@ -9,6 +9,7 @@
  * Components consume this hook and never branch on transport mode themselves.
  */
 
+import { useEffect } from 'react'
 import {
   useMutation,
   useQuery,
@@ -135,9 +136,40 @@ function useGitContext(): GitContext | null {
 // Public hooks
 // ---------------------------------------------------------------------------
 
+/**
+ * Derive the repo name (basename of the workspace root) for URL construction
+ * on the local-direct SSE path. Remote mode uses the full `userId/login/repo`
+ * workspace path and is handled by the SSR proxy.
+ */
+function extractRepoName(absPath: string): string {
+  const segs = absPath.replace(/\\/g, '/').split('/').filter(Boolean)
+  return segs[segs.length - 1] || ''
+}
+
 export function useGit() {
   const ctx = useGitContext()
   const qc = useQueryClient()
+
+  // Push-based status updates (phase G). For local mode we connect directly
+  // to the adapter's SSE stream. Remote mode keeps the polling fallback —
+  // proxying SSE through the Studio SSR server is a future enhancement.
+  useEffect(() => {
+    if (!ctx || !ctx.isLocal || !ctx.localUrl || !ctx.localRoot) return
+    const repo = extractRepoName(ctx.localRoot)
+    if (!repo) return
+    const url = `${ctx.localUrl}/ws/${encodeURIComponent(repo)}/git/events`
+    const es = new EventSource(url)
+    const onChange = () => {
+      qc.invalidateQueries({ queryKey: ['git', 'status', ctx.cacheKey] })
+    }
+    es.addEventListener('git.status.changed', onChange)
+    // Also clean up on error — browsers will auto-reconnect; we don't need to
+    // fight that, but close on unmount.
+    return () => {
+      es.removeEventListener('git.status.changed', onChange)
+      es.close()
+    }
+  }, [ctx?.cacheKey, ctx?.isLocal, ctx?.localUrl, ctx?.localRoot, qc])
 
   const invalidate = (kind?: 'status' | 'log' | 'branches') => {
     if (!ctx) return
@@ -162,7 +194,9 @@ export function useGit() {
         : remoteGet<GitStatus>('status', ctx.remotePath)
     },
     enabled,
-    refetchInterval: 10_000,
+    // Local mode gets push updates via SSE (see useEffect above) — polling is
+    // just a loose backup. Remote mode has no SSE yet, so it polls faster.
+    refetchInterval: ctx?.isLocal ? 30_000 : 5_000,
   })
 
   const log = useQuery<GitCommit[]>({
