@@ -1,103 +1,290 @@
 'use client'
 
-import { createFileRoute } from '@tanstack/react-router'
-import { GitFork, Bot, Terminal, FileCode, Folder, Sparkles } from 'lucide-react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  GitFork,
+  GitBranch,
+  Server,
+  Lock,
+  ExternalLink,
+} from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
 })
-
-const FEATURES = [
-  { icon: Bot, title: 'AI Agent Chat', desc: 'Real-time SSE streaming with tool-call visibility. Bring your own Anthropic or OpenAI-compatible backend.' },
-  { icon: FileCode, title: 'Code Editor', desc: 'CodeMirror 6 with syntax highlighting for 20+ languages. Rich Jotx editor for structured notes.' },
-  { icon: Terminal, title: 'Terminal', desc: 'Full xterm terminal inside the browser, wired to your workspace shell.' },
-  { icon: Folder, title: 'GitHub Workspaces', desc: 'Sign in with GitHub, clone any repo, and let the agent read, create, and modify files in place.' },
-  { icon: Sparkles, title: 'Memory & Skills', desc: "Browse the agent's memory store and skill library. Agent behavior shaped by your context." },
-  { icon: GitFork, title: 'Open Source', desc: 'MIT licensed. Self-host or run locally. No vendor lock-in.' },
-]
 
 function LandingPage() {
   function handleLogin() {
     window.location.href = '/api/auth/github'
   }
 
-  const bg = '#0a0e17'
-  const cardBg = '#111827'
-  const borderColor = '#1e293b'
-  const textPrimary = '#f1f5f9'
-  const textSecondary = '#94a3b8'
-  const textMuted = '#64748b'
-  const accent = '#6366f1'
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: bg, color: textPrimary, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,14,23,0.85)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${borderColor}` }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/hermes-crest.svg" alt="Hermes Studio" style={{ width: 26, height: 26 }} />
-            <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em', color: textPrimary }}>Hermes Studio</span>
+    <div className="min-h-screen flex flex-col bg-surface text-ink antialiased">
+      {/* ---------- Header ---------- */}
+      <header className="border-b border-primary-200/60">
+        <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/hermes-crest.svg"
+              alt=""
+              className="w-6 h-6"
+              aria-hidden="true"
+            />
+            <span className="text-[15px] font-semibold tracking-tight">
+              Hermes Studio
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={handleLogin}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 8, background: textPrimary, color: bg, border: 'none', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-              <GitFork style={{ width: 15, height: 15 }} />
-              Sign in with GitHub
-            </button>
-          </div>
+          <nav className="flex items-center gap-5 text-sm text-primary-600">
+            <Link
+              to="/agents"
+              className="hover:text-ink transition-colors"
+            >
+              Agents
+            </Link>
+            <a
+              href="https://github.com/balaji-embedcentrum/hermes-studio"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink transition-colors inline-flex items-center gap-1"
+            >
+              GitHub
+              <ExternalLink className="w-3 h-3" aria-hidden="true" />
+            </a>
+            <Link
+              to="/terms"
+              className="hover:text-ink transition-colors"
+            >
+              Terms
+            </Link>
+          </nav>
         </div>
-      </nav>
+      </header>
 
-      <section style={{ maxWidth: 900, margin: '0 auto', padding: '96px 24px 72px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: 900, lineHeight: 1.06, letterSpacing: '-0.04em', marginBottom: 24, color: textPrimary }}>
-          {"Your AI agent's "}
-          <span style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            command center
-          </span>.
+      {/* ---------- Hero ---------- */}
+      <section className="mx-auto max-w-3xl px-6 pt-20 pb-12 text-center">
+        <h1 className="text-[34px] sm:text-[42px] leading-[1.15] font-semibold tracking-tight text-ink">
+          A self-hostable browser IDE for working with
+          <br className="hidden sm:block" />{' '}
+          AI coding agents on real Git repositories.
         </h1>
-        <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: textSecondary, maxWidth: 600, margin: '0 auto 48px', lineHeight: 1.75 }}>
-          Chat, files, terminal, memory, skills — one workspace for working with AI coding agents.
-          Sign in with GitHub, open any repo, and collaborate.
+        <p className="mt-6 text-[15px] sm:text-base text-primary-600 max-w-xl mx-auto leading-relaxed">
+          Sign in with GitHub. Open any repo. The agent reads, edits, and runs
+          shell commands in a workspace scoped to you — you watch the stream in
+          real time.
         </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={handleLogin}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '14px 28px', borderRadius: 10, background: accent, color: '#fff', border: 'none', fontWeight: 700, fontSize: 16, cursor: 'pointer', boxShadow: `0 4px 24px ${accent}50` }}>
-            <GitFork style={{ width: 18, height: 18 }} />
+        <div className="mt-10 flex items-center justify-center gap-3">
+          <button
+            onClick={handleLogin}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-accent-500 text-white text-sm font-medium hover:bg-accent-600 transition-colors"
+          >
+            <GitFork className="w-4 h-4" aria-hidden="true" />
             Sign in with GitHub
           </button>
-        </div>
-        <p style={{ fontSize: 13, color: textMuted, marginTop: 20, lineHeight: 1.6, maxWidth: 540, marginLeft: 'auto', marginRight: 'auto' }}>
-          Experimental playground for trying Hermes agents — provided as is. By signing in
-          you agree to the{' '}
           <a
-            href="/terms"
-            style={{ color: accent, textDecoration: 'underline' }}
+            href="https://github.com/balaji-embedcentrum/hermes-studio#readme"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary-600 hover:text-ink transition-colors inline-flex items-center gap-1"
           >
-            Terms &amp; Conditions
+            Read the docs
+            <ExternalLink className="w-3 h-3" aria-hidden="true" />
           </a>
-          . For private workspaces, host your own agent.
-        </p>
-      </section>
-
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 96px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <div key={title} style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: 12, padding: 24 }}>
-              <Icon style={{ width: 24, height: 24, color: accent, marginBottom: 12 }} />
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, color: textPrimary }}>{title}</div>
-              <div style={{ fontSize: 14, color: textMuted, lineHeight: 1.6 }}>{desc}</div>
-            </div>
-          ))}
         </div>
       </section>
 
-      <footer style={{ marginTop: 'auto', borderTop: `1px solid ${borderColor}`, padding: '32px 24px', textAlign: 'center', color: textMuted, fontSize: 13 }}>
-        <div style={{ marginBottom: 6 }}>
-          Hermes Studio — MIT licensed. See{' '}
-          <a href="https://github.com/balaji-embedcentrum/hermes-studio/blob/main/CREDITS.md" target="_blank" rel="noopener noreferrer" style={{ color: accent, textDecoration: 'none' }}>
-            CREDITS
-          </a>.
+      {/* ---------- Hero screenshot ---------- */}
+      <section className="mx-auto max-w-5xl px-6 pb-24">
+        <div className="rounded-lg overflow-hidden border border-primary-200/60 shadow-2xl shadow-black/40">
+          {/*
+            Hero asset. Placeholder is /landing-hero.svg (a stylized
+            two-pane mockup so the layout works out of the box). Drop a
+            real PNG screenshot at /landing-hero.png and change the src
+            below to swap it in.
+          */}
+          <img
+            src="/landing-hero.svg"
+            alt="Hermes Studio interface — chat with the agent on the left, code editor with the agent's edits on the right."
+            className="w-full block"
+            loading="eager"
+          />
+        </div>
+      </section>
+
+      {/* ---------- What it is ---------- */}
+      <section className="mx-auto max-w-3xl px-6 pb-24">
+        <div className="space-y-12">
+          <Block
+            icon={GitBranch}
+            heading="A workspace per user, scoped to one repo at a time."
+          >
+            When you start a session, Studio clones the GitHub repo of your
+            choice into a per-user directory on the agent host. The agent only
+            sees that directory — kernel-enforced, not prompt-enforced. You see
+            every tool call and file edit as it happens via SSE streaming.
+            Commits push back to your GitHub.
+          </Block>
+
+          <Block
+            icon={Server}
+            heading="Backed by hermes-agent. Choose your runtime."
+          >
+            The chat tier runs the open-source{' '}
+            <a
+              href="https://github.com/NousResearch/hermes-agent"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent-500 hover:underline"
+            >
+              hermes-agent
+            </a>{' '}
+            from NousResearch. Three ways to point Studio at one: try it on
+            our shared Cloud Playground, install hermes-adapter on your own VPS,
+            or tunnel from your laptop for air-gapped work.
+          </Block>
+
+          <Block
+            icon={Lock}
+            heading="Open source. Your data stays where you put it."
+          >
+            MIT licensed. Auth is GitHub OAuth via your own Supabase project —
+            session JWTs in HttpOnly cookies, no client-side token exposure.
+            Filesystem APIs are scoped to a workspace root with no
+            path-traversal escape. Self-host the entire stack with one
+            docker-compose.
+          </Block>
+        </div>
+      </section>
+
+      {/* ---------- Two things you do ---------- */}
+      <section className="mx-auto max-w-3xl px-6 pb-24">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-primary-500 mb-5">
+          Two things you do
+        </h2>
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div className="border-l-2 border-primary-200/60 pl-4">
+            <h3 className="text-[15px] font-semibold text-ink">Projects</h3>
+            <p className="mt-1.5 text-[14px] text-primary-600 leading-relaxed">
+              Each project is one of your GitHub repos cloned into a per-user
+              workspace on the agent host. Pick a project, hand it to an agent,
+              and watch the work happen in your repo.
+            </p>
+          </div>
+          <div className="border-l-2 border-primary-200/60 pl-4">
+            <h3 className="text-[15px] font-semibold text-ink">Agents</h3>
+            <p className="mt-1.5 text-[14px] text-primary-600 leading-relaxed">
+              Pick from the roster on the cloud playground, or register your
+              own (BYO VPS, BYO tunnel). Each agent has its own personality
+              and runtime config, and only sees the project you've handed it.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- Three ways to run ---------- */}
+      <section className="mx-auto max-w-3xl px-6 pb-24">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-primary-500 mb-5">
+          Three ways to run it
+        </h2>
+        <div className="space-y-5">
+          <RunMode
+            label="Cloud Playground"
+            who="Trying it out, no setup"
+            what="Shared infrastructure on our cloud fleet. Experimental, no SLA. Pick from a roster of named agents."
+          />
+          <RunMode
+            label="Your VPS"
+            who="Private, persistent"
+            what="Install hermes-adapter on your server, point Studio at the URL. Your repos and sessions stay on your hardware."
+          />
+          <RunMode
+            label="Local via Tunnel"
+            who="Air-gapped or behind a corporate firewall"
+            what="Cloudflare tunnel from your laptop. Studio reaches your local dev box without exposing a public port."
+          />
+        </div>
+      </section>
+
+      {/* ---------- Footer ---------- */}
+      <footer className="mt-auto border-t border-primary-200/60">
+        <div className="mx-auto max-w-5xl px-6 py-6 flex items-center justify-between text-xs text-primary-500">
+          <span>MIT licensed.</span>
+          <div className="flex items-center gap-5">
+            <a
+              href="https://github.com/balaji-embedcentrum/hermes-studio"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://github.com/balaji-embedcentrum/hermes-studio/blob/main/CREDITS.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink transition-colors"
+            >
+              Credits
+            </a>
+            <Link
+              to="/terms"
+              className="hover:text-ink transition-colors"
+            >
+              Terms
+            </Link>
+          </div>
         </div>
       </footer>
+    </div>
+  )
+}
+
+function Block({
+  icon: Icon,
+  heading,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
+  heading: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex gap-5">
+      <div className="flex-shrink-0 mt-1">
+        <Icon
+          className="w-5 h-5 text-accent-500"
+          aria-hidden={true}
+        />
+      </div>
+      <div>
+        <h3 className="text-[17px] font-semibold text-ink leading-snug">
+          {heading}
+        </h3>
+        <p className="mt-2 text-[15px] text-primary-600 leading-relaxed">
+          {children}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function RunMode({
+  label,
+  who,
+  what,
+}: {
+  label: string
+  who: string
+  what: string
+}) {
+  return (
+    <div className="border-l-2 border-primary-200/60 pl-4">
+      <div className="flex items-baseline gap-3">
+        <h3 className="text-[15px] font-semibold text-ink">{label}</h3>
+        <span className="text-xs text-primary-500">{who}</span>
+      </div>
+      <p className="mt-1.5 text-[14px] text-primary-600 leading-relaxed">
+        {what}
+      </p>
     </div>
   )
 }
