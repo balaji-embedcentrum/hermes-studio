@@ -199,7 +199,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
             fileName={fileName}
             relativePath={filePath}
             onChange={handleChange}
-            bundleUrl="/sylang-editor/main.html?theme=dark"
+            bundleUrl="/sylang-editor/main.html"
             theme="dark"
             onReady={(post) => {
               postRef.current = post
