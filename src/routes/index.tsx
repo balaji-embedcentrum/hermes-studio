@@ -155,19 +155,29 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ---------- What's in the workspace ---------- */}
+      {/* ---------- Two things you do ---------- */}
       <section className="mx-auto max-w-3xl px-6 pb-24">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-primary-500 mb-5">
-          Inside the workspace
+          Two things you do
         </h2>
-        <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-3 text-[15px] text-primary-700 leading-relaxed">
-          <li>Chat — SSE streaming with tool-call visibility</li>
-          <li>Editor — CodeMirror 6, 20+ languages</li>
-          <li>Terminal — xterm wired to the workspace shell</li>
-          <li>Files — per-session repo browser</li>
-          <li>Notes — structured Jotx editor for `.jot` files</li>
-          <li>Git — clone, edit, commit, push from the UI</li>
-        </ul>
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div className="border-l-2 border-primary-200/60 pl-4">
+            <h3 className="text-[15px] font-semibold text-ink">Projects</h3>
+            <p className="mt-1.5 text-[14px] text-primary-600 leading-relaxed">
+              Each project is one of your GitHub repos cloned into a per-user
+              workspace on the agent host. Pick a project, hand it to an agent,
+              and watch the work happen in your repo.
+            </p>
+          </div>
+          <div className="border-l-2 border-primary-200/60 pl-4">
+            <h3 className="text-[15px] font-semibold text-ink">Agents</h3>
+            <p className="mt-1.5 text-[14px] text-primary-600 leading-relaxed">
+              Pick from the roster on the cloud playground, or register your
+              own (BYO VPS, BYO tunnel). Each agent has its own personality
+              and runtime config, and only sees the project you've handed it.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* ---------- Three ways to run ---------- */}
