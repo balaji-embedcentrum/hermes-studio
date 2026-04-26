@@ -782,6 +782,30 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
     }
   }, [selectedEntry, dirty, editValue, content, commitSave])
 
+  /**
+   * Auto-save: 1.5s after the user stops typing, silently write to disk.
+   * Bypasses the diff modal (the modal is only for explicit Save clicks).
+   * Skip while the user is actively saving or has the diff modal open
+   * — the timer will fire again on the next edit.
+   */
+  useEffect(() => {
+    if (!selectedEntry || !isEditable) return
+    if (!dirty) return
+    if (saving || showDiff) return
+    const handle = setTimeout(() => {
+      void commitSave(selectedEntry.path, editValue)
+    }, 1500)
+    return () => clearTimeout(handle)
+  }, [
+    selectedEntry,
+    isEditable,
+    dirty,
+    saving,
+    showDiff,
+    editValue,
+    commitSave,
+  ])
+
   // ── Diff Modal (always rendered so hooks stay consistent) ─────────────────
 
   const diffModal = (
@@ -832,6 +856,17 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
 
   // ── Shared header / footer ─────────────────────────────────────────────────
 
+  // Compact status pill for the header — reflects auto-save state.
+  // ``saving`` and ``savedOk`` are also visible on the manual Save button
+  // so this is the at-a-glance indicator users notice while typing.
+  const saveStatus = (() => {
+    if (!isEditable) return null
+    if (saving) return { label: 'Saving…', tone: 'muted' as const }
+    if (savedOk) return { label: '✓ Saved', tone: 'ok' as const }
+    if (dirty) return { label: 'Unsaved', tone: 'warn' as const }
+    return null
+  })()
+
   const header = (
     <div className="flex shrink-0 items-center justify-between gap-3 border-b border-primary-200 dark:border-neutral-800 px-4 py-2.5">
       <div className="flex items-center gap-2 min-w-0">
@@ -839,6 +874,20 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
         <span className="truncate text-sm font-semibold text-primary-900 dark:text-neutral-100">
           {selectedEntry.name}
         </span>
+        {saveStatus && (
+          <span
+            className={`shrink-0 ml-2 text-xs font-medium tabular-nums ${
+              saveStatus.tone === 'ok'
+                ? 'text-emerald-500'
+                : saveStatus.tone === 'warn'
+                  ? 'text-amber-500'
+                  : 'text-primary-400 dark:text-neutral-400'
+            }`}
+            aria-live="polite"
+          >
+            {saveStatus.label}
+          </span>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {isMd && !isImage && (
@@ -856,6 +905,7 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
             variant={savedOk ? 'outline' : 'default'}
             disabled={!dirty || saving}
             onClick={handleSave}
+            title="Save now (or wait 1.5s for auto-save)"
           >
             {saving ? 'Saving…' : savedOk ? '✓ Saved' : 'Save'}
           </Button>
@@ -864,6 +914,7 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
     </div>
   )
 
+  // Footer keeps file metadata only — save state is in the header.
   const footer = (
     <div className="flex shrink-0 items-center gap-4 border-t border-primary-200 dark:border-neutral-800 px-4 py-1.5 text-xs text-primary-400 dark:text-neutral-500">
       {selectedEntry.size !== undefined && (
@@ -871,9 +922,6 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
       )}
       {selectedEntry.modifiedAt && (
         <span>Modified {formatDate(selectedEntry.modifiedAt)}</span>
-      )}
-      {dirty && (
-        <span className="text-accent-500 font-medium">Unsaved changes</span>
       )}
     </div>
   )
