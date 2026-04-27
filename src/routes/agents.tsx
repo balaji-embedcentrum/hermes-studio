@@ -40,10 +40,21 @@ function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCloudId, setSelectedCloudId] = useState<string | null>(null)
-  const [selecting, setSelecting] = useState(false)
+  // Per-agent claim progress. ``selectingAgentId`` identifies WHICH card is
+  // currently being claimed (so we can render the spinner + phase text on
+  // that specific card and dim the others). ``selectStartedAt`` is the
+  // wall-clock timestamp the click fired — used to compute elapsed seconds
+  // and pick the right phase label.
+  const [selectingAgentId, setSelectingAgentId] = useState<string | null>(null)
+  const [selectStartedAt, setSelectStartedAt] = useState<number | null>(null)
+  // Ticks every 1s while selecting so the elapsed counter + phase update.
+  const [tickNow, setTickNow] = useState(() => Date.now())
   const [showFolderDialog, setShowFolderDialog] = useState(false)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [mode, setMode] = useState<Mode>('cloud')
+  // Current user's active session (if any). Used to render the End Session
+  // button on the agent card the user is currently bound to.
+  const [mySession, setMySession] = useState<{ agentId: string } | null>(null)
 
   const refreshAgents = useCallback(() => {
     fetch('/api/agents/list')
@@ -58,6 +69,33 @@ function AgentsPage() {
     // Trigger a health check to get fresh statuses
     fetch('/api/agent-sessions/health-check').catch(() => {})
   }, [refreshAgents])
+
+  // Track current user's session — drives the End Session button on the
+  // in-use agent card. Refreshes whenever any code dispatches the
+  // hermes:session-changed event (start, end, expired sweep, etc).
+  const refreshMySession = useCallback(() => {
+    fetch('/api/agent-sessions/status')
+      .then((r) => r.json())
+      .then((d) => setMySession(d.session ? { agentId: d.session.agentId } : null))
+      .catch(() => setMySession(null))
+  }, [])
+
+  useEffect(() => {
+    refreshMySession()
+    if (typeof window === 'undefined') return
+    const onChange = () => refreshMySession()
+    window.addEventListener('hermes:session-changed', onChange)
+    return () => window.removeEventListener('hermes:session-changed', onChange)
+  }, [refreshMySession])
+
+  // 1Hz tick driving the elapsed counter + phase label. Only runs while a
+  // claim is in flight; otherwise idle (no setInterval churn).
+  useEffect(() => {
+    if (!selectingAgentId) return
+    setTickNow(Date.now())
+    const id = setInterval(() => setTickNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [selectingAgentId])
 
   // Realtime updates — when any agent's status changes, update local state
   const handleRealtimeUpdate = useCallback(
@@ -95,7 +133,8 @@ function AgentsPage() {
       return
     }
 
-    setSelecting(true)
+    setSelectingAgentId(agent.id)
+    setSelectStartedAt(Date.now())
     setSessionError(null)
     try {
       const res = await fetch('/api/agent-sessions/start', {
@@ -125,8 +164,35 @@ function AgentsPage() {
     } catch {
       setSessionError('Failed to connect')
     }
-    setSelecting(false)
+    setSelectingAgentId(null)
+    setSelectStartedAt(null)
   }
+
+  // End the user's current session from the agents page (without having to
+  // navigate to chat first). Posts to the same endpoint the chat-side
+  // SessionTimer uses so the server-side cleanup is identical.
+  const handleEndSession = useCallback(async () => {
+    try {
+      await fetch('/api/agent-sessions/end', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'user_ended' }),
+      })
+    } catch {
+      /* swallow — realtime UPDATE will still flip the agent back to available */
+    }
+    setMySession(null)
+    setSelectedCloudId(null)
+    refreshAgents()
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('hermes:session-changed'))
+      try {
+        localStorage.setItem('hermes:session-changed', String(Date.now()))
+      } catch {
+        /* private mode etc. */
+      }
+    }
+  }, [refreshAgents])
 
   // Continue gate — per mode
   const canContinue = useMemo(() => {
@@ -177,8 +243,12 @@ function AgentsPage() {
               agents={cloudAgents}
               loading={loading}
               selectedId={selectedCloudId}
-              selecting={selecting}
+              selectingAgentId={selectingAgentId}
+              selectStartedAt={selectStartedAt}
+              tickNow={tickNow}
+              mySessionAgentId={mySession?.agentId ?? null}
               onSelect={handleStartSession}
+              onEndSession={handleEndSession}
             />
           )}
           {mode === 'vps' && (
@@ -317,18 +387,39 @@ function ModeRadioStrip({ mode, onChange }: { mode: Mode; onChange: (m: Mode) =>
 
 /* ── Cloud Panel ───────────────────────────────────────────────────── */
 
+/**
+ * Phase label for the claim spinner. Driven by elapsed time, not by real
+ * server progress (no SSE today). The thresholds reflect the actual claim
+ * pipeline: write override → docker compose force-recreate → poll
+ * /v1/health on the new container. Numbers are approximate but honest.
+ */
+function claimPhaseLabel(elapsedMs: number): string {
+  if (elapsedMs < 2000) return 'Claiming agent…'
+  if (elapsedMs < 8000) return 'Starting container…'
+  if (elapsedMs < 18000) return 'Waiting for agent to come online…'
+  return 'Almost there — taking longer than usual…'
+}
+
 function CloudPanel({
   agents,
   loading,
   selectedId,
-  selecting,
+  selectingAgentId,
+  selectStartedAt,
+  tickNow,
+  mySessionAgentId,
   onSelect,
+  onEndSession,
 }: {
   agents: Array<Agent>
   loading: boolean
   selectedId: string | null
-  selecting: boolean
+  selectingAgentId: string | null
+  selectStartedAt: number | null
+  tickNow: number
+  mySessionAgentId: string | null
   onSelect: (a: Agent) => void
+  onEndSession: () => void
 }) {
   if (loading) {
     return (
@@ -345,6 +436,9 @@ function CloudPanel({
       </div>
     )
   }
+  // True when ANY card is in claim flight — drives the dim/disable on
+  // every other card so multi-click can't fire a second claim.
+  const claiming = selectingAgentId !== null
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {agents.map((agent) => {
@@ -352,6 +446,8 @@ function CloudPanel({
         const skills = agent.skills ?? [agent.specialist_type]
         const model = agent.model_name ?? 'Unknown'
         const isSelected = selectedId === agent.id
+        const isClaiming = selectingAgentId === agent.id
+        const isMine = mySessionAgentId === agent.id
         const agentStatus = agent.agent_status ?? 'available'
         const isAvailable = agentStatus === 'available'
         const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
@@ -361,52 +457,145 @@ function CloudPanel({
           unavailable:  { bg: 'rgba(107,114,128,0.15)', color: '#6b7280', label: 'Offline' },
         }
         const st = statusConfig[agentStatus] ?? statusConfig.available
+
+        // Elapsed seconds for the claim counter (only meaningful while
+        // isClaiming). Guard against missing startedAt to avoid NaN.
+        const elapsedMs =
+          isClaiming && selectStartedAt ? tickNow - selectStartedAt : 0
+        const elapsedSec = Math.max(0, Math.floor(elapsedMs / 1000))
+
+        // Disable rules for the inner click area (the "claim agent"
+        // button):
+        //  - while ANY claim is in flight, disable everything except the
+        //    one being claimed (so the spinner click area stays hit-test
+        //    consistent and we don't allow stacking claims)
+        //  - the user's OWN session card is also disabled here — the
+        //    only legit action on it is the End Session button (sits in
+        //    its own hit area in the corner). Without this, clicking
+        //    the card body would call handleStartSession on an in_use
+        //    agent and surface a confusing "X is currently in use"
+        //    error on the user's own card.
+        //  - otherwise: disable cards that are in_use / cooling_down /
+        //    offline AND not the user's prior selection memory
+        const disabled = claiming
+          ? !isClaiming
+          : isMine || (!isAvailable && !isSelected)
+
+        // Cards that aren't the active claim get noticeably dimmed during
+        // the claim so it's visually obvious the page is "busy on one".
+        const opacity = isClaiming
+          ? 1
+          : claiming
+            ? 0.35
+            : isAvailable || isSelected || isMine
+              ? 1
+              : 0.6
+
         return (
-          <button
+          <div
             key={agent.id}
-            onClick={() => onSelect(agent)}
-            disabled={selecting || (!isAvailable && !isSelected)}
-            className="text-left rounded-xl p-5 transition-all hover:scale-[1.01]"
+            className="relative rounded-xl"
             style={{
               background: 'var(--theme-card)',
-              border: isSelected ? `2px solid ${color}` : '1px solid var(--theme-border)',
-              opacity: isAvailable || isSelected ? 1 : 0.6,
+              border: isSelected || isMine ? `2px solid ${color}` : '1px solid var(--theme-border)',
+              opacity,
+              transition: 'opacity 200ms',
             }}
           >
-            <div className="flex items-center gap-3 mb-3">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
-                style={{ background: `${color}20`, color }}
-              >
-                {agent.persona_name.charAt(0)}
-              </div>
-              <div>
-                <div className="font-semibold text-sm" style={{ color: 'var(--theme-text)' }}>
-                  {agent.persona_name}
+            <button
+              onClick={() => onSelect(agent)}
+              disabled={disabled}
+              className="text-left w-full rounded-xl p-5 transition-transform enabled:hover:scale-[1.01]"
+              style={{ background: 'transparent' }}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+                  style={{ background: `${color}20`, color }}
+                >
+                  {agent.persona_name.charAt(0)}
                 </div>
-                <div className="text-xs" style={{ color: 'var(--theme-muted)' }}>
-                  {model}
+                <div>
+                  <div className="font-semibold text-sm" style={{ color: 'var(--theme-text)' }}>
+                    {agent.persona_name}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--theme-muted)' }}>
+                    {model}
+                  </div>
+                </div>
+                <div className="ml-auto">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: st.bg, color: st.color }}>
+                    {st.label}
+                  </span>
                 </div>
               </div>
-              <div className="ml-auto">
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: st.bg, color: st.color }}>
-                  {st.label}
-                </span>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {skills.map((skill) => (
+                  <span key={skill} className="text-[11px] px-2 py-0.5 rounded" style={{ background: `${color}15`, color }}>
+                    {skill}
+                  </span>
+                ))}
               </div>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {skills.map((skill) => (
-                <span key={skill} className="text-[11px] px-2 py-0.5 rounded" style={{ background: `${color}15`, color }}>
-                  {skill}
+              {isSelected && !isMine && (
+                <div className="text-xs font-medium" style={{ color }}>
+                  ✓ Session active — chat will use this agent
+                </div>
+              )}
+            </button>
+
+            {/* End Session button — visible only on the agent the
+                CURRENT user is bound to. Sits in the card corner so it
+                doesn't compete with the main click-to-start affordance
+                on other cards. */}
+            {isMine && !isClaiming && (
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <span className="text-[10px] font-medium" style={{ color }}>
+                  Your session
                 </span>
-              ))}
-            </div>
-            {isSelected && (
-              <div className="text-xs font-medium" style={{ color }}>
-                ✓ Session active — chat will use this agent
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEndSession()
+                  }}
+                  className="text-[11px] font-medium px-2 py-1 rounded hover:bg-white/10"
+                  style={{
+                    color: '#ef4444',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    background: 'rgba(239,68,68,0.08)',
+                  }}
+                  title="End the current session"
+                >
+                  End Session
+                </button>
               </div>
             )}
-          </button>
+
+            {/* Claim overlay — replaces the card's hit area visually
+                while we're waiting for the adapter to recreate the
+                container and pass /v1/health. */}
+            {isClaiming && (
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl backdrop-blur-sm"
+                style={{
+                  background: 'rgba(0,0,0,0.55)',
+                  border: `2px solid ${color}`,
+                }}
+                aria-live="polite"
+              >
+                <div
+                  className="h-7 w-7 animate-spin rounded-full border-2"
+                  style={{ borderColor: `${color}40`, borderTopColor: color }}
+                />
+                <div className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
+                  {claimPhaseLabel(elapsedMs)}
+                </div>
+                <div className="text-[11px] tabular-nums" style={{ color: 'var(--theme-muted)' }}>
+                  {elapsedSec}s elapsed · usually 10–20s
+                </div>
+              </div>
+            )}
+          </div>
         )
       })}
     </div>
