@@ -260,6 +260,14 @@ function FilesRoute() {
                         : '·'}
                 </span>
                 <div className="flex-1" />
+                {/*
+                  SessionTimer in the file-open header. Without this, the
+                  timer disappears the moment a file is selected (it only
+                  rendered in the empty / WorkspaceHome branch below),
+                  hiding both the agent name and how-much-time-left from
+                  the user while they're actually working in a session.
+                */}
+                <SessionTimer />
                 <button
                   type="button"
                   onClick={handleSave}
