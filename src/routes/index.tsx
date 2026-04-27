@@ -103,7 +103,7 @@ function LandingPage() {
       {/* ──────────────────── Hero screenshot ──────────────────── */}
       <section className="mx-auto max-w-6xl w-full px-4 sm:px-6 pb-20">
         <ScreenshotFrame
-          src="/landing-workspace.png"
+          src="/screenshots/landing_workspace.png"
           fallback="/landing-hero.svg"
           alt="Hermes Studio workspace — file explorer on the left, project view in the centre, real-time agent chat on the right."
           caption="Inside a session: file explorer + git, project view, live agent chat with tool-call visibility."
@@ -123,15 +123,15 @@ function LandingPage() {
             number="1"
             title="Pick an agent"
             body="Try one from the cloud playground, point at your own VPS, tunnel from your laptop, or run hermes-agent locally. Each agent has its own model + provider config."
-            screenshot="/landing-agents.png"
+            screenshot="/screenshots/landing_agents.png"
             screenshotAlt="The Choose Your Agent screen — four source modes (Cloud Playground, Your VPS, Local via Tunnel, Local Direct) and a roster of named agents to pick from."
           />
           <Step
             number="2"
-            title="Get a workspace"
-            body="Open a GitHub repo. The agent clones it into a per-user directory it can read, edit, and run shell commands in. You watch the SSE stream of every tool call."
-            screenshot="/landing-workspace.png"
-            screenshotAlt="The workspace view — file tree, code editor, project description, and live chat panel side by side."
+            title="Pick a project"
+            body="Choose any GitHub repo you have access to. Studio clones it into a per-user workspace on the agent host — the agent only sees that directory, and your edits commit back to your GitHub."
+            screenshot="/screenshots/landing_projects.png"
+            screenshotAlt="The Projects screen — pick a GitHub repository to open in the workspace."
           />
         </div>
       </section>
