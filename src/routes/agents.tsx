@@ -464,16 +464,22 @@ function CloudPanel({
           isClaiming && selectStartedAt ? tickNow - selectStartedAt : 0
         const elapsedSec = Math.max(0, Math.floor(elapsedMs / 1000))
 
-        // Disable rules:
+        // Disable rules for the inner click area (the "claim agent"
+        // button):
         //  - while ANY claim is in flight, disable everything except the
         //    one being claimed (so the spinner click area stays hit-test
         //    consistent and we don't allow stacking claims)
-        //  - when no claim is in flight, only disable cards that are
-        //    in_use / cooling_down / offline AND not the user's current
-        //    selection
+        //  - the user's OWN session card is also disabled here — the
+        //    only legit action on it is the End Session button (sits in
+        //    its own hit area in the corner). Without this, clicking
+        //    the card body would call handleStartSession on an in_use
+        //    agent and surface a confusing "X is currently in use"
+        //    error on the user's own card.
+        //  - otherwise: disable cards that are in_use / cooling_down /
+        //    offline AND not the user's prior selection memory
         const disabled = claiming
           ? !isClaiming
-          : !isAvailable && !isSelected && !isMine
+          : isMine || (!isAvailable && !isSelected)
 
         // Cards that aren't the active claim get noticeably dimmed during
         // the claim so it's visually obvious the page is "busy on one".
