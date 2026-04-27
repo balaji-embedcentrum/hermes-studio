@@ -72,9 +72,9 @@ function LandingPage() {
           Cloud Playground is live · experimental
         </div>
         <h1 className="text-[36px] sm:text-[48px] leading-[1.1] font-semibold tracking-tight text-ink">
-          A self-hostable browser IDE for working with
+          Hosted / Self-hostable
           <br className="hidden sm:block" />{' '}
-          AI coding agents on real Git repositories.
+          browser IDE for Hermes Agents.
         </h1>
         <p className="mt-5 text-base sm:text-[17px] text-primary-600 max-w-xl mx-auto leading-relaxed">
           Sign in with GitHub. Open any repo. Watch the agent edit files,
