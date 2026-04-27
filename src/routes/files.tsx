@@ -79,6 +79,8 @@ type SelectedFile = {
   path: string
   name: string
   ext: string
+  /** When opened via click-to-id, the symbol the editor should scroll to + highlight. */
+  focusSymbolId?: string
 }
 
 function FilesRoute() {
@@ -158,12 +160,13 @@ function FilesRoute() {
             <SylangFileEditor
               filePath={selectedFile.path}
               fileName={selectedFile.name}
-              onNavigate={(path) => {
+              focusSymbolId={selectedFile.focusSymbolId}
+              onNavigate={(path, symbolId) => {
                 const name = path.split('/').pop() ?? path
                 const ext = name.includes('.')
                   ? name.slice(name.lastIndexOf('.'))
                   : ''
-                setSelectedFile({ path, name, ext })
+                setSelectedFile({ path, name, ext, focusSymbolId: symbolId })
               }}
             />
           ) : selectedFile ? (

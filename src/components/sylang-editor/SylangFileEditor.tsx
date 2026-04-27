@@ -23,6 +23,9 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved' | null
 interface Props {
   filePath: string
   fileName: string
+  /** When set, after the editor has rendered the document, scroll to and
+   *  highlight this symbol. Used by click-to-id navigation. */
+  focusSymbolId?: string
   /**
    * Called when the iframe asks to navigate to a different file (clicking a
    * relation chip / linked id). The /files route handles this by updating its
@@ -40,7 +43,7 @@ function getFileExtension(name: string): string {
 
 export { isSylangFile }
 
-export function SylangFileEditor({ filePath, fileName, onNavigate }: Props) {
+export function SylangFileEditor({ filePath, fileName, focusSymbolId, onNavigate }: Props) {
   const fileExtension = getFileExtension(fileName)
   const [doc, setDoc] = useState<SylangTiptapDocument | null>(null)
   const [loading, setLoading] = useState(true)
@@ -205,6 +208,7 @@ export function SylangFileEditor({ filePath, fileName, onNavigate }: Props) {
             fileExtension={fileExtension}
             fileName={fileName}
             relativePath={filePath}
+            focusSymbolId={focusSymbolId}
             onChange={handleChange}
             bundleUrl="/sylang-editor/main.html"
             theme="dark"
