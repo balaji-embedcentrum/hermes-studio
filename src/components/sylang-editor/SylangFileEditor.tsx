@@ -145,30 +145,27 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div
-        className="flex items-center gap-3 px-4 py-1.5 border-b shrink-0"
-        style={{ background: 'var(--theme-sidebar)', borderColor: 'var(--theme-border)' }}
-      >
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-sm font-semibold" style={{ color: 'var(--theme-accent)' }}>
-            sylang
-          </span>
-          <span className="text-xs uppercase" style={{ color: 'var(--theme-muted)' }}>
-            {fileExtension}
-          </span>
-        </div>
-        <div className="w-px h-5 shrink-0" style={{ background: 'var(--theme-border)' }} />
-        <span className="font-mono text-xs font-medium" style={{ color: 'var(--theme-text)' }}>
-          {fileName}
-        </span>
-        <div className="flex-1" />
-        <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>
+    <div className="relative flex flex-col h-full min-h-0">
+      {/* The iframe-mounted editor draws its own breadcrumb + title +
+          action toolbar (refresh / search / download / overflow). Adding
+          another header stripe here stacks two of them and pushes the
+          hermes-studio top bar (session timer / branding) off-screen.
+          Save status moves to a small floating badge instead. */}
+
+      {saveStatus && !loading && !error && (
+        <div
+          className="absolute top-2 right-3 z-10 px-2 py-0.5 rounded text-[11px] font-medium pointer-events-none"
+          style={{
+            background: 'var(--theme-sidebar, rgba(0,0,0,0.6))',
+            color: 'var(--theme-muted, #9ca3af)',
+            border: '1px solid var(--theme-border, rgba(255,255,255,0.1))',
+          }}
+        >
           {saveStatus === 'saving' && 'Saving…'}
           {saveStatus === 'saved' && '✓ Saved'}
           {saveStatus === 'unsaved' && '● Unsaved'}
-        </span>
-      </div>
+        </div>
+      )}
 
       {loading && (
         <div
