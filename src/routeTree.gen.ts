@@ -58,6 +58,8 @@ import { Route as ApiWorkspacesOpenRouteImport } from './routes/api/workspaces/o
 import { Route as ApiWorkspacesListRouteImport } from './routes/api/workspaces/list'
 import { Route as ApiWorkspacesCreateRouteImport } from './routes/api/workspaces/create'
 import { Route as ApiWorkspacesCloneRouteImport } from './routes/api/workspaces/clone'
+import { Route as ApiSylangSymbolsRouteImport } from './routes/api/sylang/symbols'
+import { Route as ApiSylangSymbolDetailsRouteImport } from './routes/api/sylang/symbol-details'
 import { Route as ApiSkillsUninstallRouteImport } from './routes/api/skills/uninstall'
 import { Route as ApiSkillsInstallRouteImport } from './routes/api/skills/install'
 import { Route as ApiSkillsHubSearchRouteImport } from './routes/api/skills/hub-search'
@@ -342,6 +344,16 @@ const ApiWorkspacesCloneRoute = ApiWorkspacesCloneRouteImport.update({
   path: '/api/workspaces/clone',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSylangSymbolsRoute = ApiSylangSymbolsRouteImport.update({
+  id: '/api/sylang/symbols',
+  path: '/api/sylang/symbols',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangSymbolDetailsRoute = ApiSylangSymbolDetailsRouteImport.update({
+  id: '/api/sylang/symbol-details',
+  path: '/api/sylang/symbol-details',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSkillsUninstallRoute = ApiSkillsUninstallRouteImport.update({
   id: '/uninstall',
   path: '/uninstall',
@@ -618,6 +630,8 @@ export interface FileRoutesByFullPath {
   '/api/skills/hub-search': typeof ApiSkillsHubSearchRoute
   '/api/skills/install': typeof ApiSkillsInstallRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
+  '/api/sylang/symbol-details': typeof ApiSylangSymbolDetailsRoute
+  '/api/sylang/symbols': typeof ApiSylangSymbolsRoute
   '/api/workspaces/clone': typeof ApiWorkspacesCloneRoute
   '/api/workspaces/create': typeof ApiWorkspacesCreateRoute
   '/api/workspaces/list': typeof ApiWorkspacesListRoute
@@ -706,6 +720,8 @@ export interface FileRoutesByTo {
   '/api/skills/hub-search': typeof ApiSkillsHubSearchRoute
   '/api/skills/install': typeof ApiSkillsInstallRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
+  '/api/sylang/symbol-details': typeof ApiSylangSymbolDetailsRoute
+  '/api/sylang/symbols': typeof ApiSylangSymbolsRoute
   '/api/workspaces/clone': typeof ApiWorkspacesCloneRoute
   '/api/workspaces/create': typeof ApiWorkspacesCreateRoute
   '/api/workspaces/list': typeof ApiWorkspacesListRoute
@@ -796,6 +812,8 @@ export interface FileRoutesById {
   '/api/skills/hub-search': typeof ApiSkillsHubSearchRoute
   '/api/skills/install': typeof ApiSkillsInstallRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
+  '/api/sylang/symbol-details': typeof ApiSylangSymbolDetailsRoute
+  '/api/sylang/symbols': typeof ApiSylangSymbolsRoute
   '/api/workspaces/clone': typeof ApiWorkspacesCloneRoute
   '/api/workspaces/create': typeof ApiWorkspacesCreateRoute
   '/api/workspaces/list': typeof ApiWorkspacesListRoute
@@ -887,6 +905,8 @@ export interface FileRouteTypes {
     | '/api/skills/hub-search'
     | '/api/skills/install'
     | '/api/skills/uninstall'
+    | '/api/sylang/symbol-details'
+    | '/api/sylang/symbols'
     | '/api/workspaces/clone'
     | '/api/workspaces/create'
     | '/api/workspaces/list'
@@ -975,6 +995,8 @@ export interface FileRouteTypes {
     | '/api/skills/hub-search'
     | '/api/skills/install'
     | '/api/skills/uninstall'
+    | '/api/sylang/symbol-details'
+    | '/api/sylang/symbols'
     | '/api/workspaces/clone'
     | '/api/workspaces/create'
     | '/api/workspaces/list'
@@ -1064,6 +1086,8 @@ export interface FileRouteTypes {
     | '/api/skills/hub-search'
     | '/api/skills/install'
     | '/api/skills/uninstall'
+    | '/api/sylang/symbol-details'
+    | '/api/sylang/symbols'
     | '/api/workspaces/clone'
     | '/api/workspaces/create'
     | '/api/workspaces/list'
@@ -1139,6 +1163,8 @@ export interface RootRouteChildren {
   ApiProfilesListRoute: typeof ApiProfilesListRoute
   ApiProfilesReadRoute: typeof ApiProfilesReadRoute
   ApiProfilesRenameRoute: typeof ApiProfilesRenameRoute
+  ApiSylangSymbolDetailsRoute: typeof ApiSylangSymbolDetailsRoute
+  ApiSylangSymbolsRoute: typeof ApiSylangSymbolsRoute
   ApiWorkspacesCloneRoute: typeof ApiWorkspacesCloneRoute
   ApiWorkspacesCreateRoute: typeof ApiWorkspacesCreateRoute
   ApiWorkspacesListRoute: typeof ApiWorkspacesListRoute
@@ -1488,6 +1514,20 @@ declare module '@tanstack/react-router' {
       path: '/api/workspaces/clone'
       fullPath: '/api/workspaces/clone'
       preLoaderRoute: typeof ApiWorkspacesCloneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/symbols': {
+      id: '/api/sylang/symbols'
+      path: '/api/sylang/symbols'
+      fullPath: '/api/sylang/symbols'
+      preLoaderRoute: typeof ApiSylangSymbolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/symbol-details': {
+      id: '/api/sylang/symbol-details'
+      path: '/api/sylang/symbol-details'
+      fullPath: '/api/sylang/symbol-details'
+      preLoaderRoute: typeof ApiSylangSymbolDetailsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/skills/uninstall': {
@@ -1919,6 +1959,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProfilesListRoute: ApiProfilesListRoute,
   ApiProfilesReadRoute: ApiProfilesReadRoute,
   ApiProfilesRenameRoute: ApiProfilesRenameRoute,
+  ApiSylangSymbolDetailsRoute: ApiSylangSymbolDetailsRoute,
+  ApiSylangSymbolsRoute: ApiSylangSymbolsRoute,
   ApiWorkspacesCloneRoute: ApiWorkspacesCloneRoute,
   ApiWorkspacesCreateRoute: ApiWorkspacesCreateRoute,
   ApiWorkspacesListRoute: ApiWorkspacesListRoute,

@@ -226,16 +226,47 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
 
                 // ── Navigation ──────────────────────────────────────────────
                 case 'openSymbolById': {
-                  // Symbol click. We don't yet have a server-side symbol index
-                  // so we can only navigate when the iframe also gives us a
-                  // fileUri. Otherwise this is a no-op (graceful degradation).
-                  const target = msg.fileUri
-                  if (typeof target === 'string' && target) {
+                  // Resolve symbol → filePath via the server-side symbol cache,
+                  // then route there. The iframe sometimes attaches a fileUri
+                  // hint (when it already knows where the symbol lives); we
+                  // honour that and skip the lookup.
+                  const symbolId =
+                    typeof msg.symbolId === 'string' ? msg.symbolId : ''
+                  const direct =
+                    typeof msg.fileUri === 'string' && msg.fileUri ? msg.fileUri : ''
+                  if (direct) {
                     void navigate({
                       to: '/files',
-                      search: { path: target },
+                      search: { path: direct },
                     } as never)
+                    return
                   }
+                  if (!symbolId) return
+                  void (async () => {
+                    try {
+                      const params = new URLSearchParams({
+                        id: symbolId,
+                        workspacePath: filePath,
+                      })
+                      const res = await fetch(
+                        `/api/sylang/symbol-details?${params.toString()}`,
+                      )
+                      if (!res.ok) return
+                      const data = (await res.json()) as {
+                        ok?: boolean
+                        symbol?: { filePath?: string }
+                      }
+                      const target = data.ok && data.symbol?.filePath
+                      if (typeof target === 'string' && target) {
+                        void navigate({
+                          to: '/files',
+                          search: { path: target },
+                        } as never)
+                      }
+                    } catch (e) {
+                      console.warn('[sylang] openSymbolById failed', e)
+                    }
+                  })()
                   return
                 }
                 case 'openFile': {
@@ -264,9 +295,66 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
                 case 'getVariantMatrix':
                   postRef.current?.({ type: 'variantMatrixData', data: null })
                   return
-                case 'getSymbolDetails':
-                  reply({ symbol: null })
+                // The iframe expects a type-keyed reply { type:
+                // 'symbolDetails', requestId, ok, symbol } — NOT the generic
+                // requestId-only shape. The shape of `symbol` matches what
+                // SymbolTooltip renders: id, kind, type, properties, fileName,
+                // filePath, line.
+                case 'getSymbolDetails': {
+                  const requestId = msg.requestId
+                  const symbolId =
+                    typeof msg.symbolId === 'string' ? msg.symbolId : ''
+                  if (!requestId || !symbolId) return
+                  void (async () => {
+                    try {
+                      const params = new URLSearchParams({
+                        id: symbolId,
+                        workspacePath: filePath,
+                      })
+                      const res = await fetch(
+                        `/api/sylang/symbol-details?${params.toString()}`,
+                      )
+                      const data = (await res.json().catch(() => ({}))) as {
+                        ok?: boolean
+                        symbol?: {
+                          name: string
+                          kind: string
+                          type: string
+                          properties: Record<string, string>
+                          fileName: string
+                          filePath: string
+                          line: number
+                        }
+                      }
+                      const ok = !!(data.ok && data.symbol)
+                      const sym = data.symbol
+                      postRef.current?.({
+                        type: 'symbolDetails',
+                        requestId,
+                        ok,
+                        symbol: ok && sym
+                          ? {
+                              id: sym.name,
+                              kind: sym.kind,
+                              type: sym.type,
+                              properties: sym.properties,
+                              fileName: sym.fileName,
+                              filePath: sym.filePath,
+                              line: sym.line,
+                            }
+                          : null,
+                      })
+                    } catch {
+                      postRef.current?.({
+                        type: 'symbolDetails',
+                        requestId,
+                        ok: false,
+                        symbol: null,
+                      })
+                    }
+                  })()
                   return
+                }
                 case 'getSlashCompletions':
                   reply({ items: [] })
                   return
