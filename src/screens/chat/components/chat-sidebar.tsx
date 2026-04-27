@@ -507,6 +507,27 @@ function ChatSidebarComponent({
   const { deleteSession } = useDeleteSession()
   const { renameSession } = useRenameSession()
 
+  // Real GitHub login (e.g. "balaji-embedcentrum") so the footer chip shows
+  // who you actually signed in as instead of the chat-settings displayName
+  // placeholder ("User"). Fetched once on mount; same endpoint
+  // SessionTimer + active-session hook already use, so it's already warm
+  // in the request lifecycle.
+  const [githubLogin, setGithubLogin] = useState<string | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/auth-check')
+      .then((r) => r.json())
+      .then((d: { githubLogin: string | null }) => {
+        if (!cancelled) setGithubLogin(d.githubLogin)
+      })
+      .catch(() => {
+        /* leave null → render falls back to profileDisplayName */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     window.location.href = '/'
@@ -919,7 +940,7 @@ function ChatSidebarComponent({
                     className="flex-1 min-w-0 flex items-center gap-1.5"
                   >
                     <span className="block truncate text-sm font-medium text-primary-900 dark:text-neutral-100">
-                      {profileDisplayName}
+                      {githubLogin ?? profileDisplayName}
                     </span>
                     <StatusDot />
                   </motion.div>
@@ -940,21 +961,29 @@ function ChatSidebarComponent({
                   My Projects
                 </span>
               </MenuItem>
-              <MenuItem
-                onClick={function onOpenSettings() {
-                  handleOpenSettings('hermes')
-                }}
-                className="justify-between"
-              >
-                <span className="flex items-center gap-2">
-                  <HugeiconsIcon
-                    icon={Settings01Icon}
-                    size={20}
-                    strokeWidth={1.5}
-                  />
-                  Settings
-                </span>
-              </MenuItem>
+              {/*
+                Settings entry hidden — keep the code so the dialog
+                infrastructure (handleOpenSettings + SettingsDialog) stays
+                wired, but no surface in the user menu for now. Flip the
+                ``false`` to bring it back.
+              */}
+              {false && (
+                <MenuItem
+                  onClick={function onOpenSettings() {
+                    handleOpenSettings('hermes')
+                  }}
+                  className="justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <HugeiconsIcon
+                      icon={Settings01Icon}
+                      size={20}
+                      strokeWidth={1.5}
+                    />
+                    Settings
+                  </span>
+                </MenuItem>
+              )}
               <MenuItem
                 onClick={handleLogout}
                 className="justify-between"
@@ -971,17 +1000,37 @@ function ChatSidebarComponent({
             </MenuContent>
           </MenuRoot>
 
-          {/* Settings + Theme toggle */}
+          {/* Sign out + Theme toggle */}
           {!isVisuallyCollapsed && (
             <div className="flex items-center gap-0.5">
+              {/*
+                Settings gear hidden — kept here so the wiring to
+                handleOpenSettings doesn't bit-rot. Flip the ``false``
+                to bring it back.
+              */}
+              {false && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenSettings('hermes')}
+                  className="shrink-0 rounded-lg p-1.5 text-primary-400 hover:bg-primary-200 dark:hover:bg-neutral-800 hover:text-primary-600 dark:hover:text-neutral-300 transition-colors"
+                  aria-label="Settings"
+                >
+                  <HugeiconsIcon
+                    icon={Settings01Icon}
+                    size={16}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => handleOpenSettings('hermes')}
-                className="shrink-0 rounded-lg p-1.5 text-primary-400 hover:bg-primary-200 dark:hover:bg-neutral-800 hover:text-primary-600 dark:hover:text-neutral-300 transition-colors"
-                aria-label="Settings"
+                onClick={handleLogout}
+                className="shrink-0 rounded-lg p-1.5 text-primary-400 hover:bg-red-500/15 hover:text-red-500 transition-colors"
+                aria-label="Sign out"
+                title="Sign out"
               >
                 <HugeiconsIcon
-                  icon={Settings01Icon}
+                  icon={Logout01Icon}
                   size={16}
                   strokeWidth={1.5}
                 />
