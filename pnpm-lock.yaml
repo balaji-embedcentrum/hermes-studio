@@ -89,6 +89,9 @@ importers:
       '@sylang-core/core':
         specifier: link:../sylang-core/packages/core
         version: link:../sylang-core/packages/core
+      '@sylang-core/diagrams':
+        specifier: link:../sylang-core/packages/diagrams
+        version: link:../sylang-core/packages/diagrams
       '@sylang-core/react':
         specifier: link:../sylang-core/packages/react
         version: link:../sylang-core/packages/react
@@ -98,6 +101,9 @@ importers:
       '@sylang-core/tiptap':
         specifier: link:../sylang-core/packages/tiptap
         version: link:../sylang-core/packages/tiptap
+      '@sylang-core/variant-matrix':
+        specifier: link:../sylang-core/packages/variant-matrix
+        version: link:../sylang-core/packages/variant-matrix
       '@sylang-core/web-editor':
         specifier: link:../sylang-core/packages/web-editor
         version: link:../sylang-core/packages/web-editor
