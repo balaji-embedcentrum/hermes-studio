@@ -22,9 +22,7 @@ import fs from 'node:fs/promises'
 import { SylangSymbolManagerCore } from '@sylang-core/core'
 import type { ISylangLogger } from '@sylang-core/core'
 import type { FileOps } from '@sylang-core/core'
-import { IS_REMOTE_AGENT } from '../../server/gateway-capabilities'
 
-const HERMES_API_URL = (process.env.HERMES_API_URL || '').trim().replace(/\/$/, '')
 const WORKSPACE_ROOT = (
   process.env.HERMES_WORKSPACE_DIR || path.join(os.homedir(), '.hermes')
 ).trim()
@@ -115,14 +113,20 @@ class BatchAgentFileOps implements FileOps {
     private hermesUrl: string,
     private repo: string,
     private workspacePrefix: string,  // e.g. "userId/login/repo"
+    private apiKey?: string,
   ) {}
+
+  private headers(): Record<string, string> {
+    return this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}
+  }
 
   /** Fetch all Sylang file contents in a single HTTP call and cache them. */
   private async fetchAll(): Promise<void> {
     if (this.fetchPromise) return this.fetchPromise
     this.fetchPromise = (async () => {
       const r = await fetch(
-        `${this.hermesUrl}/ws/${encodeURIComponent(this.repo)}/symbols`
+        `${this.hermesUrl}/ws/${encodeURIComponent(this.repo)}/symbols`,
+        { headers: this.headers() },
       )
       if (!r.ok) throw new Error(`BatchAgentFileOps: HTTP ${r.status} from /ws/${this.repo}/symbols`)
       const d = await r.json() as { files?: Array<{ path: string; content: string }>; fileCount?: number }
@@ -154,7 +158,8 @@ class BatchAgentFileOps implements FileOps {
     const relInRepo = fsPath.replace(`${this.workspacePrefix}/`, '')
     try {
       const r = await fetch(
-        `${this.hermesUrl}/ws/${encodeURIComponent(this.repo)}/file?path=${encodeURIComponent(relInRepo)}`
+        `${this.hermesUrl}/ws/${encodeURIComponent(this.repo)}/file?path=${encodeURIComponent(relInRepo)}`,
+        { headers: this.headers() },
       )
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json() as { content?: string }
@@ -276,25 +281,47 @@ function scheduleCleanup() {
  * workspacePath format: "{userId}/{login}/{repo}/{...relInRepo}"
  * Returns null if the path can't be parsed (< 3 segments).
  */
-function parseCacheKey(workspacePath: string): { cacheKey: string; repo: string; workspacePrefix: string } | null {
+function parseCacheKey(workspacePath: string): { repo: string; workspacePrefix: string } | null {
   const parts = workspacePath.replace(/\\/g, '/').split('/').filter(Boolean)
   if (parts.length < 3) return null
   return {
-    cacheKey: `${parts[0]}/${parts[1]}/${parts[2]}`,
     repo: parts[2],
     workspacePrefix: `${parts[0]}/${parts[1]}/${parts[2]}`,
   }
 }
 
 /**
+ * Build the cache key. Includes agent URL so a user switching between agents
+ * (e.g. cloud playground → BYO) doesn't see stale symbols from the old agent.
+ */
+function buildCacheKey(workspacePrefix: string, agentUrl: string | null): string {
+  return `${agentUrl ?? 'local'}|${workspacePrefix}`
+}
+
+export interface AgentLocator {
+  /** Per-user agent URL from getAgentConfig() (Supabase agent_instances.api_url).
+   *  Null means "no remote agent — read from local ~/.hermes". */
+  url: string | null
+  /** Optional bearer token for the agent. */
+  apiKey?: string
+}
+
+/**
  * Get the cached workspace symbol manager, initialising it on first call.
  * All server routes should call this instead of creating their own managers.
+ *
+ * The agent URL is per-user (not a global env var) — pass it explicitly so
+ * the cache stays correct even if multiple users hit the same backend.
  */
-export async function getWorkspaceManager(workspacePath: string): Promise<ServerSymbolManager | null> {
+export async function getWorkspaceManager(
+  workspacePath: string,
+  agent: AgentLocator,
+): Promise<ServerSymbolManager | null> {
   const parsed = parseCacheKey(workspacePath)
   if (!parsed) return null
 
-  const { cacheKey, repo, workspacePrefix } = parsed
+  const { repo, workspacePrefix } = parsed
+  const cacheKey = buildCacheKey(workspacePrefix, agent.url)
 
   const existing = cache.get(cacheKey)
   if (existing) {
@@ -304,20 +331,20 @@ export async function getWorkspaceManager(workspacePath: string): Promise<Server
     return existing.manager
   }
 
-  // Build the right FileOps for this environment:
-  //   Remote (Machine 2): BatchAgentFileOps — one HTTP call fetches all file
-  //     contents at once from GET /ws/{repo}/symbols. Zero per-file network I/O.
-  //   Local (same machine): NodeFileOps — reads directly from fs.
-  const fileOps: FileOps = IS_REMOTE_AGENT && HERMES_API_URL
-    ? new BatchAgentFileOps(HERMES_API_URL, repo, workspacePrefix)
+  // Build the right FileOps:
+  //   With agent URL: BatchAgentFileOps — one HTTP call to GET /ws/{repo}/symbols.
+  //   No agent URL: NodeFileOps reading from local ~/.hermes.
+  const fileOps: FileOps = agent.url
+    ? new BatchAgentFileOps(agent.url, repo, workspacePrefix, agent.apiKey)
     : new NodeFileOps(path.join(WORKSPACE_ROOT, workspacePrefix))
 
   const manager = new ServerSymbolManager(fileOps)
 
-  // Start initialization — use the virtual workspace prefix as the "project root"
-  const virtualRoot = IS_REMOTE_AGENT
-    ? workspacePrefix        // agent mode: virtual path prefix
-    : path.join(WORKSPACE_ROOT, workspacePrefix)  // local: real fs path
+  // Use the virtual workspace prefix as the project root for agent mode;
+  // for local mode we resolve to the real fs path.
+  const virtualRoot = agent.url
+    ? workspacePrefix
+    : path.join(WORKSPACE_ROOT, workspacePrefix)
 
   const initPromise = manager.initializeWorkspace(virtualRoot).then(() => {
     // After all files are parsed, resolve `use` imports so that
@@ -341,7 +368,8 @@ export async function getWorkspaceManager(workspacePath: string): Promise<Server
 
 /**
  * Update a single document in the cache after a file save.
- * Called from /api/files POST handler.
+ * Called from /api/files POST handler. Updates every cache entry for the
+ * workspace prefix (covers any agent the user might have hit).
  */
 export async function updateCachedDocument(
   workspacePath: string,
@@ -350,17 +378,23 @@ export async function updateCachedDocument(
 ): Promise<void> {
   const parsed = parseCacheKey(workspacePath)
   if (!parsed) return
-  const entry = cache.get(parsed.cacheKey)
-  if (!entry || entry.initializing) return
-  await entry.manager.parseContent(filePath, content)
+  const suffix = `|${parsed.workspacePrefix}`
+  for (const [key, entry] of cache.entries()) {
+    if (!key.endsWith(suffix)) continue
+    if (entry.initializing) continue
+    await entry.manager.parseContent(filePath, content)
+  }
 }
 
 /**
- * Invalidate (evict) the cache for a workspace.
+ * Invalidate (evict) the cache for a workspace across all agents.
  * Call after destructive operations (clone, bulk write).
  */
 export function invalidateWorkspace(workspacePath: string): void {
   const parsed = parseCacheKey(workspacePath)
   if (!parsed) return
-  cache.delete(parsed.cacheKey)
+  const suffix = `|${parsed.workspacePrefix}`
+  for (const key of cache.keys()) {
+    if (key.endsWith(suffix)) cache.delete(key)
+  }
 }

@@ -6,7 +6,8 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { isAuthenticated } from '../../../server/auth-middleware'
+import { getAuthUser } from '../../../server/supabase-auth'
+import { getAgentConfig } from '../../../server/gateway-capabilities'
 import { getWorkspaceManager } from '../../../sylang/symbolManager/workspaceSymbolCache'
 import type { SylangSymbol } from '@sylang-core/core'
 import path from 'node:path'
@@ -15,9 +16,8 @@ export const Route = createFileRoute('/api/sylang/symbol-details')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-        }
+        const authUser = await getAuthUser(request).catch(() => null)
+        if (!authUser) return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
 
         const url = new URL(request.url)
         const symbolId = (url.searchParams.get('id') ?? '').trim()
@@ -26,7 +26,13 @@ export const Route = createFileRoute('/api/sylang/symbol-details')({
         if (!symbolId) return json({ ok: false, error: 'id param required' }, { status: 400 })
         if (!workspacePath) return json({ ok: false, error: 'workspacePath required' }, { status: 400 })
 
-        const manager = await getWorkspaceManager(workspacePath)
+        // Look up the user's selected agent URL — files live there, not in
+        // the local hermes-studio process's workspace dir.
+        const agentConfig = await getAgentConfig(authUser.userId).catch(() => null)
+        const manager = await getWorkspaceManager(workspacePath, {
+          url: agentConfig?.url ?? null,
+          apiKey: agentConfig?.apiKey,
+        })
         if (!manager) return json({ ok: false, error: 'Workspace not found' }, { status: 404 })
 
         // Search all documents for this symbol

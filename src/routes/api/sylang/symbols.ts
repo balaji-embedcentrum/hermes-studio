@@ -10,16 +10,16 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { isAuthenticated } from '../../../server/auth-middleware'
+import { getAuthUser } from '../../../server/supabase-auth'
+import { getAgentConfig } from '../../../server/gateway-capabilities'
 import { getWorkspaceManager } from '../../../sylang/symbolManager/workspaceSymbolCache'
 
 export const Route = createFileRoute('/api/sylang/symbols')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-        }
+        const authUser = await getAuthUser(request).catch(() => null)
+        if (!authUser) return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
 
         const url = new URL(request.url)
         const nodeType = (url.searchParams.get('nodeType') ?? '').trim().toLowerCase()
@@ -28,7 +28,11 @@ export const Route = createFileRoute('/api/sylang/symbols')({
         if (!nodeType) return json({ ok: false, error: 'nodeType param required' }, { status: 400 })
         if (!workspacePath) return json({ ok: true, ids: [] })
 
-        const manager = await getWorkspaceManager(workspacePath)
+        const agentConfig = await getAgentConfig(authUser.userId).catch(() => null)
+        const manager = await getWorkspaceManager(workspacePath, {
+          url: agentConfig?.url ?? null,
+          apiKey: agentConfig?.apiKey,
+        })
         if (!manager) return json({ ok: true, ids: [] })
 
         // Find the requesting document
