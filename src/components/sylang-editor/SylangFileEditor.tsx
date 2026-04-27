@@ -8,7 +8,6 @@
  * serialized DSL back when the editor reports a content change.
  */
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { localReadFile, localWriteFile } from '@/lib/local-file-ops'
 import {
@@ -24,6 +23,14 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved' | null
 interface Props {
   filePath: string
   fileName: string
+  /**
+   * Called when the iframe asks to navigate to a different file (clicking a
+   * relation chip / linked id). The /files route handles this by updating its
+   * selectedFile state — we deliberately don't change the URL, otherwise the
+   * file-explorer sidebar refetches the tree against a *file* path and shows
+   * "No workspace selected".
+   */
+  onNavigate?: (path: string, symbolId?: string) => void
 }
 
 function getFileExtension(name: string): string {
@@ -33,7 +40,7 @@ function getFileExtension(name: string): string {
 
 export { isSylangFile }
 
-export function SylangFileEditor({ filePath, fileName }: Props) {
+export function SylangFileEditor({ filePath, fileName, onNavigate }: Props) {
   const fileExtension = getFileExtension(fileName)
   const [doc, setDoc] = useState<SylangTiptapDocument | null>(null)
   const [loading, setLoading] = useState(true)
@@ -44,7 +51,10 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
   const postRef = useRef<((msg: unknown) => void) | null>(null)
   const localAgentUrl = useWorkspaceStore((s) => s.localHermesUrl)
   const activeWorkspacePath = useWorkspaceStore((s) => s.activeWorkspacePath)
-  const navigate = useNavigate()
+  const onNavigateRef = useRef(onNavigate)
+  useEffect(() => {
+    onNavigateRef.current = onNavigate
+  }, [onNavigate])
 
   // Workspace prefix is the first three path segments: <userId>/<login>/<repo>.
   // Used to scope iframe-side requests (symbol lookups etc.) to the right
@@ -227,18 +237,15 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
                 // ── Navigation ──────────────────────────────────────────────
                 case 'openSymbolById': {
                   // Resolve symbol → filePath via the server-side symbol cache,
-                  // then route there. The iframe sometimes attaches a fileUri
-                  // hint (when it already knows where the symbol lives); we
-                  // honour that and skip the lookup.
+                  // then ask the host route to switch files. The iframe
+                  // sometimes attaches a fileUri hint (when it already knows
+                  // where the symbol lives); we honour it and skip the lookup.
                   const symbolId =
                     typeof msg.symbolId === 'string' ? msg.symbolId : ''
                   const direct =
                     typeof msg.fileUri === 'string' && msg.fileUri ? msg.fileUri : ''
                   if (direct) {
-                    void navigate({
-                      to: '/files',
-                      search: { path: direct },
-                    } as never)
+                    onNavigateRef.current?.(direct, symbolId || undefined)
                     return
                   }
                   if (!symbolId) return
@@ -258,10 +265,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
                       }
                       const target = data.ok && data.symbol?.filePath
                       if (typeof target === 'string' && target) {
-                        void navigate({
-                          to: '/files',
-                          search: { path: target },
-                        } as never)
+                        onNavigateRef.current?.(target, symbolId)
                       }
                     } catch (e) {
                       console.warn('[sylang] openSymbolById failed', e)
@@ -271,10 +275,7 @@ export function SylangFileEditor({ filePath, fileName }: Props) {
                 }
                 case 'openFile': {
                   if (typeof msg.path === 'string' && msg.path) {
-                    void navigate({
-                      to: '/files',
-                      search: { path: msg.path },
-                    } as never)
+                    onNavigateRef.current?.(msg.path)
                   }
                   return
                 }

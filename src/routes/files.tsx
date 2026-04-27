@@ -158,6 +158,13 @@ function FilesRoute() {
             <SylangFileEditor
               filePath={selectedFile.path}
               fileName={selectedFile.name}
+              onNavigate={(path) => {
+                const name = path.split('/').pop() ?? path
+                const ext = name.includes('.')
+                  ? name.slice(name.lastIndexOf('.'))
+                  : ''
+                setSelectedFile({ path, name, ext })
+              }}
             />
           ) : selectedFile ? (
             <>
