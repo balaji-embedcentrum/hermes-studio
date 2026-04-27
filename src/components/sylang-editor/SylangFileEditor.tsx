@@ -1,0 +1,289 @@
+/**
+ * SylangFileEditor — renders Sylang DSL files (.req, .fun, .blk, .fml, etc.)
+ * using @sylang-core/react.
+ *
+ * Pipeline: .req text → parseDSLToTiptap → SylangTiptapDocument → SylangEditor
+ * On save: SylangTiptapDocument → serializeToDSL → text → /api/files POST
+ */
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useWorkspaceStore } from '@/stores/workspace-store'
+import { localReadFile, localWriteFile } from '@/lib/local-file-ops'
+import {
+  SylangEditor,
+  parseDSLToTiptap,
+  serializeToDSL,
+  isSylangFile,
+  type SylangTiptapDocument,
+} from '@sylang-core/react'
+
+type SaveStatus = 'saved' | 'saving' | 'unsaved' | null
+
+interface Props {
+  filePath: string
+  fileName: string
+}
+
+function getFileExtension(name: string): string {
+  const idx = name.lastIndexOf('.')
+  // Returns the dotted extension (".req", not "req") because that's the
+  // format sylang-core's SYLANG_FILE_TYPES table is keyed on. Without the
+  // leading dot, getFileTypeKeywords() returns undefined and
+  // parseDSLToTiptap() emits an empty document — i.e. a blank editor.
+  return idx >= 0 ? name.slice(idx) : ''
+}
+
+export { isSylangFile }
+
+export function SylangFileEditor({ filePath, fileName }: Props) {
+  const fileExtension = useMemo(() => getFileExtension(fileName), [fileName])
+  const [doc, setDoc] = useState<SylangTiptapDocument | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(null)
+  const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Original raw text from disk. Used as the safety baseline so we never
+  // overwrite a file with significantly less content than it had — e.g.
+  // when a parser/serializer round-trip drops blocks the editor schema
+  // didn't recognize.
+  const originalContentRef = useRef<string>('')
+  // Until the user has actually focused/typed in the editor, we treat the
+  // doc as read-only and refuse to write anything. TipTap's content
+  // normalization can fire onUpdate during schema validation; without this
+  // gate that would auto-save a possibly-mangled doc back to disk.
+  const userHasEditedRef = useRef<boolean>(false)
+  const localAgentUrl = useWorkspaceStore((s) => s.localHermesUrl)
+  const activeWorkspacePath = useWorkspaceStore((s) => s.activeWorkspacePath)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    userHasEditedRef.current = false
+    console.log('[sylang]', { filePath, fileName, fileExtension, localAgentUrl, activeWorkspacePath })
+
+    async function load() {
+      try {
+        let rawContent: string
+        if (localAgentUrl && activeWorkspacePath) {
+          const result = await localReadFile(localAgentUrl, activeWorkspacePath, filePath)
+          rawContent = result.content
+        } else {
+          const res = await fetch(`/api/files?action=read&path=${encodeURIComponent(filePath)}`)
+          if (!res.ok) throw new Error(`Cannot read file: HTTP ${res.status}`)
+          const data = (await res.json()) as { content?: string; type?: string; path?: string }
+          console.log('[sylang] read response (raw)', data)
+          rawContent = data.content ?? ''
+        }
+
+        const content = rawContent ?? ''
+        console.log('[sylang] read content', { length: content.length, preview: content.slice(0, 200) })
+
+        const tiptapDoc = parseDSLToTiptap(content, fileExtension)
+        const blockCount = Array.isArray(tiptapDoc.content) ? tiptapDoc.content.length : 0
+        console.log('[sylang] parsed tiptap doc', { blockCount, doc: tiptapDoc })
+
+        if (!cancelled) {
+          originalContentRef.current = content
+          setDoc(tiptapDoc)
+          setLoading(false)
+        }
+      } catch (e) {
+        console.error('[sylang] load/parse failed:', e)
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : String(e))
+          setLoading(false)
+        }
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [filePath, fileName, fileExtension, localAgentUrl, activeWorkspacePath])
+
+  const handleChange = (next: SylangTiptapDocument) => {
+    setDoc(next)
+
+    // Hard guard: don't write anything until the user has actually edited.
+    // TipTap can fire onUpdate during initial content normalization; that is
+    // not a user edit and must not trigger a save. The user-edit flag is
+    // flipped by onEditor below the first time the editor receives focus or
+    // input.
+    if (!userHasEditedRef.current) {
+      console.log('[sylang] skipping save — change happened before user interaction (likely TipTap normalization)')
+      return
+    }
+
+    setSaveStatus('unsaved')
+    if (pendingSave.current) clearTimeout(pendingSave.current)
+
+    pendingSave.current = setTimeout(async () => {
+      const original = originalContentRef.current
+      let text: string
+      try {
+        text = serializeToDSL(next, fileExtension)
+      } catch (e) {
+        console.error('[sylang] serializeToDSL threw — refusing to save', e)
+        setSaveStatus('unsaved')
+        return
+      }
+
+      // Safety: never write content that is dramatically smaller than the
+      // original. This catches parser/serializer round-trips that silently
+      // drop blocks (e.g. unsupported schema nodes stripped by TipTap).
+      if (original.length > 50 && text.length < original.length * 0.5) {
+        console.warn('[sylang] refusing to save — serialized content is dramatically smaller than original', {
+          originalLength: original.length,
+          newLength: text.length,
+          previewOriginal: original.slice(0, 80),
+          previewNew: text.slice(0, 80),
+        })
+        setSaveStatus('unsaved')
+        return
+      }
+
+      // Skip no-op writes.
+      if (text === original) {
+        setSaveStatus('saved')
+        return
+      }
+
+      setSaveStatus('saving')
+      try {
+        if (localAgentUrl && activeWorkspacePath) {
+          await localWriteFile(localAgentUrl, activeWorkspacePath, filePath, text)
+        } else {
+          await fetch('/api/files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'write', path: filePath, content: text }),
+          })
+        }
+        originalContentRef.current = text
+        setSaveStatus('saved')
+      } catch (e) {
+        console.error('[sylang] save failed:', e)
+        setSaveStatus('unsaved')
+      }
+    }, 1500)
+  }
+
+  const handleEditor = (editor: import('@tiptap/react').Editor | null) => {
+    if (!editor) return
+    const markEdited = () => {
+      userHasEditedRef.current = true
+    }
+    editor.on('focus', markEdited)
+    editor.view.dom.addEventListener('keydown', markEdited, { once: true })
+    editor.view.dom.addEventListener('input', markEdited, { once: true })
+  }
+
+  const docBlockCount = doc && Array.isArray(doc.content) ? doc.content.length : 0
+  const status: string = error
+    ? `error: ${error}`
+    : loading
+      ? 'loading'
+      : doc
+        ? `doc: ${docBlockCount} blocks`
+        : 'idle'
+
+  return (
+    <div
+      className="flex flex-col h-full min-h-0"
+      style={{ background: 'var(--theme-bg)', color: 'var(--theme-text)' }}
+    >
+      {/* Diagnostic banner — remove after editor is verified working */}
+      <div
+        style={{
+          background: '#fef3c7',
+          color: '#78350f',
+          padding: '4px 12px',
+          fontFamily: 'monospace',
+          fontSize: 11,
+          borderBottom: '1px solid #fcd34d',
+        }}
+      >
+        SYLANG · file={fileName} · ext={fileExtension} · {status}
+      </div>
+      <div
+        className="flex items-center gap-3 px-4 py-1.5 border-b shrink-0"
+        style={{ background: 'var(--theme-sidebar)', borderColor: 'var(--theme-border)' }}
+      >
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-sm font-semibold" style={{ color: 'var(--theme-accent)' }}>
+            sylang
+          </span>
+          <span className="text-xs uppercase" style={{ color: 'var(--theme-muted)' }}>
+            {fileExtension}
+          </span>
+        </div>
+        <div className="w-px h-5 shrink-0" style={{ background: 'var(--theme-border)' }} />
+        <span className="font-mono text-xs font-medium" style={{ color: 'var(--theme-text)' }}>
+          {fileName}
+        </span>
+        <div className="flex-1" />
+        <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>
+          {saveStatus === 'saving' && 'Saving…'}
+          {saveStatus === 'saved' && '✓ Saved'}
+          {saveStatus === 'unsaved' && '● Unsaved'}
+        </span>
+      </div>
+
+      {loading && (
+        <div
+          className="flex items-center justify-center flex-1 gap-3"
+          style={{ color: 'var(--theme-muted)' }}
+        >
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />
+          <span className="text-sm">Loading {fileName}…</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-center justify-center flex-1">
+          <div
+            className="text-sm px-4 py-3 rounded-xl"
+            style={{ background: '#3f0f0f', color: '#f87171' }}
+          >
+            {error}
+          </div>
+        </div>
+      )}
+
+      {doc && !loading && !error && (
+        <div
+          className="flex-1 min-h-0 overflow-auto p-4"
+          style={{ background: 'var(--theme-bg)', minHeight: 200 }}
+        >
+          {docBlockCount === 0 ? (
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: '#9ca3af',
+                whiteSpace: 'pre-wrap',
+                padding: 12,
+                border: '1px dashed #4b5563',
+                borderRadius: 8,
+              }}
+            >
+              parseDSLToTiptap returned an empty document for extension &quot;{fileExtension}&quot;.
+              {'\n'}
+              This usually means the extension isn&apos;t in SYLANG_FILE_TYPES or the file
+              parser doesn&apos;t recognize the content. Open the console for details.
+            </div>
+          ) : (
+            <SylangEditor
+              document={doc}
+              fileExtension={fileExtension}
+              onChange={handleChange}
+              onEditor={handleEditor}
+              className="prose max-w-none"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
