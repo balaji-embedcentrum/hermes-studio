@@ -32,7 +32,7 @@ type Mode = 'cloud' | 'vps' | 'tunnel' | 'local'
 const VPS_INSTALL_SCRIPT =
   'curl -fsSL https://raw.githubusercontent.com/balaji-embedcentrum/hermes-adapter/main/scripts/install-studio-vps.sh | bash -s -- --domain your.domain.com --email you@example.com'
 const TUNNEL_INSTALL_SCRIPT =
-  'curl -fsSL https://raw.githubusercontent.com/balaji-embedcentrum/hermes-adapter/main/scripts/install-tunnel.sh | bash'
+  'curl -fsSL https://raw.githubusercontent.com/balaji-embedcentrum/hermes-adapter/main/scripts/install-local-tunnel.sh | bash'
 
 function AgentsPage() {
   const navigate = useNavigate()
@@ -354,12 +354,17 @@ const MODE_META: Record<Mode, { label: string; sub: string; icon: string; pill: 
 }
 
 function ModeRadioStrip({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
-  const modes: Mode[] = ['cloud', 'vps', 'tunnel', 'local']
+  // 'local' (Local Direct, browser → localhost adapter) is intentionally
+  // hidden from the picker — the BYO story is now Cloud / VPS / Tunnel.
+  // The Mode union, MODE_META entry, and LocalHermesSection are left in
+  // place so the path can be re-enabled by adding 'local' back to this
+  // array; nothing else needs to change.
+  const modes: Mode[] = ['cloud', 'vps', 'tunnel']
   return (
     <div
       role="radiogroup"
       aria-label="Agent source"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+      className="grid grid-cols-1 sm:grid-cols-3 gap-3"
     >
       {modes.map((m) => {
         const meta = MODE_META[m]
@@ -810,7 +815,7 @@ function PersonalAgentPanel({
           'Model API key expired or rate-limited on the agent',
         ]
       : [
-          'Terminal running install-tunnel.sh was closed',
+          'Terminal running install-local-tunnel.sh was closed',
           'Cloudflare rotated your tunnel URL — re-run the script, re-paste the URL',
           "Adapter crashed — check ~/.hermes-adapter/logs",
           'Model API key expired or rate-limited on the agent',
