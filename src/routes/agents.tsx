@@ -54,7 +54,12 @@ function AgentsPage() {
   const [mode, setMode] = useState<Mode>('cloud')
   // Current user's active session (if any). Used to render the End Session
   // button on the agent card the user is currently bound to.
-  const [mySession, setMySession] = useState<{ agentId: string } | null>(null)
+  // ``expiresAt`` powers the inline countdown — same source of truth as the
+  // chat-header SessionTimer, so the two displays can never disagree.
+  const [mySession, setMySession] = useState<{
+    agentId: string
+    expiresAt: string
+  } | null>(null)
 
   const refreshAgents = useCallback(() => {
     fetch('/api/agents/list')
@@ -76,7 +81,13 @@ function AgentsPage() {
   const refreshMySession = useCallback(() => {
     fetch('/api/agent-sessions/status')
       .then((r) => r.json())
-      .then((d) => setMySession(d.session ? { agentId: d.session.agentId } : null))
+      .then((d) =>
+        setMySession(
+          d.session
+            ? { agentId: d.session.agentId, expiresAt: d.session.expiresAt }
+            : null,
+        ),
+      )
       .catch(() => setMySession(null))
   }, [])
 
@@ -88,14 +99,28 @@ function AgentsPage() {
     return () => window.removeEventListener('hermes:session-changed', onChange)
   }, [refreshMySession])
 
-  // 1Hz tick driving the elapsed counter + phase label. Only runs while a
-  // claim is in flight; otherwise idle (no setInterval churn).
+  // 1Hz tick driving the elapsed counter (during claim) AND the session
+  // countdown (when a session is active). Idle otherwise — no setInterval
+  // churn when neither condition holds.
   useEffect(() => {
-    if (!selectingAgentId) return
+    if (!selectingAgentId && !mySession) return
     setTickNow(Date.now())
     const id = setInterval(() => setTickNow(Date.now()), 1000)
     return () => clearInterval(id)
-  }, [selectingAgentId])
+  }, [selectingAgentId, mySession])
+
+  // When the session has clearly expired (clock past expiresAt), drop the
+  // local mySession so the End Session UI hides itself. The server-side
+  // periodic sweep will eventually flip the agent back to available, and
+  // the realtime subscription will refresh the agent list — this is just
+  // the optimistic local cleanup so the user doesn't see a stale ``Your
+  // session 0:00`` for tens of seconds.
+  useEffect(() => {
+    if (!mySession) return
+    if (Date.now() < new Date(mySession.expiresAt).getTime()) return
+    setMySession(null)
+    refreshAgents()
+  }, [mySession, tickNow, refreshAgents])
 
   // Realtime updates — when any agent's status changes, update local state
   const handleRealtimeUpdate = useCallback(
@@ -247,6 +272,7 @@ function AgentsPage() {
               selectStartedAt={selectStartedAt}
               tickNow={tickNow}
               mySessionAgentId={mySession?.agentId ?? null}
+              mySessionExpiresAt={mySession?.expiresAt ?? null}
               onSelect={handleStartSession}
               onEndSession={handleEndSession}
             />
@@ -400,6 +426,21 @@ function claimPhaseLabel(elapsedMs: number): string {
   return 'Almost there — taking longer than usual…'
 }
 
+/**
+ * Format a millisecond duration as compact ``Mm Ss`` (e.g. ``23m 45s``)
+ * for runs longer than a minute, and ``45s`` for short remainders.
+ * Mirrors the chat-header SessionTimer's "what's left" feel without the
+ * fancy color-coded box.
+ */
+function formatTimeLeft(ms: number): string {
+  if (ms <= 0) return '0s'
+  const totalSec = Math.floor(ms / 1000)
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  if (m === 0) return `${s}s`
+  return `${m}m ${s.toString().padStart(2, '0')}s`
+}
+
 function CloudPanel({
   agents,
   loading,
@@ -408,6 +449,7 @@ function CloudPanel({
   selectStartedAt,
   tickNow,
   mySessionAgentId,
+  mySessionExpiresAt,
   onSelect,
   onEndSession,
 }: {
@@ -418,6 +460,7 @@ function CloudPanel({
   selectStartedAt: number | null
   tickNow: number
   mySessionAgentId: string | null
+  mySessionExpiresAt: string | null
   onSelect: (a: Agent) => void
   onEndSession: () => void
 }) {
@@ -543,33 +586,80 @@ function CloudPanel({
               )}
             </button>
 
-            {/* End Session button — visible only on the agent the
-                CURRENT user is bound to. Sits in the card corner so it
-                doesn't compete with the main click-to-start affordance
-                on other cards. */}
-            {isMine && !isClaiming && (
-              <div className="absolute top-3 right-3 flex items-center gap-2">
-                <span className="text-[10px] font-medium" style={{ color }}>
-                  Your session
-                </span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onEndSession()
-                  }}
-                  className="text-[11px] font-medium px-2 py-1 rounded hover:bg-white/10"
+            {/*
+              Session bar — visible only on the agent the CURRENT user is
+              bound to. Anchored at the bottom of the card (inside the
+              colored border) so it reads as part of the session, not a
+              floating action. Shows: persona-colored "Your session"
+              label + ticking countdown + a prominent End Session button.
+              Color shifts amber under 5min, red under 2min so the user
+              feels the deadline approaching (matches SessionTimer in the
+              chat header).
+            */}
+            {isMine && !isClaiming && (() => {
+              const remainingMs = mySessionExpiresAt
+                ? Math.max(
+                    0,
+                    new Date(mySessionExpiresAt).getTime() - tickNow,
+                  )
+                : 0
+              const urgent = remainingMs <= 2 * 60 * 1000
+              const warn = remainingMs <= 5 * 60 * 1000
+              const timerColor = urgent ? '#ef4444' : warn ? '#f59e0b' : color
+              return (
+                <div
+                  className="flex items-center justify-between gap-3 px-4 py-3 border-t rounded-b-xl"
                   style={{
-                    color: '#ef4444',
-                    border: '1px solid rgba(239,68,68,0.4)',
-                    background: 'rgba(239,68,68,0.08)',
+                    background: `${color}0d`,
+                    borderColor: `${color}40`,
                   }}
-                  title="End the current session"
                 >
-                  End Session
-                </button>
-              </div>
-            )}
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span
+                      className="text-[10px] uppercase tracking-wider font-semibold"
+                      style={{ color }}
+                    >
+                      Your session
+                    </span>
+                    <span
+                      className="text-sm font-mono tabular-nums font-medium"
+                      style={{ color: timerColor }}
+                      title={`Expires at ${
+                        mySessionExpiresAt
+                          ? new Date(mySessionExpiresAt).toLocaleTimeString()
+                          : '—'
+                      }`}
+                    >
+                      {formatTimeLeft(remainingMs)} left
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEndSession()
+                    }}
+                    className="shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+                    style={{
+                      background: 'rgba(239,68,68,0.12)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239,68,68,0.5)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#ef4444'
+                      e.currentTarget.style.color = '#fff'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(239,68,68,0.12)'
+                      e.currentTarget.style.color = '#ef4444'
+                    }}
+                    title="End the current session and free the agent"
+                  >
+                    End Session
+                  </button>
+                </div>
+              )
+            })()}
 
             {/* Claim overlay — replaces the card's hit area visually
                 while we're waiting for the adapter to recreate the
