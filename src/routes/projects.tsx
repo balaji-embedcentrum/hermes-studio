@@ -41,19 +41,26 @@ function ProjectsPage() {
   const [newProjectName, setNewProjectName] = useState('')
   const [showNewProject, setShowNewProject] = useState(false)
 
-  // Guard: redirect to /agents if no agent is selected (remote mode only)
+  // Guard: redirect to /agents if no agent is selected (remote mode only).
+  // BYO single-tenant agents (user_vps, user_tunnel) don't have a session
+  // lifecycle — a registered personal agent is sufficient.
   useEffect(() => {
-    if (isLocalMode) return // local agent always ok
-    fetch('/api/agent-sessions/status')
-      .then(r => r.json())
-      .then(data => {
-        // If no active session and not local mode, user needs to select an agent first
-        if (!data.session) {
+    if (isLocalMode) return
+    ;(async () => {
+      try {
+        const agentsRes = await fetch('/api/agents/list').then(r => r.json())
+        const personal = (agentsRes.agents ?? []).find((a: { owner_user_id?: string | null }) => !!a.owner_user_id)
+        if (personal) return
+
+        const sess = await fetch('/api/agent-sessions/status').then(r => r.json())
+        if (!sess.session) {
           setHasAgent(false)
           navigate({ to: '/agents' })
         }
-      })
-      .catch(() => {})
+      } catch {
+        /* swallow — letting the page render is safer than redirect-looping on a network blip */
+      }
+    })()
   }, [isLocalMode, navigate])
 
   useEffect(() => {
