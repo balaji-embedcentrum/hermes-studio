@@ -278,10 +278,12 @@ function AgentsPage() {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold mb-1">Choose Your Agent</h1>
         <p className="text-sm mb-6" style={{ color: 'var(--theme-muted)' }}>
-          Pick one source. You can switch anytime.
+          Pick a playground agent below.
         </p>
 
-        <ModeRadioStrip mode={mode} onChange={switchMode} />
+        {/* ModeRadioStrip is hidden while only Cloud is exposed. Re-enable
+            by adding modes back to its array — see comment in the component. */}
+        {false && <ModeRadioStrip mode={mode} onChange={switchMode} />}
 
         <div className="mt-6">
           {mode === 'cloud' && (
@@ -375,12 +377,12 @@ const MODE_META: Record<Mode, { label: string; sub: string; icon: string; pill: 
 }
 
 function ModeRadioStrip({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
-  // 'local' (Local Direct, browser → localhost adapter) is intentionally
-  // hidden from the picker — the BYO story is now Cloud / VPS / Tunnel.
-  // The Mode union, MODE_META entry, and LocalHermesSection are left in
-  // place so the path can be re-enabled by adding 'local' back to this
-  // array; nothing else needs to change.
-  const modes: Mode[] = ['cloud', 'vps', 'tunnel']
+  // Cloud-only release. BYO modes (vps, tunnel) and Local Direct are
+  // hidden from the picker until the BYO session model is finished — the
+  // Mode union, MODE_META entries, PersonalAgentPanel, and
+  // LocalHermesSection are left in place so re-enabling is just adding
+  // entries back to this array; nothing else needs to change.
+  const modes: Mode[] = ['cloud']
   return (
     <div
       role="radiogroup"
