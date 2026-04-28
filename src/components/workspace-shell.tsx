@@ -84,10 +84,13 @@ export function WorkspaceShell() {
   useMobileKeyboard()
 
   const [creatingSession, setCreatingSession] = useState(false)
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia('(max-width: 767px)').matches
-  })
+  // Always start false so SSR and the client's first render match — the
+  // matchMedia useEffect below flips this to the real value on mount.
+  // Initializing from window.matchMedia here was a hydration mismatch in
+  // production: SSR returned false, client returned true on narrow viewports,
+  // tripping React #418 and leaving the layout subtree without event handlers
+  // until React fell back to client render.
+  const [isMobile, setIsMobile] = useState(false)
 
   // Slide transition direction tracking (mobile only)
   const [slideClass, setSlideClass] = useState<string>('')
