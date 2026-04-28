@@ -239,23 +239,23 @@ function AgentsPage() {
       return
     }
     if ((mode === 'vps' || mode === 'tunnel') && personalAgent) {
+      // BYO single-tenant agents skip the session lifecycle (no fleet
+      // rotation, no quota, no cooldown). Just point profile.selected_agent_id
+      // at the personal agent so the gateway dispatch resolves to it.
       setSessionError(null)
       try {
-        const res = await fetch('/api/agent-sessions/start', {
+        const res = await fetch('/api/agents/select', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ agentId: personalAgent.id }),
         })
-        const data = (await res.json()) as { ok: boolean; error?: string }
-        if (!data.ok) {
-          setSessionError(data.error ?? 'Failed to start session')
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string }
+          setSessionError(data.error ?? 'Failed to select agent')
           return
         }
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('hermes:session-changed'))
-        }
       } catch {
-        setSessionError('Failed to start session')
+        setSessionError('Failed to select agent')
         return
       }
     }
