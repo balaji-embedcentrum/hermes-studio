@@ -233,12 +233,33 @@ function AgentsPage() {
     return false
   }, [mode, selectedCloudId, localHermesUrl, personalAgent])
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (mode === 'local') {
       setShowFolderDialog(true)
-    } else {
-      navigate({ to: '/projects' })
+      return
     }
+    if ((mode === 'vps' || mode === 'tunnel') && personalAgent) {
+      setSessionError(null)
+      try {
+        const res = await fetch('/api/agent-sessions/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentId: personalAgent.id }),
+        })
+        const data = (await res.json()) as { ok: boolean; error?: string }
+        if (!data.ok) {
+          setSessionError(data.error ?? 'Failed to start session')
+          return
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('hermes:session-changed'))
+        }
+      } catch {
+        setSessionError('Failed to start session')
+        return
+      }
+    }
+    navigate({ to: '/projects' })
   }
 
   // Mode switching: clear cross-mode state so "Continue" state is honest
