@@ -42,9 +42,13 @@ export function useActiveSession() {
     try {
       const sessRes = (await fetch('/api/agent-sessions/status').then((r) =>
         r.json(),
-      )) as { session: SessionInfo | null }
+      )) as { session: SessionInfo | null; hasPersonalAgent?: boolean }
       setSession(sessRes.session)
-      setHasSession(Boolean(sessRes.session))
+      // BYO single-tenant users (user_vps, user_tunnel) don't create
+      // session rows but DO have a registered personal agent. Treat that
+      // as "has session" so the global SessionEndRedirect in __root.tsx
+      // doesn't kick them off /projects, /files, /chat, etc.
+      setHasSession(Boolean(sessRes.session) || Boolean(sessRes.hasPersonalAgent))
     } catch {
       setHasSession(false)
     }
