@@ -11,6 +11,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { requireAuth } from '../../../server/supabase-auth'
 import { getSupabaseServer } from '../../../lib/supabase'
+import { decryptSecret } from '../../../server/secret-crypto'
 
 type TestResult =
   | { ok: true; latencyMs: number; status: number }
@@ -55,7 +56,8 @@ export const Route = createFileRoute('/api/agents/test')({
         }
 
         const headers: Record<string, string> = {}
-        if (agent.api_key) headers['Authorization'] = `Bearer ${agent.api_key}`
+        const agentKey = decryptSecret(agent.api_key)
+        if (agentKey) headers['Authorization'] = `Bearer ${agentKey}`
 
         let lastStatus = 0
         const startedAt = Date.now()

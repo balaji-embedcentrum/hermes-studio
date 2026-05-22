@@ -159,9 +159,18 @@ export async function openaiChat(
   options: OpenAIChatOptions = {},
 ): Promise<string | AsyncGenerator<StreamChunkType, void, void>> {
   // Use selected agent's URL + model + key if userId provided
-  const agentConfig = options.userId ? await getAgentConfig(options.userId) : { url: HERMES_API }
+  const agentConfig = options.userId
+    ? await getAgentConfig(options.userId)
+    : { url: HERMES_API, isLocalDefault: true }
   const apiUrl = agentConfig.url
-  const token = agentConfig.apiKey || BEARER_TOKEN
+  // The shared global BEARER_TOKEN is only valid for the local default Hermes.
+  // A user-selected agent must carry its own key; never leak the global secret
+  // to a third-party/remote agent, and never fall through to an unauthenticated
+  // request — fail closed instead.
+  const token = agentConfig.apiKey ?? (agentConfig.isLocalDefault ? BEARER_TOKEN : undefined)
+  if (!token && !agentConfig.isLocalDefault) {
+    throw new Error('Selected agent has no API key configured')
+  }
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token) {

@@ -8,9 +8,11 @@
  * relying on @supabase/ssr's createServerClient, which has known issues
  * with PKCE cookie persistence in TanStack Start / Vinxi.
  */
+import '../../../server/ws-polyfill'
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { provisionProfile } from '../../../server/supabase-auth'
+import { encryptSecret } from '../../../server/secret-crypto'
 import { getPublicUrl } from '../../../server/request-url'
 
 const SUPABASE_URL = process.env.SUPABASE_URL!
@@ -98,10 +100,10 @@ export const Route = createFileRoute('/api/auth/callback')({
             .single()
 
           if (!existing) {
-            await provisionProfile(admin, user, provider_token ?? null)
-          } else if (provider_token) {
-            await admin.from('profiles').update({ github_token: provider_token }).eq('id', user.id)
+            await provisionProfile(admin, user)
           }
+          // NB: the GitHub OAuth token is NOT written to the database — it
+          // goes into the `gh-token` cookie below and lives nowhere else.
         } catch (err) {
           console.error('[auth/callback] Profile provisioning error:', err)
           // Non-fatal — continue with login
@@ -116,21 +118,26 @@ export const Route = createFileRoute('/api/auth/callback')({
         //
         const isHttps = url.protocol === 'https:'
         const secure = isHttps ? '; Secure' : ''
-        const encodedAT = encodeURIComponent(access_token)
 
-        // NARROWED TO A SINGLE SET-COOKIE to work around a runtime that
-        // collapses repeated Set-Cookie headers into one comma-merged header.
-        // The PKCE verifier expires on its own (Max-Age=600 from github.ts).
-        // Refresh token flow is not wired yet; session currently lasts
-        // expires_in (typically 1h from Supabase).
-        const sessionCookie = `sb-access-token=${encodedAT}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${expires_in}`
+        // ONE cookie, ONE Set-Cookie, object-form headers — the exact shape
+        // the callback used before PR #17 and the only shape that survives
+        // the 302 redirect path intact. A second Set-Cookie / array-of-pairs
+        // header gets dropped on a redirect (that was the #17 login bug).
+        //
+        // Value: the Supabase JWT, optionally followed by
+        // `|<encrypted-github-token>`. The GitHub token therefore rides
+        // inside the session cookie — never in the database.
+        // Refresh token flow is not wired yet; session lasts expires_in
+        // (typically 1h from Supabase).
+        let cookieValue = access_token
+        if (provider_token) {
+          cookieValue += '|' + encryptSecret(provider_token)
+        }
+        const sessionCookie =
+          `sb-access-token=${encodeURIComponent(cookieValue)}; ` +
+          `HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${expires_in}`
 
-        console.info(
-          '[auth/callback] Login successful for user:',
-          user.id,
-          '| setting cookie length:',
-          sessionCookie.length,
-        )
+        console.info('[auth/callback] Login successful for user:', user.id)
 
         return new Response(null, {
           status: 302,
