@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/agent-sessions/start')({
         const body = await request.json().catch(() => ({})) as { agentId?: string }
         if (!body.agentId) return json({ ok: false, error: 'agentId required' }, { status: 400 })
 
-        const result = await startSession(auth.userId, body.agentId)
+        const result = await startSession(auth.userId, body.agentId, auth.githubToken)
         if (result.ok) {
           return json({ ok: true, session: result.session })
         }

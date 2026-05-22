@@ -6,8 +6,10 @@
  * All API routes call requireAuth(request) — returns user or throws 401.
  */
 
+import './ws-polyfill'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Profile } from '../lib/supabase'
+import { decryptSecret } from './secret-crypto'
 
 const SUPABASE_URL = process.env.SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!
@@ -18,7 +20,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY!
  * Returns the user's profile from our profiles table.
  * Throws a Response with status 401 if not authenticated.
  */
-export async function requireAuth(request: Request): Promise<{ userId: string; profile: Profile }> {
+export async function requireAuth(request: Request): Promise<{ userId: string; profile: Profile; githubToken: string | null }> {
   const token = extractToken(request)
   if (!token) {
     // Diagnostic: show what cookies and headers DID arrive, so we can tell
@@ -43,6 +45,10 @@ export async function requireAuth(request: Request): Promise<{ userId: string; p
     throw unauthorizedResponse()
   }
 
+  // The GitHub OAuth token rides in its own HttpOnly `gh-token` cookie now,
+  // not the profiles table. Decrypt it from the request and surface it.
+  const githubToken = extractGithubToken(request)
+
   // Load profile from our table (service role — bypasses RLS)
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: { persistSession: false },
@@ -56,16 +62,16 @@ export async function requireAuth(request: Request): Promise<{ userId: string; p
   if (profileErr || !profile) {
     // Profile missing — create it now (race condition on first request)
     const newProfile = await provisionProfile(admin, user)
-    return { userId: user.id, profile: newProfile }
+    return { userId: user.id, profile: newProfile, githubToken }
   }
 
-  return { userId: user.id, profile }
+  return { userId: user.id, profile, githubToken }
 }
 
 /**
  * Like requireAuth but returns null instead of throwing — for optional auth checks.
  */
-export async function getAuthUser(request: Request): Promise<{ userId: string; profile: Profile } | null> {
+export async function getAuthUser(request: Request): Promise<{ userId: string; profile: Profile; githubToken: string | null } | null> {
   try {
     return await requireAuth(request)
   } catch (err) {
@@ -84,7 +90,6 @@ export async function getAuthUser(request: Request): Promise<{ userId: string; p
 export async function provisionProfile(
   admin: SupabaseClient,
   user: { id: string; email?: string; user_metadata?: Record<string, any> },
-  githubToken: string | null = null,
 ): Promise<Profile> {
   const githubLogin = user.user_metadata?.user_name ?? user.user_metadata?.preferred_username ?? ''
   const email = user.email ?? null
@@ -104,7 +109,6 @@ export async function provisionProfile(
     .insert([{
       id: user.id,
       github_login: githubLogin,
-      github_token: githubToken,
       system_uid: nextUid,
       email,
       credits: 10,
@@ -129,12 +133,33 @@ function extractToken(request: Request): string | null {
   const auth = request.headers.get('authorization')
   if (auth?.startsWith('Bearer ')) return auth.slice(7)
 
-  // 2. Cookie: sb-access-token=<token>
+  // 2. Cookie: sb-access-token=<jwt>[|<encrypted-github-token>]
   const cookie = request.headers.get('cookie') ?? ''
   const match = cookie.match(/(?:^|;\s*)sb-access-token=([^;]+)/)
-  if (match) return decodeURIComponent(match[1])
+  if (match) return decodeURIComponent(match[1]).split('|')[0]
 
   return null
+}
+
+/**
+ * The user's GitHub OAuth token. It rides as the `|`-suffixed segment of the
+ * `sb-access-token` cookie value (`<jwt>|<encrypted-token>`), AES-encrypted
+ * with SECRETS_ENCRYPTION_KEY — never stored in the database. Returns null
+ * when absent or undecryptable; callers treat that as "reconnect GitHub."
+ * (One cookie, not two: a second cookie is dropped on the 302 login
+ * redirect — see callback.ts.)
+ */
+function extractGithubToken(request: Request): string | null {
+  const cookie = request.headers.get('cookie') ?? ''
+  const match = cookie.match(/(?:^|;\s*)sb-access-token=([^;]+)/)
+  if (!match) return null
+  const parts = decodeURIComponent(match[1]).split('|')
+  if (parts.length < 2 || !parts[1]) return null
+  try {
+    return decryptSecret(parts[1])
+  } catch {
+    return null
+  }
 }
 
 function unauthorizedResponse(): Response {
