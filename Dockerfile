@@ -5,7 +5,10 @@ WORKDIR /app
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 COPY package.json pnpm-lock.yaml .npmrc ./
-RUN npm install -g pnpm && pnpm install --no-frozen-lockfile
+# pnpm pinned to v9: an unpinned (newer) pnpm hard-errors on
+# ERR_PNPM_IGNORED_BUILDS. v9 matches pnpm-lock.yaml (lockfileVersion 9.0)
+# and runs dependency build scripts by default — do not un-pin.
+RUN npm install -g pnpm@9 && pnpm install --no-frozen-lockfile
 
 COPY . .
 RUN pnpm build
