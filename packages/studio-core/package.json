@@ -1,0 +1,23 @@
+{
+  "name": "@studio/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./components/*": "./src/components/*",
+    "./hooks/*": "./src/hooks/*",
+    "./lib/*": "./src/lib/*",
+    "./server/*": "./src/server/*",
+    "./stores/*": "./src/stores/*",
+    "./screens/*": "./src/screens/*",
+    "./routes/*": "./src/routes/*",
+    "./sylang/*": "./src/sylang/*",
+    "./brand": "./src/brand/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "comment": "Shipped as SOURCE (no build step) — each app's Vite/TanStack transpiles it. Runtime deps are declared here so pnpm hoists them; the exports map mirrors today's @/* subfolders so import rewrites are mechanical. Fill `dependencies` from the current hermes-studio package.json during the Phase 1 move (react, react-dom, @tanstack/*, @supabase/*, zustand, lucide-react, clsx, tailwind-merge, marked, etc.).",
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  }
+}
