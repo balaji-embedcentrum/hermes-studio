@@ -2,6 +2,7 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 import { GitFork } from 'lucide-react'
+import { brand } from '@/brand'
 
 /**
  * Sylang Studio gateway.
@@ -50,7 +51,7 @@ function SignInGateway() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-surface text-ink antialiased px-6">
       <div className="w-full max-w-sm flex flex-col items-center gap-6">
         <img
-          src="/sylang-logo.svg"
+          src={brand.logo}
           alt=""
           aria-hidden="true"
           className="h-12 w-12"
@@ -63,7 +64,7 @@ function SignInGateway() {
 
         <div className="text-center">
           <h1 className="text-xl font-semibold tracking-tight">
-            Sylang Studio
+            {brand.appTitle}
           </h1>
           <p className="text-sm text-primary-600 mt-1">
             Sign in with GitHub to open the playground.

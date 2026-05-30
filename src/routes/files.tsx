@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import { CodeMirrorEditor } from '@/components/code-editor/CodeMirrorEditor'
+import { brand } from '@/brand'
 import { createFileRoute } from '@tanstack/react-router'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { FileExplorerSidebar, type FileEntry } from '@/components/file-explorer'
@@ -471,11 +472,15 @@ function WorkspaceHome({
               {repoName}
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--theme-muted)' }}>
-              Model-Based Systems Engineering Workspace
+              {brand.showMbseTools ? 'Model-Based Systems Engineering Workspace' : 'Workspace'}
             </p>
           </div>
         </div>
 
+        {/* MBSE tools (Quick Actions + file-type guide + standards callout) —
+            Sylang only; hidden in Hermes via brand.showMbseTools. */}
+        {brand.showMbseTools && (
+        <>
         {/* Quick Actions — Coverage / Traceability / FMEA / ASPICE. */}
         <div className="mb-10">
           <h2
@@ -563,6 +568,8 @@ function WorkspaceHome({
             your project.
           </p>
         </div>
+        </>
+        )}
       </div>
     </div>
   )
