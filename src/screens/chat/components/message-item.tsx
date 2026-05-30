@@ -7,6 +7,7 @@ import {
   textFromMessage,
 } from '../utils'
 import { MessageActionsBar } from './message-actions-bar'
+import { TuiActivityCard } from './tui-activity-card'
 import type { ChatAttachment, ChatMessage, ToolCallContent } from '../types'
 import type { ToolPart } from '@/components/prompt-kit/tool'
 import { AssistantAvatar, UserAvatar } from '@/components/avatars'
@@ -2147,32 +2148,25 @@ function MessageItemComponent({
         </div>
       )}
       {/* <think>...</think> blocks from Hermes agent — rendered as collapsibles */}
-      {!isUser && thinkBlocks.length > 0 && thinkBlocks.map((block, i) => (
-        <div key={i} className="w-full max-w-[900px]">
-          <Collapsible defaultOpen={false}>
-            <CollapsibleTrigger className="w-fit">
-              <HugeiconsIcon
-                icon={Idea01Icon}
-                size={20}
-                strokeWidth={1.5}
-                className="opacity-70"
-              />
-              <span>Thinking</span>
-              <HugeiconsIcon
-                icon={ArrowDown01Icon}
-                size={20}
-                strokeWidth={1.5}
-                className="opacity-60 transition-transform duration-150 group-data-panel-open:rotate-180"
-              />
-            </CollapsibleTrigger>
-            <CollapsiblePanel>
-              <div className="rounded-md border border-primary-200 bg-primary-50 p-3">
-                <p className="text-sm text-primary-700 whitespace-pre-wrap text-pretty">{block}</p>
-              </div>
-            </CollapsiblePanel>
-          </Collapsible>
+      {/* Agent reasoning emitted as <think> blocks renders in the grouped
+          TUI-style activity card (combined into one expandable "Thinking"
+          row) instead of separate bare collapsibles, matching the tool
+          activity card visual language. */}
+      {!isUser && thinkBlocks.length > 0 ? (
+        <div className="w-full max-w-[900px] flex">
+          <div className="w-6 shrink-0" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <TuiActivityCard
+              toolSections={[]}
+              thinking={thinkBlocks.join('\n\n')}
+              isStreaming={false}
+              expandAll={expandAllToolSections}
+              formatLabel={formatToolDisplayLabel}
+              formatArg={keyArgLabel}
+            />
+          </div>
         </div>
-      ))}
+      ) : null}
       {effectiveIsStreaming && hasLifecycleEvents && !hasToolCalls && (
         <div className="w-full max-w-[900px] flex flex-col gap-1">
           {effectiveLifecycleEvents.map((event, index) => (
@@ -2210,14 +2204,28 @@ function MessageItemComponent({
           </details>
         </div>
       )}
-      {/* Render tool calls above the message bubble */}
-      {hasToolCalls && (
-        <ToolCallGroup
-          toolSections={finalToolSections}
-          expandAll={expandAllToolSections}
-          isStreaming={effectiveIsStreaming}
-        />
-      )}
+      {/* Grouped TUI-style activity card above the assistant bubble. Only
+          show once there is real assistant text in the bubble (or the run
+          finished). While streaming with no text yet, the streaming
+          ThinkingBubble in chat-message-list owns the visual and renders its
+          own branched TuiActivityCard so we don't double up. */}
+      {!isUser &&
+      finalToolSections.length > 0 &&
+      (hasText || !effectiveIsStreaming) ? (
+        <div className="w-full max-w-[900px] flex">
+          <div className="w-6 shrink-0" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <TuiActivityCard
+              toolSections={finalToolSections}
+              thinking={null}
+              isStreaming={effectiveIsStreaming}
+              expandAll={expandAllToolSections}
+              formatLabel={formatToolDisplayLabel}
+              formatArg={keyArgLabel}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {shouldRenderMessageBubble && !(message as any).__isNarration && (
         <Message

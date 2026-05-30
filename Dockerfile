@@ -5,13 +5,15 @@ WORKDIR /app
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 COPY package.json pnpm-lock.yaml .npmrc ./
-# pnpm pinned to v9: an unpinned (newer) pnpm hard-errors on
-# ERR_PNPM_IGNORED_BUILDS. v9 matches pnpm-lock.yaml (lockfileVersion 9.0)
-# and runs dependency build scripts by default — do not un-pin.
-RUN npm install -g pnpm@9 && pnpm install --no-frozen-lockfile
+RUN npm install -g pnpm && pnpm install --no-frozen-lockfile
 
 COPY . .
-RUN pnpm build
+# Sync the @sylang editor bundles from node_modules into public/ AFTER the
+# source copy. The public/sylang-* dirs are no longer vendored in git, and
+# `postinstall` runs before `COPY . .` (so a stale bundle from the VPS
+# working tree could overlay it). This explicit, idempotent sync makes the
+# bundle deterministic regardless of pnpm pre/post-script settings.
+RUN pnpm sync:editors:npm && pnpm build
 
 # --- Production stage ---
 FROM node:22-alpine AS runner

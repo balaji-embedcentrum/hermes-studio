@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/terms')({
   component: TermsPage,
@@ -45,6 +45,7 @@ function TermsPage() {
         >
           <Link
             to="/"
+            search={{ error: undefined }}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -54,8 +55,8 @@ function TermsPage() {
             }}
           >
             <img
-              src="/hermes-crest.svg"
-              alt="Hermes Studio"
+              src="/sylang-logo.svg"
+              alt="Sylang Studio"
               style={{ width: 26, height: 26 }}
             />
             <span
@@ -65,7 +66,7 @@ function TermsPage() {
                 letterSpacing: '-0.03em',
               }}
             >
-              Hermes Studio
+              Sylang Studio
             </span>
           </Link>
         </div>
@@ -113,7 +114,7 @@ function TermsPage() {
               marginBottom: 0,
             }}
           >
-            Hermes Studio is an open playground for trying AI coding agents.
+            Sylang Studio is an open playground for trying AI coding agents.
             It is provided <strong>AS IS</strong>, without warranties of any
             kind. By signing in, you acknowledge that this is experimental
             software and you use it at your own risk.
@@ -311,6 +312,7 @@ function TermsPage() {
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <Link
             to="/"
+            search={{ error: undefined }}
             style={{
               display: 'inline-block',
               padding: '10px 24px',

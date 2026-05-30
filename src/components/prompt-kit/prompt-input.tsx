@@ -14,6 +14,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import {
+  selectEnterBehavior,
+  useChatSettingsStore,
+} from '@/hooks/use-chat-settings'
 
 type PromptInputContextType = {
   isLoading: boolean
@@ -189,6 +193,7 @@ function PromptInputTextarea({
 }: PromptInputTextareaProps) {
   const { value, setValue, maxHeight, onSubmit, disabled, textareaRef } =
     usePromptInput()
+  const enterBehavior = useChatSettingsStore(selectEnterBehavior)
 
   function adjustHeight(el: HTMLTextAreaElement | null) {
     if (!el || disableAutosize) return
@@ -236,7 +241,20 @@ function PromptInputTextarea({
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // IME guard: never act on Enter while composing (CJK/IME candidates).
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) {
+      onKeyDown?.(e)
+      return
+    }
+
+    const modifierSend = e.metaKey || e.ctrlKey
+    // Default 'send' mode preserves prior behavior exactly: Enter sends unless
+    // Shift is held. 'newline' mode (opt-in) inserts a newline on Enter and
+    // sends on Cmd/Ctrl+Enter.
+    const shouldSend =
+      enterBehavior === 'newline' ? modifierSend : !e.shiftKey
+
+    if (shouldSend) {
       e.preventDefault()
       const form = e.currentTarget.form
       if (form) {
@@ -245,6 +263,7 @@ function PromptInputTextarea({
         onSubmit?.()
       }
     }
+    // else: let the newline happen naturally (no preventDefault)
     onKeyDown?.(e)
   }
 

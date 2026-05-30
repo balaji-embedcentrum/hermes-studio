@@ -148,7 +148,7 @@ export function DashboardOverflowPanel({ open, onClose }: Props) {
             onSelect={handleSelect}
           />
           <OverflowGrid
-            title="Hermes"
+            title="Sylang"
             items={HERMES_ITEMS}
             onSelect={handleSelect}
           />

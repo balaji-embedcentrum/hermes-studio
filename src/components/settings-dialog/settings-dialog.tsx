@@ -1832,7 +1832,7 @@ export function SettingsDialog({
                 Settings
               </DialogTitle>
               <DialogDescription className="sr-only">
-                Configure Hermes Workspace
+                Configure Sylang Studio
               </DialogDescription>
             </div>
             <DialogClose

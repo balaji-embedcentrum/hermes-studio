@@ -1,7 +1,7 @@
 {
-  "name": "Hermes Studio",
-  "short_name": "Hermes Studio",
-  "description": "AI agent workspace — chat, files, terminal, memory, and skills.",
+  "name": "Sylang Studio",
+  "short_name": "Sylang Studio",
+  "description": "Browser IDE for Sylang — Model-Based Systems Engineering with AI assist.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0E1A",
@@ -9,7 +9,7 @@
   "categories": ["productivity", "utilities", "developer"],
   "icons": [
     {
-      "src": "/hermes-crest.svg",
+      "src": "/sylang-logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

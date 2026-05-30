@@ -55,8 +55,8 @@ export function ChatEmptyState({
             }}
           />
           <img
-            src="/hermes-crest.svg"
-            alt="Hermes Studio"
+            src="/sylang-logo.svg"
+            alt="Sylang Studio"
             className="relative size-20 rounded-2xl"
             style={{
               boxShadow:
@@ -70,7 +70,7 @@ export function ChatEmptyState({
           className="text-xl font-semibold tracking-tight"
           style={{ color: 'var(--theme-text)' }}
         >
-          Hermes Studio
+          Sylang Studio
         </h2>
 
         {!compact && (

@@ -25,7 +25,7 @@ function classifyConnectionError(
   if (!normalizedError && !status) {
     return {
       title: 'Not connected',
-      description: "Hermes Workspace can't reach Hermes.",
+      description: "Sylang Studio can't reach the gateway.",
       action: 'Check that Hermes is running, then try again.',
     }
   }

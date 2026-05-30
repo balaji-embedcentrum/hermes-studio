@@ -424,6 +424,84 @@ function shouldCollapseTextDuplicate(
   return true
 }
 
+/**
+ * Last-resort defensive dedup at the render layer.
+ *
+ * The chat-store dedup (on 'message' and 'done' events) and the
+ * finalDisplayMessages text dedup both compare assistant message text
+ * with strict equality after some normalization. Occasionally a
+ * duplicate still slips through — most commonly when the agent repeats
+ * a canned welcome response across consecutive turns, or when the same
+ * message arrives twice via different channels (history refetch + SSE,
+ * 'done' + a trailing 'message' event) and the copies differ by
+ * formatting markers (e.g. **bold** vs <strong> after rendering),
+ * trailing whitespace, or zero-width chars that the earlier
+ * normalization didn't strip.
+ *
+ * This pass walks the final message list and drops any assistant
+ * message whose normalized text matches any of the previous
+ * WINDOW_SIZE assistant messages in the same session. Compares across
+ * intervening user messages because the typical leak pattern is
+ * A1=welcome, U1, A2=welcome (agent re-emits the welcome on every
+ * turn until it engages with the actual question).
+ */
+const RECENT_ASSISTANT_WINDOW = 5
+
+/**
+ * Shared text normalizer used by both the streaming-placeholder duplicate
+ * check (PR #30) and the render-layer assistant dedup (PR #33). Same input
+ * → same comparable string so the two layers agree on what counts as a
+ * verbatim repeat:
+ *   - markdown bold markers stripped (`**x**` vs `<strong>x</strong>` post-render)
+ *   - common zero-width chars stripped (BOM, joiners, word joiner)
+ *   - runs of any whitespace collapsed to a single space
+ *   - leading / trailing whitespace removed
+ */
+function normalizeChatText(text: string): string {
+  return text
+    .replace(/\*\*/g, '')
+    .replace(/[​-‍⁠﻿]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function normalizeForDedup(message: ChatMessage): string {
+  return normalizeChatText(textFromMessage(message))
+}
+
+function collapseAdjacentAssistantDuplicates(
+  messages: Array<ChatMessage>,
+): Array<ChatMessage> {
+  if (messages.length < 2) return messages
+  const result: Array<ChatMessage> = []
+  const recentAssistantTexts: Array<string> = []
+  for (const msg of messages) {
+    if (msg.role !== 'assistant') {
+      // User / system messages don't reset the recent-assistant window —
+      // the duplicate pattern we're fighting always has a user turn
+      // between the two identical assistant replies.
+      result.push(msg)
+      continue
+    }
+    const normalized = normalizeForDedup(msg)
+    if (
+      normalized.length > 20 &&
+      recentAssistantTexts.includes(normalized)
+    ) {
+      // Same text as a recent prior assistant turn — drop this one.
+      continue
+    }
+    result.push(msg)
+    if (normalized.length > 20) {
+      recentAssistantTexts.push(normalized)
+      if (recentAssistantTexts.length > RECENT_ASSISTANT_WINDOW) {
+        recentAssistantTexts.shift()
+      }
+    }
+  }
+  return result
+}
+
 function stripQueuedWrapperFromUserMessage(message: ChatMessage): ChatMessage {
   if (message.role !== 'user') return message
 
@@ -532,6 +610,9 @@ export function ChatScreen({
   )
   const { renameSession, renaming: renamingSessionTitle } = useRenameSession()
   const sseConnectionState = useChatStore((s) => s.connectionState)
+  const clearStoreStreamingSession = useChatStore(
+    (s) => s.clearStreamingSession,
+  )
 
   const {
     sessionsQuery,
@@ -579,6 +660,7 @@ export function ChatScreen({
     completedStreamingThinking,
     clearCompletedStreaming,
     activeToolCalls,
+    streamingRunId,
   } = useRealtimeChatHistory({
     sessionKey: isPortableMode
       ? 'main'
@@ -1047,7 +1129,7 @@ export function ChatScreen({
         setSending(false)
         if (isMissingAuth(messageText)) {
           try {
-            navigate({ to: '/', replace: true })
+            navigate({ to: '/', replace: true, search: { error: undefined } })
           } catch {
             /* router not ready */
           }
@@ -1103,6 +1185,21 @@ export function ChatScreen({
     activeRealtimeStreamingText,
     activeIsRealtimeStreaming,
   )
+  // Anti-flicker: the smoothed text can momentarily go empty mid-stream
+  // (between chunks / tool phases), which blanks the assistant bubble then
+  // snaps back. Hold the last non-empty smoothed value while streaming so the
+  // text never flashes blank; reset once streaming ends.
+  const stickyStreamingTextRef = useRef('')
+  if (activeIsRealtimeStreaming) {
+    if (smoothActiveStreamingText) {
+      stickyStreamingTextRef.current = smoothActiveStreamingText
+    }
+  } else {
+    stickyStreamingTextRef.current = ''
+  }
+  const stableActiveStreamingText = activeIsRealtimeStreaming
+    ? smoothActiveStreamingText || stickyStreamingTextRef.current
+    : ''
 
   // Use realtime-merged messages for display (SSE + history)
   // Re-apply display filter to realtime messages
@@ -1196,7 +1293,7 @@ export function ChatScreen({
       .map((msg) => stripQueuedWrapperFromUserMessage(msg))
 
     if (!activeIsRealtimeStreaming) {
-      return deduped
+      return collapseAdjacentAssistantDuplicates(deduped)
     }
 
     const nextMessages = [...deduped]
@@ -1205,12 +1302,47 @@ export function ChatScreen({
       phase: toolCall.phase,
     }))
 
+    // Defensive: if the live streaming text matches the most recent prior
+    // assistant message (after the same normalization we use for the render
+    // dedup — markdown markers stripped, zero-width chars stripped, whitespace
+    // collapsed), the agent or SSE layer is replaying that message as the new
+    // run's first chunk. Suppress the duplicate text in the placeholder so
+    // the user doesn't see the prior reply repeated under their new question
+    // while waiting for the real new chunks.
+    //
+    // Earlier this check used a bare trim() which missed cases where the
+    // replayed text differed by a single markdown marker or a zero-width
+    // char from the stored copy — letting the duplicate leak through.
+    const lastAssistantNormalized = (() => {
+      for (let i = deduped.length - 1; i >= 0; i--) {
+        const msg = deduped[i]
+        if (msg.role !== 'assistant') continue
+        return normalizeChatText(textFromMessage(msg))
+      }
+      return ''
+    })()
+    const normalizedStreamingText = normalizeChatText(
+      activeRealtimeStreamingText ?? '',
+    )
+    const streamingTextIsDuplicate =
+      normalizedStreamingText.length > 20 &&
+      normalizedStreamingText === lastAssistantNormalized
+    const effectiveStreamingText = streamingTextIsDuplicate
+      ? ''
+      : activeRealtimeStreamingText
+
+    // Key the placeholder by runId so each new send gets a fresh MessageItem
+    // instance. Reusing a constant key ('streaming-current') caused React to
+    // keep the previous run's MessageItem alive, including its useState
+    // displayText/revealedText, so the prior assistant message's text bled
+    // into the new turn's bubble until the next chunk arrived.
+    const streamingPlaceholderId = `streaming-${streamingRunId ?? 'pending'}`
     const streamingMsg = {
       role: 'assistant',
       content: [],
-      __optimisticId: 'streaming-current',
+      __optimisticId: streamingPlaceholderId,
       __streamingStatus: 'streaming',
-      __streamingText: activeRealtimeStreamingText,
+      __streamingText: effectiveStreamingText,
       __streamingThinking: realtimeStreamingThinking,
       __streamToolCalls: streamToolCalls,
     } as ChatMessage
@@ -1238,13 +1370,14 @@ export function ChatScreen({
     } else {
       nextMessages.push(streamingMsg)
     }
-    return nextMessages
+    return collapseAdjacentAssistantDuplicates(nextMessages)
   }, [
     activeToolCalls,
     activeIsRealtimeStreaming,
     activeRealtimeStreamingText,
     realtimeMessages,
     realtimeStreamingThinking,
+    streamingRunId,
   ])
 
   const derivedStreamingInfo = useMemo(() => {
@@ -1527,7 +1660,7 @@ export function ChatScreen({
       return
     }
     if (isMissingAuth(messageText)) {
-      navigate({ to: '/', replace: true })
+      navigate({ to: '/', replace: true, search: { error: undefined } })
     }
     const message = sessionsError
       ? `Failed to load sessions. ${sessionsError}`
@@ -1716,6 +1849,10 @@ export function ChatScreen({
       setSending(true)
       setError(null)
       clearCompletedStreaming()
+      // Defensive: drop any lingering chat-store streaming state for this
+      // session before the new run starts. Prevents prior run's tool pills /
+      // progress events from rendering during the gap before the first chunk.
+      clearStoreStreamingSession(sessionKey)
       setWaitingForResponse(true)
       activeSendRef.current = {
         sessionKey,
@@ -2607,13 +2744,21 @@ export function ChatScreen({
               isStreaming={derivedStreamingInfo.isStreaming}
               streamingMessageId={derivedStreamingInfo.streamingMessageId}
               streamingText={
-                smoothActiveStreamingText ||
-                completedStreamingText.current ||
+                stableActiveStreamingText ||
+                // Only fall back to the previous run's completed text while
+                // truly idle (handoff window between 'done' and history paint).
+                // Suppress it the instant a new send starts so the prior
+                // response can't render as the new run's streaming bubble.
+                (!sending && !waitingForResponse
+                  ? completedStreamingText.current
+                  : '') ||
                 undefined
               }
               streamingThinking={
                 realtimeStreamingThinking ||
-                completedStreamingThinking.current ||
+                (!sending && !waitingForResponse
+                  ? completedStreamingThinking.current
+                  : '') ||
                 undefined
               }
               lifecycleEvents={realtimeLifecycleEvents}

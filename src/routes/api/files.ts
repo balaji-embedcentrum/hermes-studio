@@ -19,6 +19,13 @@ import {
 import { getAgentConfig } from '../../server/gateway-capabilities'
 import { getAuthUser } from '../../server/supabase-auth'
 import { validateSession } from '../../server/agent-sessions'
+import {
+  invalidateWorkspace,
+  isSylangFile,
+  removeCachedDocument,
+  updateCachedDocument,
+} from '../../sylang/symbolManager/workspaceSymbolCache'
+
 const execFileAsync = promisify(execFile)
 
 // In remote mode this is a virtual path prefix only — no local FS access.
@@ -332,9 +339,13 @@ export const Route = createFileRoute('/api/files')({
             if (action === 'git-pull') {
               const r = await fetch(`${remoteAgentUrl}/ws/${encodeURIComponent(repo)}/git/pull`, { method: 'POST', headers: agentHeaders })
               const d = await r.json() as { output?: string; message?: string }
-              return r.ok
-                ? json({ ok: true, output: d.output ?? '' })
-                : json({ ok: false, error: d.message ?? r.statusText }, { status: r.status })
+              if (r.ok) {
+                // A pull can rewrite many files at once — cheaper to drop the
+                // whole cache and let the next read re-init than to enumerate.
+                invalidateWorkspace(inputPath)
+                return json({ ok: true, output: d.output ?? '' })
+              }
+              return json({ ok: false, error: d.message ?? r.statusText }, { status: r.status })
             }
 
             if (action === 'read') {
@@ -391,6 +402,7 @@ export const Route = createFileRoute('/api/files')({
                 cwd: resolvedDir,
                 timeout: 30_000,
               })
+              invalidateWorkspace(inputPath)
               return json({ ok: true, output: (stdout + stderr).trim() })
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err)
@@ -485,7 +497,13 @@ export const Route = createFileRoute('/api/files')({
             await fs.mkdir(path.dirname(destination), { recursive: true })
             const buffer = Buffer.from(await file.arrayBuffer())
             await fs.writeFile(destination, buffer)
-            return json({ ok: true, path: toRelative(destination) })
+            const relativeDest = toRelative(destination)
+            if (isSylangFile(destination)) {
+              // Cache key is parsed from the workspace-virtual path; manager
+              // stores docs by absolute fs path in local mode, so pass both.
+              await updateCachedDocument(relativeDest, destination, buffer.toString('utf8'))
+            }
+            return json({ ok: true, path: relativeDest })
           }
 
           const body = (await request.json().catch(() => ({}))) as Record<
@@ -522,6 +540,9 @@ export const Route = createFileRoute('/api/files')({
               if (!r.ok) {
                 const d = await r.json().catch(() => ({})) as { message?: string }
                 return json({ error: `Agent: ${d.message ?? r.statusText}` }, { status: r.status })
+              }
+              if (isSylangFile(postFilePath)) {
+                await updateCachedDocument(postFilePath, postFilePath, writeContent)
               }
               return json({ ok: true, path: postFilePath })
             }
@@ -594,6 +615,12 @@ export const Route = createFileRoute('/api/files')({
                 method: 'DELETE',
               })
 
+              // Mirror the rename into the symbol cache: drop the source doc
+              // and add the destination doc. Re-resolution inside each helper
+              // keeps cross-file `use` imports honest.
+              if (isSylangFile(fromPath)) removeCachedDocument(fromPath, fromPath)
+              if (isSylangFile(toPath)) await updateCachedDocument(toPath, toPath, content)
+
               return json({ ok: true, path: toPath })
             }
 
@@ -604,7 +631,10 @@ export const Route = createFileRoute('/api/files')({
               const r = await fetch(`${postAgentUrl}/ws/${encodeURIComponent(delParsed.repo)}/file?path=${encodeURIComponent(delParsed.relInRepo)}`, {
                 method: 'DELETE',
               })
-              if (r.ok) return json({ ok: true })
+              if (r.ok) {
+                if (isSylangFile(postFilePath)) removeCachedDocument(postFilePath, postFilePath)
+                return json({ ok: true })
+              }
               const d = await r.json().catch(() => ({})) as { message?: string }
               return json({ error: d.message ?? 'Delete failed' }, { status: r.status })
             }
@@ -620,31 +650,49 @@ export const Route = createFileRoute('/api/files')({
           }
 
           if (action === 'rename') {
-            const fromPath = ensureWorkspacePath(String(body.from || ''))
-            const toPath = ensureWorkspacePath(String(body.to || ''))
+            const fromInput = String(body.from || '')
+            const toInput = String(body.to || '')
+            const fromPath = ensureWorkspacePath(fromInput)
+            const toPath = ensureWorkspacePath(toInput)
             await fs.mkdir(path.dirname(toPath), { recursive: true })
             await fs.rename(fromPath, toPath)
-            return json({ ok: true, path: toRelative(toPath) })
+            const relativeTo = toRelative(toPath)
+            if (isSylangFile(fromPath)) {
+              removeCachedDocument(fromInput || toRelative(fromPath), fromPath)
+            }
+            if (isSylangFile(toPath)) {
+              const renamed = await fs.readFile(toPath, 'utf8').catch(() => '')
+              await updateCachedDocument(toInput || relativeTo, toPath, renamed)
+            }
+            return json({ ok: true, path: relativeTo })
           }
 
           if (action === 'delete') {
             if (!(await requireLocalOrAuth(request))) {
               return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
             }
-            const targetPath = ensureWorkspacePath(String(body.path || ''))
+            const deleteInput = String(body.path || '')
+            const targetPath = ensureWorkspacePath(deleteInput)
             try {
               await execFileAsync('trash', [targetPath])
             } catch {
               await fs.rm(targetPath, { recursive: true, force: true })
             }
+            if (isSylangFile(targetPath)) {
+              removeCachedDocument(deleteInput || toRelative(targetPath), targetPath)
+            }
             return json({ ok: true })
           }
 
           // ── Local filesystem (absolute paths from local agent mode) ────
-          const filePath = ensureWorkspacePath(String(body.path || ''))
+          const fileInput = String(body.path || '')
+          const filePath = ensureWorkspacePath(fileInput)
           const content = typeof body.content === 'string' ? body.content : ''
           await fs.mkdir(path.dirname(filePath), { recursive: true })
           await fs.writeFile(filePath, content, 'utf8')
+          if (isSylangFile(filePath)) {
+            await updateCachedDocument(fileInput || toRelative(filePath), filePath, content)
+          }
           return json({ ok: true, path: toRelative(filePath) })
         } catch (err) {
           return json({ error: safeErrorMessage(err) }, { status: 500 })

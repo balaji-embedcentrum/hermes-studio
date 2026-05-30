@@ -13,17 +13,18 @@ import {
   RefreshIcon,
   Upload01Icon,
 } from '@hugeicons/core-free-icons'
+import { GitPanel } from '../git-panel'
 import FilePreviewDialog from './file-preview-dialog'
-import { GitPanel, type GitDiffSelection } from '../git-panel'
+import type { GitDiffSelection } from '../git-panel'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import {
+  localDeleteFile,
+  localGitPull,
   localListFiles,
+  localMkdir,
   localReadFile,
   localWriteFile,
-  localDeleteFile,
-  localMkdir,
-  localGitPull,
 } from '@/lib/local-file-ops'
 import {
   ScrollAreaCorner,
@@ -110,7 +111,7 @@ async function fetchFileTree(dirPath = '', localAgentUrl?: string | null, worksp
   const url = dirPath
     ? `/api/files?action=list&path=${encodeURIComponent(dirPath)}`
     : '/api/files?action=list'
-  const res = await fetch(url)
+  const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) throw new Error('Failed to load files')
   const data = (await res.json()) as { entries?: Array<FileEntry> }
   return Array.isArray(data.entries) ? data.entries : []
@@ -165,12 +166,60 @@ export function FileExplorerSidebar({
   const [syncing, setSyncing] = useState(false)
   const localAgentUrl = useWorkspaceStore(s => s.localHermesUrl)
 
+  // Mirror `expanded` in a ref so `refresh` can re-fetch open folders without
+  // depending on the Set itself (which would re-fire the mount useEffect on every toggle).
+  const expandedRef = useRef(expanded)
+  useEffect(() => {
+    expandedRef.current = expanded
+  }, [expanded])
+
   const refresh = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const nextEntries = await fetchFileTree(initialPath, localAgentUrl, initialPath)
-      setEntries(nextEntries)
+      const rootEntries = await fetchFileTree(initialPath, localAgentUrl, initialPath)
+
+      // Re-fetch children for every currently-expanded folder so the visible
+      // subtree reflects the latest workspace state, not the last-loaded snapshot.
+      const expandedPaths = Array.from(expandedRef.current)
+      const childrenByPath = new Map<string, Array<FileEntry>>()
+      await Promise.all(
+        expandedPaths.map(async (p) => {
+          try {
+            const children = await fetchFileTree(p, localAgentUrl, initialPath)
+            childrenByPath.set(p, children)
+          } catch {
+            // Folder may have been deleted — leave it out; we'll prune below.
+          }
+        }),
+      )
+
+      const graft = (es: Array<FileEntry>): Array<FileEntry> =>
+        es.map((entry) => {
+          if (entry.type !== 'folder') return entry
+          const children = childrenByPath.get(entry.path)
+          if (children === undefined) return entry
+          return { ...entry, children: graft(children) }
+        })
+
+      const nextTree = graft(rootEntries)
+      setEntries(nextTree)
+
+      // Prune `expanded` of paths that no longer exist in the refreshed tree.
+      const livePaths = new Set<string>()
+      const collect = (es: Array<FileEntry>) => {
+        for (const e of es) {
+          livePaths.add(e.path)
+          if (e.children) collect(e.children)
+        }
+      }
+      collect(nextTree)
+      setExpanded((prev) => {
+        const next = new Set<string>()
+        for (const p of prev) if (livePaths.has(p)) next.add(p)
+        return next.size === prev.size ? prev : next
+      })
+      setLoadingFolders((prev) => (prev.size === 0 ? prev : new Set()))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -682,21 +731,38 @@ export function FileExplorerSidebar({
             <div className="px-3 py-2 text-xs text-primary-500">Loading…</div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
-              <div className="flex size-10 items-center justify-center rounded-xl border border-primary-200 bg-primary-100/60">
+              <div className="flex size-10 items-center justify-center rounded-xl border border-red-200 bg-red-50">
                 <HugeiconsIcon
                   icon={Folder01Icon}
                   size={20}
                   strokeWidth={1.5}
-                  className="text-primary-500"
+                  className="text-red-500"
                 />
               </div>
               <div>
                 <p className="text-sm font-medium text-primary-800">
-                  No workspace selected
+                  {initialPath
+                    ? 'Could not load workspace files'
+                    : 'No workspace selected'}
                 </p>
                 <p className="mt-1 text-xs text-primary-500 text-pretty">
-                  Select a folder to browse and edit files.
+                  {initialPath
+                    ? 'The agent could not return a file tree for this workspace. The directory may have been moved, deleted, or never created.'
+                    : 'Select a folder to browse and edit files.'}
                 </p>
+                {initialPath && (
+                  <p className="mt-2 font-mono text-[10px] text-primary-400 break-all">
+                    {initialPath}
+                  </p>
+                )}
+                {initialPath && (
+                  <p
+                    className="mt-2 text-[11px] text-red-600 break-words"
+                    title={error}
+                  >
+                    {error.slice(0, 200)}
+                  </p>
+                )}
               </div>
               <Button
                 size="sm"
@@ -720,11 +786,20 @@ export function FileExplorerSidebar({
               </div>
               <div>
                 <p className="text-sm font-medium text-primary-800">
-                  Workspace is empty
+                  {initialPath
+                    ? 'Workspace is empty'
+                    : 'No workspace selected'}
                 </p>
                 <p className="mt-1 text-xs text-primary-500 text-pretty">
-                  Create files or upload content to get started.
+                  {initialPath
+                    ? 'The agent reported this workspace exists but contains no files. Create a file or upload content to start.'
+                    : 'Select a folder to browse and edit files.'}
                 </p>
+                {initialPath && (
+                  <p className="mt-2 font-mono text-[10px] text-primary-400 break-all">
+                    {initialPath}
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -744,6 +819,14 @@ export function FileExplorerSidebar({
                 >
                   <HugeiconsIcon icon={Upload01Icon} size={16} />
                   Upload
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={refresh}
+                  title="Re-query the agent"
+                >
+                  <HugeiconsIcon icon={RefreshIcon} size={16} />
                 </Button>
               </div>
             </div>

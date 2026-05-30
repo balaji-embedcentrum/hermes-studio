@@ -7,7 +7,6 @@ import type { BundledLanguage, Highlighter } from 'shiki'
 import { useResolvedTheme } from '@/hooks/use-chat-settings'
 import { writeTextToClipboard } from '@/lib/clipboard'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 
 type CodeBlockProps = {
   content: string
@@ -36,14 +35,9 @@ export function CodeBlock({
 }: CodeBlockProps) {
   const resolvedTheme = useResolvedTheme()
   const [copied, setCopied] = useState(false)
-  const [showLineNumbers, setShowLineNumbers] = useState(false)
   const [html, setHtml] = useState<string | null>(null)
   const [resolvedLanguage, setResolvedLanguage] = useState('text')
-  const [headerBg, setHeaderBg] = useState<string | undefined>()
-
-  const fallback = useMemo(() => {
-    return content
-  }, [content])
+  const [themeBg, setThemeBg] = useState<string | undefined>()
 
   const normalizedLanguage = normalizeLanguage(language || 'text')
   const themeName = resolvedTheme === 'dark' ? 'vitesse-dark' : 'vitesse-light'
@@ -51,7 +45,8 @@ export function CodeBlock({
     () => Math.max(1, content.split('\n').length),
     [content],
   )
-  const canShowLineNumbers = lineCount > 1
+  const isSingleLine = lineCount === 1
+  const showLineNumbers = !isSingleLine
 
   useEffect(() => {
     let active = true
@@ -72,8 +67,7 @@ export function CodeBlock({
         if (active) {
           setResolvedLanguage(lang)
           setHtml(highlighted)
-          const theme = highlighter.getTheme(themeName)
-          setHeaderBg(theme.bg)
+          setThemeBg(highlighter.getTheme(themeName).bg)
         }
       })
       .catch(() => {
@@ -94,57 +88,49 @@ export function CodeBlock({
     }
   }
 
-  const isSingleLine = content.split('\n').length === 1
   const displayLanguage = formatLanguageName(resolvedLanguage)
 
   return (
     <div
       className={cn(
-        'group relative min-w-0 overflow-hidden rounded-lg border border-primary-200',
+        'group relative my-3 min-w-0 overflow-hidden rounded-lg border border-primary-200/80 shadow-sm',
         className,
       )}
+      style={themeBg ? { backgroundColor: themeBg } : undefined}
     >
-      <div
-        className={cn('flex items-center justify-between gap-2 px-3 pt-2')}
-        style={{ backgroundColor: headerBg }}
-      >
-        <span className="rounded border border-primary-200 bg-primary-100/80 px-2 py-0.5 text-xs font-medium text-primary-700">
+      <div className="flex items-center justify-between border-b border-primary-200/60 px-3 py-1.5">
+        <span className="font-mono text-[11px] tracking-wide text-primary-500 uppercase">
           {displayLanguage}
         </span>
-        <div className="flex items-center gap-2">
-          {canShowLineNumbers ? (
-            <Button
-              variant="ghost"
-              className="h-auto px-0 text-xs font-medium text-primary-500 hover:text-primary-800 hover:bg-transparent"
-              onClick={() => {
-                setShowLineNumbers((current) => !current)
-              }}
-            >
-              {showLineNumbers ? 'Hide lines' : 'Show lines'}
-            </Button>
-          ) : null}
-          <Button
-            variant="ghost"
-            aria-label={ariaLabel ?? 'Copy code'}
-            className="h-auto px-0 text-xs font-medium text-primary-500 hover:text-primary-800 hover:bg-transparent"
-            onClick={() => {
-              handleCopy().catch(() => {})
-            }}
-          >
-            <HugeiconsIcon
-              icon={copied ? Tick02Icon : Copy01Icon}
-              size={20}
-              strokeWidth={1.5}
-            />
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
-        </div>
+        <button
+          type="button"
+          aria-label={ariaLabel ?? (copied ? 'Copied' : 'Copy code')}
+          onClick={() => {
+            handleCopy().catch(() => {})
+          }}
+          className={cn(
+            'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors',
+            'text-primary-500 hover:bg-primary-100/70 hover:text-primary-900',
+            copied && 'text-primary-700',
+          )}
+        >
+          <HugeiconsIcon
+            icon={copied ? Tick02Icon : Copy01Icon}
+            size={14}
+            strokeWidth={1.75}
+          />
+          <span>{copied ? 'Copied' : 'Copy'}</span>
+        </button>
       </div>
       <div className="flex min-w-0 overflow-x-auto">
         {showLineNumbers ? (
-          <ol className="sticky left-0 z-10 select-none border-r border-primary-200 bg-primary-100/60 px-2 py-3 text-right text-xs text-primary-600 tabular-nums">
+          <ol
+            aria-hidden="true"
+            className="sticky left-0 z-10 m-0 flex-none border-r border-primary-200/40 py-3 pl-3 pr-3 text-right text-xs leading-6 text-primary-400/80 tabular-nums select-none"
+            style={themeBg ? { backgroundColor: themeBg } : undefined}
+          >
             {Array.from({ length: lineCount }, (_, index) => (
-              <li key={`line-${index + 1}`} className="leading-6">
+              <li key={`line-${index + 1}`} className="list-none">
                 {index + 1}
               </li>
             ))}
@@ -154,7 +140,7 @@ export function CodeBlock({
           {html ? (
             <div
               className={cn(
-                'text-sm text-primary-900 [&>pre]:m-0 [&>pre]:overflow-visible [&>pre]:leading-6',
+                'text-sm text-primary-900 [&>pre]:m-0 [&>pre]:bg-transparent [&>pre]:overflow-visible [&>pre]:leading-6',
                 isSingleLine
                   ? '[&>pre]:whitespace-pre [&>pre]:px-3 [&>pre]:py-2'
                   : '[&>pre]:px-3 [&>pre]:py-3',
@@ -164,11 +150,11 @@ export function CodeBlock({
           ) : (
             <pre
               className={cn(
-                'text-sm leading-6 text-primary-900',
+                'm-0 bg-transparent text-sm leading-6 text-primary-900',
                 isSingleLine ? 'whitespace-pre px-3 py-2' : 'px-3 py-3',
               )}
             >
-              <code>{fallback}</code>
+              <code>{content}</code>
             </pre>
           )}
         </div>

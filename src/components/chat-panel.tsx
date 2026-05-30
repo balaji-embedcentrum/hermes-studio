@@ -14,7 +14,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { AnimatePresence, motion } from 'motion/react'
 import type { SessionMeta } from '@/screens/chat/types'
-import { ChatScreen } from '@/screens/chat/chat-screen'
+import { ChatScreenV2 } from '@/screens/chat-v2/chat-screen-v2'
 import { useActiveSession } from '@/hooks/use-active-session'
 import { chatQueryKeys, clearHistoryMessages, moveHistoryMessages } from '@/screens/chat/chat-queries'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -49,14 +49,35 @@ export function ChatPanel() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  // Resize drag handlers
+  // Resize drag handlers.
+  //
+  // The Sylang editor (and other inline editors) render inside same-origin
+  // iframes. While dragging, when the mouse passes over an iframe the
+  // iframe's window CAPTURES the mousemove events and our document-level
+  // listener stops receiving them — drag jerks / loses tracking until the
+  // cursor crosses back out. Two well-known mitigations applied here:
+  //
+  //   (a) Overlay a transparent fixed-position div over the whole viewport
+  //       while dragging. Sits above iframes, so the parent receives every
+  //       mousemove cleanly.
+  //   (b) Set pointer-events:none on all iframes for belt-and-suspenders.
+  //       Cheaper alternative if (a) ever has a stacking-context surprise.
+  //
+  // We do both — they're independent and the cost is one extra div + one
+  // class toggle.
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     isDragging.current = true
+    setIsDraggingState(true)
     startX.current = e.clientX
     startWidth.current = panelWidth
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
+    // Belt: ignore pointer events on every iframe so they can't steal
+    // mousemove from the parent document while we drag.
+    for (const f of document.querySelectorAll('iframe')) {
+      ;(f as HTMLIFrameElement).style.pointerEvents = 'none'
+    }
 
     const handleMouseMove = (ev: MouseEvent) => {
       if (!isDragging.current) return
@@ -66,14 +87,22 @@ export function ChatPanel() {
     }
     const handleMouseUp = () => {
       isDragging.current = false
+      setIsDraggingState(false)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+      for (const f of document.querySelectorAll('iframe')) {
+        ;(f as HTMLIFrameElement).style.pointerEvents = ''
+      }
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
   }, [panelWidth])
+
+  // Mirrors `isDragging` ref into render state so the suspenders overlay
+  // (the transparent fixed div) can show only while dragging.
+  const [isDraggingState, setIsDraggingState] = useState(false)
 
   // Sync panel width to CSS custom property so workspace-shell can read it for margin
   useEffect(() => {
@@ -180,7 +209,7 @@ export function ChatPanel() {
     //    (hermes_pending_msg_* for old sessions; missing this caused the
     //    previous chat's last user bubble to appear at the top of a new chat)
     try {
-      const lsKeys: string[] = []
+      const lsKeys: Array<string> = []
       for (let i = 0; i < window.localStorage.length; i++) {
         const key = window.localStorage.key(i)
         if (!key) continue
@@ -197,7 +226,7 @@ export function ChatPanel() {
 
     // 5. Clear sessionStorage streaming state
     try {
-      const keysToRemove: string[] = []
+      const keysToRemove: Array<string> = []
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i)
         if (key?.startsWith('hermes_streaming_')) keysToRemove.push(key)
@@ -229,6 +258,19 @@ export function ChatPanel() {
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Drag overlay — covers the whole viewport during a resize drag
+           *  so iframes (Sylang editor etc.) can't steal mousemove events
+           *  from the parent document. Without this, dragging the resize
+           *  handle becomes jerky the moment the cursor enters an iframe.
+           *  z-index sits above iframes but below the chat panel itself so
+           *  the panel's own UI stays interactive even mid-drag. */}
+          {isDraggingState && (
+            <div
+              aria-hidden
+              className="fixed inset-0 z-[19]"
+              style={{ cursor: 'col-resize' }}
+            />
+          )}
           {/* Backdrop for narrow screens */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -342,15 +384,18 @@ export function ChatPanel() {
 
             {/* Chat content */}
             <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
-              <ChatScreen
+              <ChatScreenV2
                 key={`${activeFriendlyId}-${chatResetCounter}`}
-                activeFriendlyId={activeFriendlyId}
-                isNewChat={isNewChat}
-                forcedSessionKey={forcedSessionKey}
-                onSessionResolved={
-                  isNewChat ? handleSessionResolved : undefined
-                }
-                compact
+                sessionKey={activeFriendlyId}
+                friendlyId={activeFriendlyId}
+                onSelectSession={(key) => {
+                  // Panel context: swap the panel's session in place
+                  // instead of navigating to /chat/$sessionKey (which
+                  // would take the user out of their editor). The key
+                  // change on ChatScreenV2 forces a clean remount with
+                  // fresh history hydration for the picked session.
+                  setChatPanelSessionKey(key)
+                }}
               />
               {/* Session-ended overlay */}
               {hasSession === false && (

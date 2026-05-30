@@ -1,45 +1,33 @@
 /**
- * JotxFileEditor — renders .jot files using @jotx-labs/editor
+ * JotxFileEditor — renders .jot files using @sylang/jot-editor.
  *
- * Pipeline: .jot text → Parser → AST blocks → TiptapAdapter → Tiptap JSON → JotxEditor
- * On save: Tiptap JSON → Serializer → .jot text → /api/files POST
+ * History: this used to import @jotx-labs/editor directly and drove its
+ * tiptap document via `useEffect + setTiptapDoc(...)`. That triggers a
+ * known layout-effect race inside @jotx-labs/editor's BlockMenu — every
+ * setTiptapDoc looks like an editor recreation, but the new TipTap view
+ * isn't mounted yet, so the next render throws
+ * "[tiptap error]: The editor view is not available. Cannot access
+ *  view['dom']. The editor may not be mounted yet."
+ *
+ * @sylang/jot-editor wraps @jotx-labs/editor with the right lifecycle:
+ *   • parse the raw text *once* per mount via `useState` lazy initializer
+ *   • the TipTap editor owns content from mount onwards
+ *   • the host swaps files by passing a different `key` so React remounts
+ *
+ * This component now is just: fetch the file, hand the text to
+ * <JotxEditor>, and debounce-save what it returns.
  */
-import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { JotxEditor } from '@sylang/jot-editor'
+import '@sylang/jot-editor/styles.css'
+// Full 6354-line Notion-style styling (tables, headings, lists, callouts,
+// etc.) lifted from sylang2.1/src/jotx — kept host-local because the npm
+// `@sylang/jot-editor` only ships a minimal layout stub. We should fold
+// this back into the package and republish, but the cosmetic version
+// bump is a separate task; for now the host imports it directly.
+import './jotx-editor.css'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { localReadFile, localWriteFile } from '@/lib/local-file-ops'
-import { Parser, Serializer } from '@jotx-labs/core'
-import { BlockRegistry } from '@jotx-labs/registry'
-import { registerStandardBlocks } from '@jotx-labs/standard-lib'
-import { TiptapAdapter } from '@jotx-labs/adapters/dist/editor'
-
-// Lazy load JotxEditor — it imports CSS via require() which crashes SSR
-const JotxEditorLazy = lazy(() =>
-  import('@jotx-labs/editor').then(m => ({
-    default: ({ documentId, documentType, tiptapDoc, onChange, ribbonExpanded, editable, bridge }: any) => {
-      // Import CSS on client side
-      import('./jotx-editor.css').catch(() => {})
-      return (
-        <m.BridgeProvider bridge={bridge}>
-          <m.JotxEditor
-            documentId={documentId}
-            documentType={documentType}
-            tiptapDoc={tiptapDoc}
-            onChange={onChange}
-            ribbonExpanded={ribbonExpanded}
-            editable={editable}
-          />
-        </m.BridgeProvider>
-      )
-    }
-  }))
-)
-
-// Initialize registry + parser once
-const registry = new BlockRegistry()
-registerStandardBlocks(registry)
-const parser = new Parser({ registry })
-const serializer = new Serializer()
-const tiptapAdapter = new TiptapAdapter()
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | null
 
@@ -48,64 +36,38 @@ interface Props {
   fileName: string
 }
 
-// Web bridge — no-op for VSCode-specific features
-const webBridge = {
-  log: (msg: string) => console.info('[jotx]', msg),
-  error: (msg: string) => console.error('[jotx]', msg),
-  openFile: () => {},
-  showMessage: (msg: string) => console.info('[jotx]', msg),
-  navigateToSymbol: () => {},
-  saveState: () => {},
-  getState: () => undefined,
-  onMessage: () => () => {},
-}
-
 export function JotxFileEditor({ filePath, fileName }: Props) {
-  const [tiptapDoc, setTiptapDoc] = useState<any>(null)
+  const [content, setContent] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>(null)
   const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const docMetaRef = useRef<{ id: string; type: string; metadata: Record<string, string> } | null>(null)
-  const localAgentUrl = useWorkspaceStore(s => s.localHermesUrl)
-  const activeWorkspacePath = useWorkspaceStore(s => s.activeWorkspacePath)
+  const localAgentUrl = useWorkspaceStore((s) => s.localHermesUrl)
+  const activeWorkspacePath = useWorkspaceStore((s) => s.activeWorkspacePath)
 
-  // Load file → parse → convert to Tiptap JSON
+  // Fetch the raw .jot text. Re-runs when filePath changes; the wrapper
+  // component below is keyed on filePath too, so it remounts on file
+  // change rather than mutating state in place.
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
+    setContent(null)
 
     async function load() {
       try {
-        let rawContent: string
+        let raw: string
         if (localAgentUrl && activeWorkspacePath) {
           const result = await localReadFile(localAgentUrl, activeWorkspacePath, filePath)
-          rawContent = result.content
+          raw = result.content
         } else {
           const res = await fetch(`/api/files?action=read&path=${encodeURIComponent(filePath)}`)
           if (!res.ok) throw new Error(`Cannot read file: HTTP ${res.status}`)
-          const data = await res.json() as { content: string }
-          rawContent = data.content
+          const data = (await res.json()) as { content: string }
+          raw = data.content
         }
-
-        // If empty file, use a minimal template
-        const content = rawContent?.trim() || `hdef jotx ${fileName.replace(/\.\w+$/, '')}\n  title "Untitled"\n\n  def paragraph p1\n    text "Start writing here..."`
-
-        const result = parser.parse(content)
-        if (result.errors?.length) {
-          console.warn('[jotx] Parse warnings:', result.errors)
-        }
-
-        const doc = result.document
-        docMetaRef.current = { id: doc.id, type: doc.type, metadata: doc.metadata ?? {} }
-
-        // Convert blocks to Tiptap JSON
-        const tiptapNodes = (doc.blocks ?? []).map((b: any) => tiptapAdapter.blockToTiptap(b))
-        const tiptapDocument = { type: 'doc', content: tiptapNodes }
-
         if (!cancelled) {
-          setTiptapDoc(tiptapDocument)
+          setContent(raw ?? '')
           setLoading(false)
         }
       } catch (e) {
@@ -117,64 +79,55 @@ export function JotxFileEditor({ filePath, fileName }: Props) {
     }
 
     void load()
-    return () => { cancelled = true }
-  }, [filePath])
+    return () => {
+      cancelled = true
+    }
+  }, [filePath, localAgentUrl, activeWorkspacePath])
 
-  // Handle changes from the editor — auto-save with debounce
-  const handleChange = (tiptapJson: string) => {
-    setSaveStatus('unsaved')
-    if (pendingSave.current) clearTimeout(pendingSave.current)
-
-    pendingSave.current = setTimeout(async () => {
-      setSaveStatus('saving')
-      try {
-        // Convert Tiptap JSON back to jotx text
-        const tiptapDocument = JSON.parse(tiptapJson)
-        const blocks = tiptapAdapter.tiptapToBlocks(tiptapDocument)
-        const meta = docMetaRef.current
-
-        // Rebuild AST for serialization
-        const ast = {
-          document: {
-            id: meta?.id ?? 'untitled',
-            type: meta?.type ?? 'jotx',
-            metadata: meta?.metadata ?? {},
-            blocks,
-          },
+  // Debounced save — @sylang/jot-editor hands us the already-serialized
+  // .jot text, so we just write it back.
+  const handleChange = useCallback(
+    (text: string) => {
+      setSaveStatus('unsaved')
+      if (pendingSave.current) clearTimeout(pendingSave.current)
+      pendingSave.current = setTimeout(async () => {
+        setSaveStatus('saving')
+        try {
+          if (localAgentUrl && activeWorkspacePath) {
+            await localWriteFile(localAgentUrl, activeWorkspacePath, filePath, text)
+          } else {
+            await fetch('/api/files', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'write', path: filePath, content: text }),
+            })
+          }
+          setSaveStatus('saved')
+        } catch (e) {
+          console.error('[jotx] Save failed:', e)
+          setSaveStatus('unsaved')
         }
-
-        const jotText = serializer.serialize(ast as any)
-
-        if (localAgentUrl && activeWorkspacePath) {
-          await localWriteFile(localAgentUrl, activeWorkspacePath, filePath, jotText)
-        } else {
-          await fetch('/api/files', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'write', path: filePath, content: jotText }),
-          })
-        }
-
-        setSaveStatus('saved')
-      } catch (e) {
-        console.error('[jotx] Save failed:', e)
-        setSaveStatus('unsaved')
-      }
-    }, 1500)
-  }
+      }, 1500)
+    },
+    [filePath, localAgentUrl, activeWorkspacePath],
+  )
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="jotx-host flex flex-col h-full min-h-0">
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 py-1.5 border-b shrink-0"
         style={{ background: 'var(--theme-sidebar)', borderColor: 'var(--theme-border)' }}
       >
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-sm font-semibold" style={{ color: 'var(--theme-accent)' }}>jotx</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--theme-accent)' }}>
+            jotx
+          </span>
         </div>
         <div className="w-px h-5 shrink-0" style={{ background: 'var(--theme-border)' }} />
-        <span className="font-mono text-xs font-medium" style={{ color: 'var(--theme-text)' }}>{fileName}</span>
+        <span className="font-mono text-xs font-medium" style={{ color: 'var(--theme-text)' }}>
+          {fileName}
+        </span>
         <div className="flex-1" />
         <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>
           {saveStatus === 'saving' && 'Saving…'}
@@ -183,9 +136,11 @@ export function JotxFileEditor({ filePath, fileName }: Props) {
         </span>
       </div>
 
-      {/* Loading / Error */}
       {loading && (
-        <div className="flex items-center justify-center flex-1 gap-3" style={{ color: 'var(--theme-muted)' }}>
+        <div
+          className="flex items-center justify-center flex-1 gap-3"
+          style={{ color: 'var(--theme-muted)' }}
+        >
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />
           <span className="text-sm">Loading {fileName}…</span>
         </div>
@@ -193,26 +148,28 @@ export function JotxFileEditor({ filePath, fileName }: Props) {
 
       {error && (
         <div className="flex items-center justify-center flex-1">
-          <div className="text-sm px-4 py-3 rounded-xl" style={{ background: '#3f0f0f', color: '#f87171' }}>
+          <div
+            className="text-sm px-4 py-3 rounded-xl"
+            style={{ background: '#3f0f0f', color: '#f87171' }}
+          >
             {error}
           </div>
         </div>
       )}
 
-      {/* Editor */}
-      {tiptapDoc && !loading && !error && (
-        <div className="flex-1 min-h-0 overflow-auto" style={{ background: 'var(--theme-bg)' }}>
-          <Suspense fallback={<div className="flex items-center justify-center py-20 gap-3" style={{ color: 'var(--theme-muted)' }}><div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />Loading editor...</div>}>
-            <JotxEditorLazy
-              documentId={filePath}
-              documentType="page"
-              tiptapDoc={tiptapDoc}
-              onChange={handleChange}
-              ribbonExpanded={true}
-              editable={true}
-              bridge={webBridge}
-            />
-          </Suspense>
+      {/* Editor — `key={filePath}` ensures React remounts on file change,
+          which is exactly what @sylang/jot-editor's wrapper expects. */}
+      {content !== null && !loading && !error && (
+        <div
+          className="flex-1 min-h-0 overflow-auto"
+          style={{ background: 'var(--theme-bg)' }}
+        >
+          <JotxEditor
+            key={filePath}
+            value={content}
+            fileName={fileName}
+            onChange={handleChange}
+          />
         </div>
       )}
     </div>
