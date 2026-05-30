@@ -4,6 +4,12 @@ WORKDIR /app
 
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
+# Brand selection — one engine, two products. Build the Hermes image with
+#   docker build --build-arg VITE_BRAND=hermes .
+# Defaults to Sylang. studio-apps passes this per brand.
+ARG VITE_BRAND=sylang
+ENV VITE_BRAND=$VITE_BRAND
+
 COPY package.json pnpm-lock.yaml .npmrc ./
 RUN npm install -g pnpm && pnpm install --no-frozen-lockfile
 
