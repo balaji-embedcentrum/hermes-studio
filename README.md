@@ -209,11 +209,15 @@ A user's agent (and its key) is looked up here per request; the global
   bundle). Every table **must** have Row-Level Security enabled with policies
   scoping rows to `auth.uid()`. The service key bypasses RLS and is used only in
   server route handlers — keep it server-side.
-- **Secrets at rest.** `agent_instances.api_key` and the stored GitHub token are
-  AES-256-GCM encrypted (`enc:v1:` envelope) using `SECRETS_ENCRYPTION_KEY`
-  (separate from the Supabase keys). See `src/server/secret-crypto.ts`. Losing
-  the key makes those rows unrecoverable — keep an offline backup. Backfill with
+- **Secrets at rest.** `agent_instances.api_key` is AES-256-GCM encrypted
+  (`enc:v1:` envelope) using `SECRETS_ENCRYPTION_KEY` (separate from the Supabase
+  keys). See `src/server/secret-crypto.ts`. Losing the key makes those rows
+  unrecoverable — keep an offline backup. Backfill with
   `pnpm migrate:encrypt-secrets`.
+- **The GitHub token is never persisted.** The user's GitHub OAuth token is
+  encrypted and kept **only inside the HttpOnly session cookie** — never written
+  to the database — so it is **deleted when the session ends** (logout or
+  expiry), not retained.
 - **No secrets in the bundle.** Only `SUPABASE_URL` + `SUPABASE_ANON_KEY` are
   baked in. `HERMES_API_TOKEN` and the service key are explicitly never sent to
   the client.
