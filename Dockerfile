@@ -3,6 +3,8 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+# Vite/Rollup chunk rendering for this app needs more than Node's ~2GB default.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 
 # Brand selection — one engine, two products. Build the Hermes image with
 #   docker build --build-arg VITE_BRAND=hermes .
@@ -11,12 +13,14 @@ ARG VITE_BRAND=sylang
 ENV VITE_BRAND=$VITE_BRAND
 
 COPY package.json pnpm-lock.yaml .npmrc ./
-# --ignore-scripts: pnpm v10 errors (ERR_PNPM_IGNORED_BUILDS) on unapproved
-# dependency build scripts in non-interactive installs. We don't need any of
-# them at install time — esbuild/unrs-resolver ship prebuilt platform binaries
-# as optional deps, core-js' script only prints a funding notice — and the
-# project's own editor sync + build are run explicitly after `COPY . .` below.
-RUN npm install -g pnpm && pnpm install --no-frozen-lockfile --ignore-scripts
+# Pin pnpm 9 (matches lockfileVersion 9.0). pnpm 10/11 no longer read the
+# "pnpm" field in package.json, silently dropping our overrides + the
+# @jotx-labs/editor patch; pnpm 9 honors them and has no build-script gate.
+# --ignore-scripts: dependency build scripts aren't needed at install time
+# (esbuild/unrs-resolver ship prebuilt binaries as optional deps; core-js'
+# script only prints a notice), and the editor sync + build run explicitly
+# after `COPY . .` below. Patches still apply (patching isn't a script).
+RUN npm install -g pnpm@9 && pnpm install --no-frozen-lockfile --ignore-scripts
 
 COPY . .
 # Sync the @sylang editor bundles from node_modules into public/ AFTER the
