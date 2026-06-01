@@ -12,6 +12,15 @@ ENV NODE_OPTIONS=--max-old-space-size=4096
 ARG VITE_BRAND=sylang
 ENV VITE_BRAND=$VITE_BRAND
 
+# The client bundle bakes SUPABASE_URL + SUPABASE_ANON_KEY at build time (vite
+# loadEnv reads them from the environment). Both are public, RLS-protected
+# values — safe to embed. SUPABASE_SERVICE_KEY is intentionally NOT passed here:
+# it must stay a runtime-only secret and is never baked into the client.
+ARG SUPABASE_URL=
+ARG SUPABASE_ANON_KEY=
+ENV SUPABASE_URL=$SUPABASE_URL
+ENV SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
 COPY package.json pnpm-lock.yaml .npmrc ./
 # Patches must be present before install: pnpm 9 applies patchedDependencies
 # (@jotx-labs/editor) during `pnpm install`, reading patches/ from the cwd.
