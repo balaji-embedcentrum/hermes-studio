@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { brand } from '@/brand'
 
 export const Route = createFileRoute('/terms')({
   component: TermsPage,
@@ -55,8 +56,8 @@ function TermsPage() {
             }}
           >
             <img
-              src="/sylang-logo.svg"
-              alt="Sylang Studio"
+              src={brand.logo}
+              alt={brand.appTitle}
               style={{ width: 26, height: 26 }}
             />
             <span
@@ -66,7 +67,7 @@ function TermsPage() {
                 letterSpacing: '-0.03em',
               }}
             >
-              Sylang Studio
+              {brand.appTitle}
             </span>
           </Link>
         </div>
@@ -114,7 +115,7 @@ function TermsPage() {
               marginBottom: 0,
             }}
           >
-            Sylang Studio is an open playground for trying AI coding agents.
+            {brand.appTitle} is an open playground for trying AI coding agents.
             It is provided <strong>AS IS</strong>, without warranties of any
             kind. By signing in, you acknowledge that this is experimental
             software and you use it at your own risk.

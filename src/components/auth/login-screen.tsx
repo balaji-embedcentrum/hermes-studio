@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { brand } from '@/brand'
 
 export function LoginScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -31,9 +32,9 @@ export function LoginScreen() {
 
           {/* Logo */}
           <div className="mb-8 flex flex-col items-center gap-3">
-            <img src="/sylang-logo.svg" alt="Sylang Studio" className="h-16 w-16 rounded-2xl" />
+            <img src={brand.logo} alt={brand.appTitle} className="h-16 w-16 rounded-2xl" />
             <div className="text-center">
-              <h1 className="text-2xl font-bold tracking-tight text-white">Sylang Studio</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{brand.appTitle}</h1>
               <p className="text-sm text-primary-400 mt-1">Model-Based Systems Engineering</p>
             </div>
           </div>

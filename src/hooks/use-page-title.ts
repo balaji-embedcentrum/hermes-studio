@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
+import { brand } from '@/brand'
 
-const BASE_TITLE = 'Sylang Studio'
+const BASE_TITLE = brand.appTitle
 
 /**
  * Sets document.title for the current page.

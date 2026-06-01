@@ -1,4 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react'
+import { brand } from '@/brand'
 import {
   ArrowDown01Icon,
   ArrowLeft01Icon,
@@ -828,15 +829,15 @@ function ChatSidebarComponent({
                 )}
               >
                 <img
-                  src="/sylang-logo.svg"
-                  alt="Sylang Studio"
+                  src={brand.logo}
+                  alt={brand.appTitle}
                   className="size-6 rounded-lg"
                 />
                 <span
                   className="text-sm font-semibold tracking-tight"
                   style={{ color: 'var(--theme-text)' }}
                 >
-                  Sylang Studio
+                  {brand.appTitle}
                 </span>
               </Link>
             </motion.div>

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { brand } from '@/brand'
 import { useEffect, useState } from 'react'
 import { getSupabaseBrowser } from '@/lib/supabase'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -437,9 +438,9 @@ function ProjectsPage() {
         style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-sidebar)' }}
       >
         <div className="flex items-center gap-3">
-          <img src="/sylang-logo.svg" alt="Sylang Studio" className="h-8 w-8 rounded-lg" />
+          <img src={brand.logo} alt={brand.appTitle} className="h-8 w-8 rounded-lg" />
           <span className="font-semibold text-lg" style={{ color: 'var(--theme-text)' }}>
-            Sylang Studio
+            {brand.appTitle}
           </span>
         </div>
         <div className="flex items-center gap-4">

@@ -33,7 +33,7 @@ function statusGlyph(phase: ToolPart['phase']): {
       return { icon: '○', className: 'text-amber-500 animate-pulse' }
     case 'start':
     default:
-      return { icon: '○', className: 'text-primary-400' }
+      return { icon: '○', className: 'cv2-muted' }
   }
 }
 
@@ -80,7 +80,7 @@ export function ToolSection({ tool }: Props) {
   const expandable = hasDetails(tool)
 
   return (
-    <div className="my-1 rounded border border-primary-200/70 bg-primary-50/40 text-xs dark:border-primary-700/70 dark:bg-primary-900/40">
+    <div className="my-1 rounded border cv2-border cv2-card text-xs dark:border-primary-700/70 dark:bg-primary-900/40">
       <button
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
@@ -94,17 +94,17 @@ export function ToolSection({ tool }: Props) {
           {icon}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="font-mono font-medium text-primary-900 dark:text-primary-100">
+          <span className="font-mono font-medium cv2-text dark:text-primary-100">
             {tool.name}
           </span>
           {summary && (
-            <span className="ml-2 text-primary-500 dark:text-primary-400">{summary}</span>
+            <span className="ml-2 cv2-muted dark:text-primary-400">{summary}</span>
           )}
         </span>
         {expandable && (
           <span
             aria-hidden="true"
-            className="flex-none text-[10px] text-primary-400 group-hover:text-primary-600 dark:text-primary-500 dark:group-hover:text-primary-300"
+            className="flex-none text-[10px] cv2-muted group-hover:text-primary-600 dark:text-primary-500 dark:group-hover:text-primary-300"
           >
             {open ? '▾' : '▸'}
           </span>
@@ -112,7 +112,7 @@ export function ToolSection({ tool }: Props) {
       </button>
 
       {open && expandable && (
-        <div className="space-y-1.5 border-t border-primary-200/60 px-2 py-2 dark:border-primary-700/60">
+        <div className="space-y-1.5 border-t cv2-border px-2 py-2 dark:border-primary-700/60">
           {Boolean(
             tool.args &&
               typeof tool.args === 'object' &&
@@ -166,19 +166,19 @@ function DetailBlock({
           'mb-0.5 text-[9px] font-medium uppercase tracking-wider',
           danger
             ? 'text-red-600 dark:text-red-300'
-            : 'text-primary-500 dark:text-primary-400',
+            : 'cv2-muted dark:text-primary-400',
         )}
       >
         {label}
       </div>
       <pre
         className={cn(
-          'max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-white/60 p-1.5 text-[11px] leading-snug ring-1 ring-primary-200/50',
+          'max-h-48 overflow-auto whitespace-pre-wrap break-words rounded cv2-output p-1.5 text-[11px] leading-snug ring-1',
           'dark:bg-primary-950/60 dark:ring-primary-700/50',
           mono ? 'font-mono' : 'font-sans',
           danger
             ? 'text-red-700 dark:text-red-200'
-            : 'text-primary-700 dark:text-primary-200',
+            : 'cv2-text dark:text-primary-200',
         )}
       >
         {body}

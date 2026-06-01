@@ -127,8 +127,8 @@ export function SessionsSidebar({
   }, [goTo, queryClient])
 
   return (
-    <aside className="flex h-full w-64 flex-none flex-col border-r border-primary-200 bg-primary-50/60 dark:border-primary-800 dark:bg-primary-950/60">
-      <div className="border-b border-primary-200 p-2 dark:border-primary-800">
+    <aside className="flex h-full w-64 flex-none flex-col border-r cv2-border cv2-panel">
+      <div className="border-b cv2-border p-2">
         <button
           type="button"
           onClick={handleNewChat}
@@ -140,7 +140,7 @@ export function SessionsSidebar({
 
       <div className="flex-1 overflow-y-auto p-1">
         {sessions.length === 0 ? (
-          <div className="p-3 text-xs text-primary-500 dark:text-primary-400">
+          <div className="p-3 text-xs cv2-muted">
             No chats yet — send a message to start one.
           </div>
         ) : (
@@ -162,8 +162,8 @@ export function SessionsSidebar({
                     className={cn(
                       'group flex w-full cursor-pointer flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left text-sm transition-colors',
                       active
-                        ? 'bg-primary-200 text-primary-950 dark:bg-primary-800 dark:text-primary-50'
-                        : 'text-primary-800 hover:bg-primary-100 dark:text-primary-200 dark:hover:bg-primary-800/60',
+                        ? 'cv2-active'
+                        : 'cv2-text cv2-hover',
                     )}
                   >
                     <div className="flex w-full items-baseline justify-between gap-2">
@@ -171,7 +171,7 @@ export function SessionsSidebar({
                         {session.label}
                       </span>
                       <div className="flex flex-none items-center gap-1">
-                        <span className="text-[10px] text-primary-500 dark:text-primary-400">
+                        <span className="text-[10px] cv2-muted">
                           {formatRelativeTime(session.updatedAt)}
                         </span>
                         <button
@@ -179,14 +179,14 @@ export function SessionsSidebar({
                           onClick={(e) => handleDelete(e, session.key)}
                           aria-label={`Delete chat ${session.label}`}
                           title="Remove from sidebar"
-                          className="rounded p-0.5 text-primary-400 opacity-0 transition-opacity hover:bg-red-100 hover:text-red-600 group-hover:opacity-100 dark:text-primary-500 dark:hover:bg-red-950/60 dark:hover:text-red-300"
+                          className="rounded p-0.5 cv2-muted opacity-0 transition-opacity hover:bg-red-100 hover:text-red-600 group-hover:opacity-100"
                         >
                           ×
                         </button>
                       </div>
                     </div>
                     {session.lastSnippet && (
-                      <span className="line-clamp-1 w-full text-xs text-primary-500 dark:text-primary-400">
+                      <span className="line-clamp-1 w-full text-xs cv2-muted">
                         {session.lastSnippet}
                       </span>
                     )}
@@ -197,7 +197,7 @@ export function SessionsSidebar({
           </ul>
         )}
       </div>
-      <div className="border-t border-primary-200/70 px-2 py-1 text-[10px] text-primary-400 dark:border-primary-800/70 dark:text-primary-500">
+      <div className="border-t cv2-border px-2 py-1 text-[10px] cv2-muted">
         Stored locally in this browser.
       </div>
     </aside>

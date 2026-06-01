@@ -1,4 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react'
+import { brand } from '@/brand'
 import { BrainIcon, CodeIcon, PuzzleIcon } from '@hugeicons/core-free-icons'
 import { motion } from 'motion/react'
 
@@ -55,8 +56,8 @@ export function ChatEmptyState({
             }}
           />
           <img
-            src="/sylang-logo.svg"
-            alt="Sylang Studio"
+            src={brand.logo}
+            alt={brand.appTitle}
             className="relative size-20 rounded-2xl"
             style={{
               boxShadow:
@@ -70,7 +71,7 @@ export function ChatEmptyState({
           className="text-xl font-semibold tracking-tight"
           style={{ color: 'var(--theme-text)' }}
         >
-          Sylang Studio
+          {brand.appTitle}
         </h2>
 
         {!compact && (

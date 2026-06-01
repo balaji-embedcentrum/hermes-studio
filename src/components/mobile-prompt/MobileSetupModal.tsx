@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { brand } from '@/brand'
 import { AnimatePresence, motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
@@ -62,7 +63,7 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
   const steps = [
     {
       title: 'Install Tailscale on your desktop',
-      body: 'Install Tailscale on the machine running Sylang Studio, then sign in.',
+      body: `Install Tailscale on the machine running ${brand.appTitle}, then sign in.`,
       showTailscaleIcon: true,
       action: (
         <a
@@ -77,7 +78,7 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
     },
     {
       title: 'Keep your backend reachable',
-      body: 'Sylang Studio can talk to any OpenAI-compatible backend on mobile too. Make sure both the workspace and backend stay reachable over Tailscale or your local network.',
+      body: `${brand.appTitle} can talk to any OpenAI-compatible backend on mobile too. Make sure both the workspace and backend stay reachable over Tailscale or your local network.`,
       showTailscaleIcon: false,
       action: (
         <div className="rounded-lg border border-primary-700 bg-primary-950 px-4 py-3 text-sm text-primary-200">
@@ -112,7 +113,7 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
       ),
     },
     {
-      title: 'Open Sylang Studio on your phone',
+      title: `Open ${brand.appTitle} on your phone`,
       body:
         networkUrl?.source === 'tailscale'
           ? 'Your Tailscale address. Open this on your phone browser to use the same workspace.'
@@ -222,7 +223,7 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
         <div className="mb-4 flex items-center gap-3 pr-10">
           <img
             src="/hermes-avatar.webp"
-            alt="Sylang Studio"
+            alt={brand.appTitle}
             className="size-9 rounded-xl"
           />
           <div className="flex-1">

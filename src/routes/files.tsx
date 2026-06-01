@@ -270,7 +270,7 @@ function FilesRoute() {
               style={{ color: 'var(--theme-accent)' }}
               title="Back to workspace home"
             >
-              Sylang Studio
+              {brand.appTitle}
             </button>
             <div className="flex-1" />
             <SessionTimer />

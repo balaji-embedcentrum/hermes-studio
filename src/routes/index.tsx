@@ -82,8 +82,10 @@ function SignInGateway() {
         )}
 
         <button
+          type="button"
           onClick={handleLogin}
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-accent-500 text-white text-sm font-medium hover:bg-accent-600 transition-colors"
+          style={{ background: 'var(--theme-accent, #c2410c)', color: '#ffffff' }}
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-opacity hover:opacity-90 cursor-pointer"
         >
           <GitFork className="w-4 h-4" aria-hidden="true" />
           Sign in with GitHub

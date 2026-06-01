@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { brand } from '@/brand'
 import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { ProviderLogo } from '@/components/provider-logo'
@@ -500,7 +501,7 @@ export function HermesOnboarding() {
                   filter: 'drop-shadow(0 8px 24px rgba(99,102,241,0.3))',
                 }}
               />
-              <h2 className="text-xl font-bold">Welcome to Sylang Studio</h2>
+              <h2 className="text-xl font-bold">Welcome to {brand.appTitle}</h2>
               <p className="text-sm" style={mutedStyle}>
                 Works with any OpenAI-compatible backend. Hermes gateway APIs
                 unlock sessions, memory, skills, and other extras automatically.
@@ -525,7 +526,7 @@ export function HermesOnboarding() {
               <div className="text-4xl">🔌</div>
               <h2 className="text-lg font-bold">Connect Your Backend</h2>
               <p className="text-sm" style={mutedStyle}>
-                Start by verifying that Sylang Studio can reach your
+                Start by verifying that {brand.appTitle} can reach your
                 OpenAI-compatible backend.
               </p>
 
@@ -622,7 +623,7 @@ export function HermesOnboarding() {
               <p className="text-center text-xs" style={mutedStyle}>
                 {canEditConfig
                   ? 'Save provider settings here, then choose a model before testing chat.'
-                  : 'This backend manages provider settings outside Sylang Studio. Confirm the model you expect to use, then test chat.'}
+                  : 'This backend manages provider settings outside ${brand.appTitle}. Confirm the model you expect to use, then test chat.'}
               </p>
 
               <div className="rounded-xl p-3 text-xs" style={cardStyle}>
@@ -1012,8 +1013,8 @@ export function HermesOnboarding() {
                       </p>
                     ) : (
                       <p className="mt-2 text-xs text-yellow-400">
-                        Confirm the backend is running and still reachable from
-                        Sylang Studio.
+                        Confirm the backend is running and still reachable from{' '}
+                        {brand.appTitle}.
                       </p>
                     )}
                   </div>

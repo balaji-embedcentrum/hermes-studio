@@ -1,4 +1,5 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { brand } from '@/brand'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   BrainIcon,
@@ -174,7 +175,7 @@ export function MobileHamburgerMenu() {
           <div className="flex items-center gap-2.5">
             <img
               src="/hermes-avatar.webp"
-              alt="Sylang Studio"
+              alt={brand.appTitle}
               className="size-8 rounded-xl shrink-0"
             />
             <div className="flex flex-col leading-tight">

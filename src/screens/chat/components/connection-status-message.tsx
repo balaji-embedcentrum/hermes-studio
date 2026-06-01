@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { brand } from '@/brand'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Alert02Icon, WifiDisconnected01Icon } from '@hugeicons/core-free-icons'
 import { cn } from '@/lib/utils'
@@ -25,7 +26,7 @@ function classifyConnectionError(
   if (!normalizedError && !status) {
     return {
       title: 'Not connected',
-      description: "Sylang Studio can't reach the gateway.",
+      description: `${brand.appTitle} can't reach the gateway.`,
       action: 'Check that Hermes is running, then try again.',
     }
   }

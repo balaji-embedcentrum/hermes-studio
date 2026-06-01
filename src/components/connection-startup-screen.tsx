@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { brand } from '@/brand'
 import type { AuthStatus } from '@/lib/hermes-auth'
 import { writeTextToClipboard } from '@/lib/clipboard'
 import { fetchHermesAuthStatus } from '@/lib/hermes-auth'
@@ -185,13 +186,13 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
     >
       <div className="flex w-full max-w-lg flex-col items-center text-center">
         <img
-          src="/sylang-logo.svg"
-          alt="Sylang Studio"
+          src={brand.logo}
+          alt={brand.appTitle}
           className="mb-5 h-20 w-20 rounded-2xl object-cover shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
         />
 
         <h1 className="text-[2rem] font-semibold tracking-tight text-white">
-          Sylang Studio
+          {brand.appTitle}
         </h1>
 
         {/* Connecting spinner */}
@@ -220,7 +221,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
               Welcome! Let&apos;s connect your backend
             </p>
             <p className="mt-2 text-sm leading-6 text-white/60">
-              Sylang Studio works with any OpenAI-compatible backend. Hermes
+              {brand.appTitle} works with any OpenAI-compatible backend. Hermes
               gateway APIs unlock enhanced features automatically when they are
               available.
             </p>

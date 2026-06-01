@@ -196,7 +196,9 @@ function AgentsPage() {
   // End the user's current session from the agents page (without having to
   // navigate to chat first). Posts to the same endpoint the chat-side
   // SessionTimer uses so the server-side cleanup is identical.
+  const [isEndingSession, setIsEndingSession] = useState(false)
   const handleEndSession = useCallback(async () => {
+    setIsEndingSession(true)
     try {
       await fetch('/api/agent-sessions/end', {
         method: 'POST',
@@ -206,6 +208,7 @@ function AgentsPage() {
     } catch {
       /* swallow — realtime UPDATE will still flip the agent back to available */
     }
+    setIsEndingSession(false)
     setMySession(null)
     setSelectedCloudId(null)
     refreshAgents()
@@ -298,6 +301,7 @@ function AgentsPage() {
               mySessionExpiresAt={mySession?.expiresAt ?? null}
               onSelect={handleStartSession}
               onEndSession={handleEndSession}
+              endingSession={isEndingSession}
             />
           )}
           {mode === 'vps' && (
@@ -480,6 +484,7 @@ function CloudPanel({
   mySessionExpiresAt,
   onSelect,
   onEndSession,
+  endingSession,
 }: {
   agents: Array<Agent>
   loading: boolean
@@ -491,6 +496,7 @@ function CloudPanel({
   mySessionExpiresAt: string | null
   onSelect: (a: Agent) => void
   onEndSession: () => void
+  endingSession: boolean
 }) {
   if (loading) {
     return (
@@ -663,11 +669,13 @@ function CloudPanel({
                   </div>
                   <button
                     type="button"
+                    disabled={endingSession}
                     onClick={(e) => {
                       e.stopPropagation()
+                      if (endingSession) return
                       onEndSession()
                     }}
-                    className="shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait"
                     style={{
                       background: 'rgba(239,68,68,0.12)',
                       color: '#ef4444',
@@ -683,7 +691,14 @@ function CloudPanel({
                     }}
                     title="End the current session and free the agent"
                   >
-                    End Session
+                    {endingSession ? (
+                      <>
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                        Ending session…
+                      </>
+                    ) : (
+                      'End Session'
+                    )}
                   </button>
                 </div>
               )

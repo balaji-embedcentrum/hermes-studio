@@ -1,6 +1,7 @@
 'use client'
 
 import { HugeiconsIcon } from '@hugeicons/react'
+import { brand } from '@/brand'
 import {
   ArrowLeft01Icon,
   Cancel01Icon,
@@ -859,7 +860,7 @@ const ENTERPRISE_THEME_FAMILIES: Array<ThemeId> = [
   'hermes-mono',
 ]
 
-const ENTERPRISE_THEMES = THEMES.map((theme) => ({
+const ENTERPRISE_THEMES = THEMES.filter((theme) => brand.themes.includes(theme.id)).map((theme) => ({
   ...theme,
   desc: theme.description,
   preview:
@@ -1832,7 +1833,7 @@ export function SettingsDialog({
                 Settings
               </DialogTitle>
               <DialogDescription className="sr-only">
-                Configure Sylang Studio
+                Configure {brand.appTitle}
               </DialogDescription>
             </div>
             <DialogClose

@@ -12,6 +12,7 @@
  * Non-chat routes show the sub-page content.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { brand } from '@/brand'
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Suspense, lazy } from 'react'
@@ -290,7 +291,7 @@ export function WorkspaceShell() {
                 className="text-[13px] font-medium select-none"
                 style={{ color: 'var(--theme-accent, #B98A44)' }}
               >
-                Sylang Studio
+                {brand.appTitle}
               </span>
             </div>
             {/* Right spacer to balance */}

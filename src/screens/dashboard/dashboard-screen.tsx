@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { brand } from '@/brand'
 import { useNavigate } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import {
@@ -675,12 +676,12 @@ export function DashboardScreen() {
       {/* ── Header: Sylang Logo + Quick Actions ── */}
       <div className="flex flex-col items-center gap-3 py-3">
         <img
-          src="/sylang-logo.svg"
-          alt="Sylang Studio"
+          src={brand.logo}
+          alt={brand.appTitle}
           className="size-12 md:size-14 rounded-xl shadow-md shadow-indigo-500/10 border border-[var(--theme-border)]"
         />
         <h1 className="text-sm font-semibold text-ink tracking-wide">
-          Sylang Studio
+          {brand.appTitle}
         </h1>
         <div className="mt-1 grid w-full max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
           <QuickAction

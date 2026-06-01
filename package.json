@@ -13,7 +13,12 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_OPTIONS=\"--max-old-space-size=2048\" vite dev --port 3000",
+    "dev:sylang": "VITE_BRAND=sylang NODE_OPTIONS=\"--max-old-space-size=2048\" vite dev --port 3000",
+    "dev:hermes": "VITE_BRAND=hermes NODE_OPTIONS=\"--max-old-space-size=2048\" vite dev --port 3000",
     "build": "vite build",
+    "build:sylang": "NODE_ENV=production VITE_BRAND=sylang vite build",
+    "build:hermes": "NODE_ENV=production VITE_BRAND=hermes vite build",
+    "serve": "NODE_ENV=production node server-entry.js",
     "start": "NODE_OPTIONS=\"--max-old-space-size=2048\" node .output/server/index.mjs",
     "start:dev": "NODE_OPTIONS=\"--max-old-space-size=2048\" vite dev --port 3000",
     "preview": "vite preview",

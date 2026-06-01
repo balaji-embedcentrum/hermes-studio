@@ -1,6 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=EB+Garamond:opsz,wght@8..120,400..800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 
+/* Bind Tailwind dark: variant to the app theme (.dark set by __root theme
+   script) instead of the OS prefers-color-scheme. Without this, dark:
+   utilities (e.g. chat-v2) followed the OS, not the selected theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --tabbar-h: 0px;
   /* System font stack (VSCode-like = SF Pro on macOS; matches bbalaji.com).
@@ -1354,3 +1359,26 @@ code {
   }
 }
 
+
+/* ── chat-v2 surfaces ──────────────────────────────────────────────────────
+   chat-v2 was authored with Tailwind `primary-*` + `dark:` utilities that this
+   Tailwind 4 setup never generated (the palette isn't registered via @theme),
+   so its surfaces fell back to bg-white and stayed light in every theme. These
+   classes drive chat-v2 from the same --theme-* vars the rest of the app uses,
+   so it themes correctly in light AND dark without primary-*/dark:. */
+.cv2-bg { background: var(--theme-bg); }
+.cv2-panel { background: var(--theme-panel); }
+.cv2-card { background: var(--theme-card); color: var(--theme-text); }
+.cv2-output { background: var(--theme-card2); color: var(--theme-text); }
+.cv2-input { background: var(--theme-card); color: var(--theme-text); border-color: var(--theme-border); }
+.cv2-input::placeholder { color: var(--theme-muted); }
+.cv2-text { color: var(--theme-text); }
+.cv2-muted { color: var(--theme-muted); }
+.cv2-border { border-color: var(--theme-border); }
+.cv2-accent { background: var(--theme-accent); color: #fff; }
+.cv2-accent:hover { filter: brightness(1.08); }
+.cv2-user-bubble { background: var(--theme-card2); color: var(--theme-text); }
+.cv2-assistant-bubble { background: var(--theme-card); color: var(--theme-text); border: 1px solid var(--theme-border); }
+.cv2-active { background: var(--theme-card2); color: var(--theme-text); }
+.cv2-hover:hover { background: var(--theme-card2); }
+.cv2-dot { background: var(--theme-muted); }
