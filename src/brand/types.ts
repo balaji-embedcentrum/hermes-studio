@@ -15,7 +15,7 @@
  * import-light.
  */
 export interface Brand {
-  id: 'hermes' | 'sylang'
+  id: 'hermes' | 'sylang' | 'sample'
 
   appTitle: string
   description: string

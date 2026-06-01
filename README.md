@@ -73,10 +73,18 @@ server-only. Full annotated list is in [`.env.example`](.env.example).
 
 ## Branding — make your own studio
 
-A "brand" is the only thing that differs between Hermes and Sylang. To add a
-third (say, `acme`):
+A "brand" is the only thing that differs between Hermes and Sylang. The repo
+ships a **complete reference brand, `sample` ("Sample Studio")**, so you can see
+a full one end to end and copy it. Try it right now:
 
-**1. Define the brand** in [`src/brand/configs.ts`](src/brand/configs.ts):
+```bash
+pnpm dev:sample        # or: VITE_BRAND=sample pnpm build && pnpm serve
+```
+
+To make your own (say, `acme`), copy the `sample` pieces and rename:
+
+**1. Define the brand** — copy `sampleBrand` in
+[`src/brand/configs.ts`](src/brand/configs.ts) and edit it:
 
 ```ts
 export const acmeBrand: Brand = {
@@ -86,34 +94,37 @@ export const acmeBrand: Brand = {
   logo: '/acme-logo.svg',          // drop the file in public/
   loadingTagline: 'Your tagline',
   loadingQuips: ['Booting…', 'Almost there…'],
-  themes: ['acme-dark', 'acme-light'],   // must exist in src/styles.css @theme
+  themes: ['acme-dark', 'acme-light'],   // must exist in src/styles.css (see step 3)
   defaultTheme: 'acme-dark',
   showMbseTools: false,            // true → surface Coverage/Traceability/FMEA
 }
 ```
 
-**2. Wire it up** in [`src/brand/index.ts`](src/brand/index.ts) so
-`VITE_BRAND=acme` resolves to `acmeBrand`, and add `'acme'` to the `Brand['id']`
-union in [`src/brand/types.ts`](src/brand/types.ts).
+**2. Wire it up** — add `acmeBrand` to the `BRANDS` map in
+[`src/brand/index.ts`](src/brand/index.ts) (so `VITE_BRAND=acme` resolves to it),
+add `'acme'` to the `Brand['id']` union in
+[`src/brand/types.ts`](src/brand/types.ts), and add `dev:acme` / `build:acme`
+scripts to `package.json` (copy the `:sample` ones).
 
-**3. Register the themes** as `@theme` blocks in `src/styles.css` (Tailwind 4
-only generates utilities for colors declared there) and add your logo to
-`public/`.
+**3. Add the themes** — each theme is a `[data-theme='…']` block of CSS custom
+properties (`--theme-*`, `--chat-*`, `--code-*`) in `src/styles.css`. Copy the
+`[data-theme='sample-dark']` / `sample-light` blocks at the bottom of that file,
+rename, and recolor. Drop your logo SVG in `public/`.
 
 The [`Brand`](src/brand/types.ts) interface is the contract — there are exactly
 **four** seams, and nothing else changes:
 
 1. **Identity** — title, description, logo, themes, loading text (above).
 2. **`showMbseTools`** — whether the MBSE tools are surfaced.
-3. **Workspace home** — the in-editor home view (resolved by `brand.id` in the
-   files route).
-4. **Landing** — the public sign-in page at `/` (resolved by `brand.id` in
-   [`src/routes/index.tsx`](src/routes/index.tsx)).
+3. **Workspace home** — the in-editor home view.
+4. **Landing** — the public sign-in page at `/`
+   ([`src/routes/index.tsx`](src/routes/index.tsx)) renders from the brand
+   config (`brand.appTitle`, `brand.logo`, …), so a new brand gets a working
+   landing automatically.
 
-Build it with `VITE_BRAND=acme pnpm build` (or add `build:acme` to
-`package.json`). For a **public marketing site**, create a separate static app
-(see `hermes-marketing` as a template) — keep heavy marketing out of this repo;
-its `/` route is only a sign-in gateway + OAuth-error surface.
+For a **public marketing site**, create a separate static app (see
+`hermes-marketing` as a template) — keep heavy marketing out of this repo; its
+`/` route is only a sign-in gateway + OAuth-error surface.
 
 ---
 
