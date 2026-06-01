@@ -11,37 +11,61 @@ that carried over and helped us skip reinventing:
 - File explorer component
 - xterm terminal integration
 - Memory and skills browsers
-- Eight-theme light/dark system
+- The original light/dark theme system
 
 Thanks Eric.
 
-## Hermes Studio additions
+## What this became
 
-Everything after the initial scaffold is Hermes Studio's own work:
+What started as a single agent IDE is now **`studio-core`** — one
+brand-parameterized engine that ships as multiple products from the same code
+(`VITE_BRAND`): **Hermes Studio** (the agent workspace) and **Sylang Studio**
+(the same, plus a Model-Based Systems Engineering toolset), with a `sample`
+reference brand to copy. See the README for the brand system.
 
-- **Supabase auth** with GitHub OAuth (manual PKCE flow to work around
-  TanStack Start SSR quirks), server-set HttpOnly session cookies, profile
-  provisioning with per-user Linux UIDs
-- **Per-user workspace isolation** — symlink-activated workspace mounts,
-  filesystem boundary enforcement
-- **Agent registry via Supabase** — `agent_instances` table, per-session
-  agent assignment, cooldown/locking, real-time status updates
-- **Agent session lifecycle** — start/end/expiry with real-time UI
-  updates, idle detection, cleanup on logout
-- **Multi-provider backend** — OpenAI-compatible gateway model,
-  bring-your-own-LLM support, provider catalog
-- **Security rewrite** — removed the legacy HERMES_PASSWORD bypass and
-  X-Forwarded-For trust, unified every API route behind Supabase JWT,
-  hardened path-traversal handling, HttpOnly cookies, auth-scoped SSE
+Work built on top of the scaffold:
+
+- **Brand engine** — one codebase, multiple brands (identity, themes, surfaced
+  tools, landing) selected at build time.
+- **Supabase auth** — GitHub OAuth via a manual PKCE flow (SSR-friendly),
+  HttpOnly session cookies, profile provisioning with per-user Linux UIDs.
+- **Per-user workspace isolation** — per-user clones, filesystem boundary
+  enforcement, path-traversal hardening.
+- **Agent registry + sessions** — `agent_instances` / `sessions` in Supabase,
+  per-session assignment, locking/cooldown, real-time status, and the
+  start/end/expiry/idle/cleanup lifecycle.
+- **Multi-provider backend** — OpenAI-compatible gateway model, bring-your-own
+  LLM, per-user agent keys.
+- **Secrets encryption** — AES-256-GCM for agent keys (at rest), and the user's
+  GitHub token (encrypted inside the session cookie, never persisted, deleted
+  when the session ends).
+- **Sylang MBSE workbench** — the Sylang brand adds DSL editors, diagram
+  editors, FMEA (AIAG/VDA), and coverage + traceability views.
+- **Hardened deployment** — a multi-stage Docker image behind a Cloudflare
+  Tunnel (no inbound ports), non-root and cap-dropped containers.
+
+## Built on
+
+This project stands on a lot of open source. The major pieces:
+
+- **[TanStack](https://tanstack.com)** — Start, Router, Query (SSR app, routing, data layer)
+- **React 19**, **Vite**, **Tailwind CSS**
+- **[Supabase](https://supabase.com)** — `@supabase/ssr`, `@supabase/supabase-js` (auth, Postgres, realtime)
+- **xterm.js** — the integrated terminal
+- **D3**, **lucide** icons, **Zod**, **Zustand**, **react-markdown**, **react-joyride**
+- The **Sylang** packages (`@sylang/*`) — the MBSE DSL, editors, diagrams, FMEA,
+  traceability and variant tooling behind Sylang Studio
+- The **jotx** editor framework (`@jotx-labs/*`, TipTap-based) — structured
+  document editing
 
 ## Runtime dependency
 
-Hermes Studio uses the **Hermes Agent** Python FastAPI gateway from
-[outsourc-e/hermes-agent](https://github.com/outsourc-e/hermes-agent) as
-a runtime dependency. It is not forked or modified here — it is pulled
-from upstream at build time.
+The studios talk to the **Hermes Agent** Python/FastAPI gateway from
+[outsourc-e/hermes-agent](https://github.com/outsourc-e/hermes-agent) as a
+runtime dependency — the agent compute lives there. It is pulled from upstream,
+not forked or modified here.
 
 ## License
 
-MIT. Both Eric's original copyright and the Hermes Studio copyright are
-preserved in [LICENSE](LICENSE).
+MIT. Eric's original copyright and the project's copyright are both preserved in
+[LICENSE](LICENSE).
