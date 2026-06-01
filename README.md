@@ -1,166 +1,236 @@
-# Sylang Studio
+# Hermes Studio
 
-**The "Sylang Playground" — a browser IDE for Model-Based Systems Engineering. Sylang DSL, AIAG/VDA FMEA, traceability, and an AI agent that understands every file in your project.**
+A self-hostable, browser-based **AI agent workspace** — chat, a file tree, an
+integrated terminal, memory/skills, and per-user GitHub workspaces — built on
+[TanStack Start](https://tanstack.com/start) (React 19 SSR) + Vite + Tailwind,
+with [Supabase](https://supabase.com) for auth and data.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](https://nodejs.org/)
+This repository is the **`studio-core` engine**. It is *brand-parameterized*:
+the same code ships as two products, chosen at build time by `VITE_BRAND` —
 
-> Marketing / public landing page lives in
-> [sylang-visual-forge](https://github.com/balaji-embedcentrum/sylang-visual-forge).
-> The "Sylang Playground" button there links to `GET /api/auth/github` here,
-> which kicks off GitHub OAuth via Supabase and lands authenticated users
-> in the editor. `/` in this repo is a minimal sign-in gateway, not a
-> marketing surface.
+| `VITE_BRAND` | Product | Adds |
+|---|---|---|
+| `hermes` | **Hermes Studio** | the agent IDE base (chat, files, terminal, memory, skills) |
+| `sylang` *(default)* | **Sylang Studio** | everything above **+** the Sylang MBSE toolset (Coverage / Traceability / FMEA, DSL & diagram editors) |
 
-Sign in with GitHub, open any Sylang project, and edit `.req`, `.fun`, `.blk`,
-`.fml`, `.vml`, `.flr`, `.fta`, `.haz`, `.tst`, `.ifc`, `.smd`, `.ucd`, `.spec`,
-`.dash`, and 10+ other first-class file types in dedicated editors —
-side-by-side with an AI agent that can read, modify, and refactor them.
+Everything else is identical between the two. The public marketing/landing
+sites are **separate** repositories ([`hermes-marketing`](https://github.com/balaji-embedcentrum/hermes-marketing),
+[`sylang-visual-forge`](https://github.com/balaji-embedcentrum/sylang-visual-forge));
+`/` in *this* repo is a minimal sign-in gateway, not a marketing page.
 
-## Features
+> **License:** MIT · **Node:** ≥ 22 · **Package manager:** pnpm 9
 
-### Sylang MBSE workbench
-- **Block-aware editor** for `.req`, `.fun`, `.blk`, `.fml`, `.vml`, `.fta`,
-  `.haz`, `.ifc`, `.smd`, `.ucd` and more — TipTap rendering of the parsed
-  DSL, not just plain text.
-- **Diagram editors** for internal-block, feature-model, variant-model,
-  fault-tree, sequence, state-machine, use-case (D3/Konva/Sigma based).
-- **Spec + Dash views** — `.spec` and `.dash` files render with embedded
-  cross-file diagrams and live data.
-- **FMEA AIAG/VDA workbench** — full 7-step failure-modes UI (Structure →
-  Function → Failure → Risk → Optimization → Results) backed by a shared
-  symbol manager.
-- **Coverage Report** — 5-state symbol classification (isolated / orphan /
-  sink / connected / broken) with per-edge `source —rel→ target` detail.
-- **Traceability Graph** — interactive D3/Sigma graph of every symbol +
-  every relationship in the workspace, with click-to-inspect side panel.
-- **Variant matrix** — VML feature toggling, VCF generation, 150% PLE model.
+---
 
-### Agent IDE base (inherited from Hermes Studio)
-- **AI agent chat** — real-time SSE streaming with tool-call visibility
-- **CodeMirror 6 editor** for non-Sylang text files, 20+ languages
-- **Jotx rich-note editor** for structured `.jot` notes
-- **Terminal** via xterm, wired to the workspace shell
-- **GitHub-native workspaces** — clone any repo, edit, commit, push from the UI
-- **Memory & Skills browser** to shape agent behavior
-- **Supabase auth** (GitHub OAuth) with per-user workspace isolation
-- **MCP + multi-provider backends** — any OpenAI-compatible gateway
+## Quick start
+
+```bash
+# 1. Install (postinstall copies the Sylang editor bundles into public/)
+pnpm install
+
+# 2. Configure
+cp .env.example .env
+#    → fill SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY
+#      and HERMES_API_URL (your agent gateway). See "Configuration" below.
+
+# 3. Run a brand in dev (http://localhost:3000)
+pnpm dev:hermes      # or: pnpm dev:sylang
+
+# 4. Production build + serve
+pnpm build:hermes    # or: pnpm build:sylang
+pnpm serve           # runs server-entry.js (Node SSR) on $PORT (default 3000)
+```
+
+You also need:
+- A **Supabase project** (auth + Postgres). Create the tables in
+  [Data model](#data-model) and a **GitHub OAuth provider** in Supabase Auth.
+- An **agent gateway** — any OpenAI-compatible backend (the Hermes agent,
+  LiteLLM, etc.) reachable at `HERMES_API_URL`. Without it the UI loads but
+  chat has nothing to talk to.
+
+---
+
+## Configuration
+
+All config is environment variables (`.env`, gitignored). Only the two public
+Supabase values are baked into the browser bundle; everything else is
+server-only. Full annotated list is in [`.env.example`](.env.example).
+
+| Variable | Scope | Purpose |
+|---|---|---|
+| `SUPABASE_URL` | public (baked) | Supabase project URL |
+| `SUPABASE_ANON_KEY` | public (baked) | Anon key — **RLS-protected**, safe in the client |
+| `SUPABASE_SERVICE_KEY` | server only | Service role — **bypasses RLS**, never ship to the browser |
+| `SECRETS_ENCRYPTION_KEY` | server only | AES-256-GCM key for secrets at rest (see [Security](#security)). `openssl rand -base64 32`. **Back it up offline.** |
+| `HERMES_API_URL` | server | Default agent gateway URL (per-user agents override this — see [Data model](#data-model)) |
+| `HERMES_API_TOKEN` | server only | Bearer token for the *local-default* agent only; per-user agents use their own key |
+| `HERMES_WORKSPACE_DIR` | server | Where per-user GitHub clones live (default `/workspace`) |
+
+> ⚠️ Server-only variables **must not** carry a `VITE_` prefix — anything
+> `VITE_*` is exposed to the browser bundle by Vite.
+
+---
+
+## Branding — make your own studio
+
+A "brand" is the only thing that differs between Hermes and Sylang. To add a
+third (say, `acme`):
+
+**1. Define the brand** in [`src/brand/configs.ts`](src/brand/configs.ts):
+
+```ts
+export const acmeBrand: Brand = {
+  id: 'acme',
+  appTitle: 'Acme Studio',
+  description: 'Acme Studio — …',
+  logo: '/acme-logo.svg',          // drop the file in public/
+  loadingTagline: 'Your tagline',
+  loadingQuips: ['Booting…', 'Almost there…'],
+  themes: ['acme-dark', 'acme-light'],   // must exist in src/styles.css @theme
+  defaultTheme: 'acme-dark',
+  showMbseTools: false,            // true → surface Coverage/Traceability/FMEA
+}
+```
+
+**2. Wire it up** in [`src/brand/index.ts`](src/brand/index.ts) so
+`VITE_BRAND=acme` resolves to `acmeBrand`, and add `'acme'` to the `Brand['id']`
+union in [`src/brand/types.ts`](src/brand/types.ts).
+
+**3. Register the themes** as `@theme` blocks in `src/styles.css` (Tailwind 4
+only generates utilities for colors declared there) and add your logo to
+`public/`.
+
+The [`Brand`](src/brand/types.ts) interface is the contract — there are exactly
+**four** seams, and nothing else changes:
+
+1. **Identity** — title, description, logo, themes, loading text (above).
+2. **`showMbseTools`** — whether the MBSE tools are surfaced.
+3. **Workspace home** — the in-editor home view (resolved by `brand.id` in the
+   files route).
+4. **Landing** — the public sign-in page at `/` (resolved by `brand.id` in
+   [`src/routes/index.tsx`](src/routes/index.tsx)).
+
+Build it with `VITE_BRAND=acme pnpm build` (or add `build:acme` to
+`package.json`). For a **public marketing site**, create a separate static app
+(see `hermes-marketing` as a template) — keep heavy marketing out of this repo;
+its `/` route is only a sign-in gateway + OAuth-error surface.
+
+---
 
 ## Architecture
 
 ```
-sylang-studio (this repo)
-  └── src/                  ← TanStack Start / React 19 / Vite
-      ├── routes/           ← API + page routes
-      ├── components/
-      │   └── sylang-editor/  ← Inline FMEA/Coverage/Traceability views
-      └── sylang/           ← Server-side symbol cache + transformers
-
-@sylang-core (sibling monorepo at ../sylang-core)
-  ├── packages/core           ← Symbol manager, parser, types
-  ├── packages/web-editor     ← Per-file Sylang DSL editor (iframe bundle)
-  ├── packages/web-diagrams   ← Diagram renderers (iframe + library entry)
-  ├── packages/fmea-view      ← AIAG/VDA FMEA workbench (iframe bundle)
-  ├── packages/spec-dash      ← .spec / .dash renderers
-  ├── packages/traceability   ← Matrix builder + coverage analysis
-  ├── packages/variant-matrix ← VML feature toggling
-  ├── packages/code-editor    ← Headless tsup library
-  └── packages/registry       ← File-type → renderer mapping
+Browser ──▶ TanStack Start SSR (server-entry.js, plain node:http)
+              ├─ /             sign-in gateway (brand landing)
+              ├─ /files…       the editor / workspace UI
+              └─ /api/*        server route handlers:
+                    ├─ auth/github, auth/callback   GitHub OAuth (manual PKCE)
+                    ├─ send-stream, events          agent chat (SSE streaming)
+                    ├─ terminal-stream              PTY over SSE
+                    └─ workspaces/clone             per-user GitHub clone
+                          │
+                          ▼
+                    Agent gateway (OpenAI-compatible)  ← HERMES_API_URL / per-user key
 ```
 
-Each `@sylang/*` package is consumed via `link:../sylang/packages/*`
-in `package.json` for fast local iteration. Production builds the static
-iframe bundles into `public/sylang-{editor,diagrams,fmea}/` via the
-`sync:editor:*` scripts.
+- **SSR server** — `server-entry.js` is a plain `node:http` server that serves
+  the built client + runs the route handlers. No compression middleware (SSE
+  streams must stay unbuffered).
+- **Auth** — GitHub OAuth via Supabase, with a *manual* PKCE flow: the
+  `code_verifier` is generated server-side and stored in an **HttpOnly cookie**
+  (`src/routes/api/auth/github.ts`), so the code-for-session exchange happens
+  server-side in `auth/callback`.
+- **Streaming** — agent chat and the terminal stream over SSE. All SSE routes
+  send `Cache-Control: no-cache, no-transform` + `X-Accel-Buffering: no` so
+  intermediaries (e.g. a CDN/tunnel) don't compress/buffer the stream.
+- **Editor bundles** — the Sylang editors (`@sylang/web-editor`,
+  `web-diagrams`, `fmea-view`) are copied from `node_modules` into `public/`
+  by `pnpm sync:editors` (runs automatically on `postinstall`/`prebuild`).
 
-## Quick start (local dev)
+---
 
-```bash
-# Clone the sylang-core monorepo as a SIBLING directory:
-#   ~/Documents/sylang-core/
-#   ~/Documents/sylang-studio/   ← this repo
-git clone https://github.com/balaji-embedcentrum/sylang-core.git ../sylang-core
-( cd ../sylang-core && pnpm install && pnpm -r build )
+## Data model
 
-# Then this repo:
-pnpm install
+Postgres (via Supabase). The browser uses the **anon key and is fully
+constrained by Row-Level Security**; server route handlers use the service key
+for admin operations. TypeScript shapes live in
+[`src/lib/supabase.ts`](src/lib/supabase.ts).
 
-cp .env.example .env
-# Fill in SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY,
-# ANTHROPIC_API_KEY, HERMES_API_URL, HERMES_API_TOKEN
-# All other vars in .env.example are optional with sensible defaults.
+### `profiles` — one row per user (keyed to `auth.users.id`)
+| Column | Notes |
+|---|---|
+| `id` | UUID, = `auth.users.id` |
+| `github_login`, `email` | from the GitHub OAuth identity |
+| `system_uid` | per-user Linux UID for workspace isolation |
+| `credits`, `tier` | usage accounting (`free` / `pro` / `byollm` / `sylang_llm`) |
+| `push_enabled` | web-push opt-in |
 
-pnpm dev
-# → http://localhost:3000
-```
+### `agent_instances` — the agent registry / fleet
+| Column | Notes |
+|---|---|
+| `persona_name`, `specialist_type` | display + role (`requirements`/`architect`/`safety`/`verification`/`custom`) |
+| `api_url`, `model_name` | where this agent lives + which model it reports |
+| `api_key` | **encrypted at rest** (`enc:v1:` envelope) — never plaintext |
+| `owner_user_id` | null = shared fleet agent; set = user-owned |
+| `deployment_type` | `cloud_fleet` / `user_vps` / `user_tunnel` |
+| `status`, `current_session` | scheduling state |
 
-### Sync the iframe bundles after editing @sylang-core sources
+A user's agent (and its key) is looked up here per request; the global
+`HERMES_API_TOKEN` is only used for the local-default agent.
 
-```bash
-pnpm sync:editor:sylang     # @sylang/web-editor → public/sylang-editor/
-pnpm sync:editor:diagrams   # @sylang/web-diagrams → public/sylang-diagrams/
-pnpm sync:editor:fmea       # @sylang/fmea-view → public/sylang-fmea/
-pnpm sync:editors           # all three at once
-```
+### `workspaces` — per-user GitHub clones
+`user_id`, `repo_full`, `repo_url`, `fs_path` (on-disk path under
+`HERMES_WORKSPACE_DIR`), `size_mb`, `last_accessed`.
 
-## Required env vars
+### `sessions` — an agent working session
+`user_id`, `workspace_id`, `agent_id`, `status`
+(`active`/`ended`/`timed_out`/`crashed`), `credits_charged`,
+`tokens_in`/`tokens_out`, `started_at`/`ends_at`/`ended_at`.
 
-| Variable | Purpose |
-|----------|---------|
-| `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_ANON_KEY` | Supabase anon key (browser) |
-| `SUPABASE_SERVICE_KEY` | Supabase service role (server-only — never bundled) |
-| `ANTHROPIC_API_KEY` | For the agent tier |
-| `HERMES_API_URL` | Agent gateway URL |
-| `HERMES_API_TOKEN` | Bearer token authenticating web → agent |
-| `HERMES_WORKSPACE_DIR` | Persistent volume for per-user repos |
-
-See [`.env.example`](.env.example) for ~10 additional optional knobs
-(workspace paths, telemetry, model defaults, dev-only LAN access).
-
-## Relationship to Hermes Studio
-
-This project is a fork of [Hermes Studio](https://github.com/balaji-embedcentrum/hermes-studio)
-— the agent-IDE base. All Sylang-specific features (DSL editors, diagrams,
-FMEA, traceability, coverage, file-type registry) are layered on top.
-
-If you want only the agent IDE without the MBSE features, use Hermes Studio
-directly. If you do systems engineering and want both the agent and the
-Sylang tooling, this is the right repo.
-
-## Deployment
-
-Production topology is split across two hosts (same as Hermes Studio):
-
-- **Web tier** — this app (Node SSR + Caddy), on a VPS
-- **Agent tier** — OpenAI-compatible Python gateway
-- **Edge** — Cloudflare (DNS + TLS proxy)
-- **Data** — Supabase cloud (auth, DB, realtime)
-
-See [`docker-compose.yml`](docker-compose.yml).
+---
 
 ## Security
 
-All API routes require a valid Supabase JWT. Session tokens are stored in
-HttpOnly cookies set by the server; there is no client-side token exposure.
-Filesystem APIs are scoped to a workspace root with no path-traversal escape.
-See `src/server/auth-middleware.ts` and `src/server/supabase-auth.ts`.
+- **RLS is the boundary.** The anon key is public (it's baked into the client
+  bundle). Every table **must** have Row-Level Security enabled with policies
+  scoping rows to `auth.uid()`. The service key bypasses RLS and is used only in
+  server route handlers — keep it server-side.
+- **Secrets at rest.** `agent_instances.api_key` and the stored GitHub token are
+  AES-256-GCM encrypted (`enc:v1:` envelope) using `SECRETS_ENCRYPTION_KEY`
+  (separate from the Supabase keys). See `src/server/secret-crypto.ts`. Losing
+  the key makes those rows unrecoverable — keep an offline backup. Backfill with
+  `pnpm migrate:encrypt-secrets`.
+- **No secrets in the bundle.** Only `SUPABASE_URL` + `SUPABASE_ANON_KEY` are
+  baked in. `HERMES_API_TOKEN` and the service key are explicitly never sent to
+  the client.
 
-## Acknowledgments
+---
 
-The agent-IDE shell — chat UI, file explorer scaffolding, terminal wiring,
-the 8-theme system — comes from
-[Hermes Workspace](https://github.com/outsourc-e/hermes-agent) by
-[Eric (outsourc-e)](https://github.com/outsourc-e), MIT-licensed. Thanks Eric.
+## Deployment
 
-The Sylang DSL + every `@sylang/*` package, the FMEA workbench,
-traceability/coverage analysis, and the MBSE-specific editors are
-developed alongside this repo. See [CREDITS.md](CREDITS.md) for detail.
+Production runs as a hardened Docker image behind a **Cloudflare Tunnel** (no
+inbound ports). The build + compose live in the
+[`hermes-apps`](https://github.com/balaji-embedcentrum/hermes-apps) repo, which
+builds this image with `VITE_BRAND` per brand and serves it via `cloudflared`.
+The `Dockerfile` here is the multi-stage build (pnpm 9 install → `pnpm build` →
+slim `node:22-alpine` runner running `server-entry.js`).
+
+---
+
+## Scripts
+
+| Script | What it does |
+|---|---|
+| `pnpm dev:hermes` / `dev:sylang` | dev server for a brand on `:3000` |
+| `pnpm build:hermes` / `build:sylang` | production build for a brand |
+| `pnpm serve` | run the built SSR server (`server-entry.js`) |
+| `pnpm sync:editors` | copy the Sylang editor bundles into `public/` |
+| `pnpm migrate:encrypt-secrets` | one-time backfill to encrypt existing secrets |
+| `pnpm check` | `prettier --write` + `eslint --fix` |
+| `pnpm test` | vitest |
+
+---
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
-## Author
-
-Balaji Boominathan ([@balaji-embedcentrum](https://github.com/balaji-embedcentrum))
+MIT — see [LICENSE](LICENSE).
