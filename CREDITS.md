@@ -1,19 +1,13 @@
 # Credits
 
-## Initial scaffold
+## Starting point
 
-The initial scaffold started from [Hermes Workspace](https://github.com/outsourc-e/hermes-agent)
-by Eric ([@outsourc-e](https://github.com/outsourc-e)), MIT-licensed. The pieces
-that carried over and helped us skip reinventing:
-
-- TanStack Start + Vite + React 19 project layout
-- Chat UI shell with SSE streaming and tool-call rendering
-- File explorer component
-- xterm terminal integration
-- Memory and skills browsers
-- The original light/dark theme system
-
-Thanks Eric.
+This project was originally bootstrapped from [Hermes Workspace](https://github.com/outsourc-e/hermes-agent)
+by Eric ([@outsourc-e](https://github.com/outsourc-e)), MIT-licensed — his
+copyright is preserved in [LICENSE](LICENSE). The codebase has since been built
+out into its own thing: the current chat, editors, terminal, file tree,
+theming, auth, agent integration and tooling are this project's own work, built
+on the open-source libraries credited below. Thanks Eric for the starting point.
 
 ## What this became
 
