@@ -1,5 +1,5 @@
 import type { Brand } from './types'
-import { hermesBrand, sylangBrand } from './configs'
+import { hermesBrand, sylangBrand, sampleBrand } from './configs'
 
 export type { Brand } from './types'
 
@@ -9,6 +9,12 @@ export type { Brand } from './types'
  *
  *   VITE_BRAND=hermes  → Hermes Studio
  *   VITE_BRAND=sylang  → Sylang Studio  (default)
+ *   VITE_BRAND=sample  → Sample Studio  (reference brand — copy it to make your own)
  */
-export const brand: Brand =
-  import.meta.env.VITE_BRAND === 'hermes' ? hermesBrand : sylangBrand
+const BRANDS: Record<string, Brand> = {
+  hermes: hermesBrand,
+  sylang: sylangBrand,
+  sample: sampleBrand,
+}
+
+export const brand: Brand = BRANDS[import.meta.env.VITE_BRAND ?? ''] ?? sylangBrand

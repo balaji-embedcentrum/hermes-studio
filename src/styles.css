@@ -1382,3 +1382,101 @@ code {
 .cv2-active { background: var(--theme-card2); color: var(--theme-text); }
 .cv2-hover:hover { background: var(--theme-card2); }
 .cv2-dot { background: var(--theme-muted); }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Sample Studio themes — a reference brand (VITE_BRAND=sample). Copy a block,
+   rename the [data-theme='…'] selector, and recolor to make your own theme.
+   Every --theme-* / --chat-* / --code-* var below must be set for a theme to
+   render correctly. See src/brand/configs.ts (sampleBrand) + the README.
+   ─────────────────────────────────────────────────────────────────────────── */
+[data-theme='sample-dark'] {
+  --theme-bg: #0b0f12;
+  --theme-sidebar: #0f1417;
+  --theme-panel: #0f1417;
+  --theme-card: #141a1e;
+  --theme-card2: #1a2227;
+  --theme-border: #263238;
+  --theme-border-subtle: #1c262b;
+  --theme-text: #e6edf0;
+  --theme-muted: #9bb0b8;
+  --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.55);
+  --theme-shadow-2: 0 6px 16px rgba(0, 0, 0, 0.52);
+  --theme-shadow-3: 0 16px 36px rgba(0, 0, 0, 0.62);
+  --theme-glass: rgba(11, 15, 18, 0.88);
+  --theme-focus: #2dd4bf;
+  --theme-accent: #14b8a6;
+  --theme-accent-secondary: #2dd4bf;
+  --theme-accent-subtle: rgba(20, 184, 166, 0.14);
+  --theme-accent-border: rgba(20, 184, 166, 0.3);
+  --theme-active: #22d3ee;
+  --theme-link: #2dd4bf;
+  --theme-success: #22c55e;
+  --theme-warning: #f59e0b;
+  --theme-danger: #ef4444;
+  --theme-stripe: rgba(38, 50, 56, 0.48);
+  --theme-header-bg: #0f1417;
+  --theme-header-border: #263238;
+  --chat-user-bg: #122a28;
+  --chat-user-border: #1f5650;
+  --chat-user-foreground: #e6edf0;
+  --chat-assistant-bg: #141a1e;
+  --chat-assistant-border: #1c262b;
+  --chat-assistant-foreground: #e6edf0;
+  --composer-bg: #0f1619;
+  --composer-border: #243036;
+  --composer-placeholder: #7d9298;
+  --tool-card-bg: #0f1619;
+  --tool-card-border: #243036;
+  --tool-card-title: #e6edf0;
+  --tool-card-muted: #9bb0b8;
+  --code-bg: #0f1619;
+  --code-border: #243036;
+  --code-foreground: #e6edf0;
+  --theme-input: #0f1619;
+}
+
+[data-theme='sample-light'] {
+  --theme-bg: #f6f8f8;
+  --theme-sidebar: #ffffff;
+  --theme-panel: #ffffff;
+  --theme-card: #ffffff;
+  --theme-card2: #eef2f2;
+  --theme-border: #d7e0e0;
+  --theme-border-subtle: #e6ecec;
+  --theme-text: #0f1c1f;
+  --theme-muted: #5a6b70;
+  --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --theme-shadow-2: 0 6px 16px rgba(0, 0, 0, 0.08);
+  --theme-shadow-3: 0 16px 36px rgba(0, 0, 0, 0.12);
+  --theme-glass: rgba(255, 255, 255, 0.88);
+  --theme-focus: #0d9488;
+  --theme-accent: #0d9488;
+  --theme-accent-secondary: #14b8a6;
+  --theme-accent-subtle: rgba(13, 148, 136, 0.1);
+  --theme-accent-border: rgba(13, 148, 136, 0.28);
+  --theme-active: #0891b2;
+  --theme-link: #0d9488;
+  --theme-success: #16a34a;
+  --theme-warning: #d97706;
+  --theme-danger: #dc2626;
+  --theme-stripe: rgba(215, 224, 224, 0.5);
+  --theme-header-bg: #ffffff;
+  --theme-header-border: #d7e0e0;
+  --chat-user-bg: #e6f7f4;
+  --chat-user-border: #b9e4dd;
+  --chat-user-foreground: #0f1c1f;
+  --chat-assistant-bg: #ffffff;
+  --chat-assistant-border: #e6ecec;
+  --chat-assistant-foreground: #0f1c1f;
+  --composer-bg: #ffffff;
+  --composer-border: #d7e0e0;
+  --composer-placeholder: #8a999d;
+  --tool-card-bg: #ffffff;
+  --tool-card-border: #d7e0e0;
+  --tool-card-title: #0f1c1f;
+  --tool-card-muted: #5a6b70;
+  --code-bg: #f1f5f5;
+  --code-border: #d7e0e0;
+  --code-foreground: #0f1c1f;
+  --theme-input: #ffffff;
+}
