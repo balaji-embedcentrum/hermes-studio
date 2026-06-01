@@ -1,6 +1,6 @@
 {
   "name": "hermes-studio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI agent workspace — chat, files, terminal, memory, and skills in one browser IDE.",
   "author": "Balaji Boominathan <balaji@sylang.dev>",
   "homepage": "https://github.com/balaji-embedcentrum/hermes-studio",
