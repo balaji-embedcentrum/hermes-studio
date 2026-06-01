@@ -2,21 +2,24 @@
 
 A self-hostable, browser-based **AI agent workspace** — chat, a file tree, an
 integrated terminal, memory/skills, and per-user GitHub workspaces — built on
-[TanStack Start](https://tanstack.com/start) (React 19 SSR) + Vite + Tailwind,
-with [Supabase](https://supabase.com) for auth and data.
+TanStack Start (React 19 SSR) + Vite + Tailwind, with Supabase for auth and
+data.
 
-This repository is the **`studio-core` engine**. It is *brand-parameterized*:
-the same code ships as two products, chosen at build time by `VITE_BRAND` —
+This repository is the **`studio-core` engine**: one codebase that ships as
+several **brands**, selected at build time by `VITE_BRAND`. A brand changes only
+the identity (name, logo, themes), which optional tools are surfaced, and the
+landing/home view — everything else is shared.
 
-| `VITE_BRAND` | Product | Adds |
+## Studios built on this engine
+
+| Brand (`VITE_BRAND`) | Live | What it adds |
 |---|---|---|
-| `hermes` | **Hermes Studio** | the agent IDE base (chat, files, terminal, memory, skills) |
-| `sylang` *(default)* | **Sylang Studio** | everything above **+** the Sylang MBSE toolset (Coverage / Traceability / FMEA, DSL & diagram editors) |
+| **Hermes Studio** (`hermes`) | [hermes-studio.com](https://hermes-studio.com) | the agent IDE base — chat, files, terminal, memory, skills |
+| **Sylang Studio** (`sylang`, default) | [sylang.dev](https://sylang.dev) | the above **+** the Sylang MBSE toolset (Coverage / Traceability / FMEA, DSL & diagram editors) |
+| **Sample Studio** (`sample`) | reference brand in this repo | a complete, copyable template — run `pnpm dev:sample` |
 
-Everything else is identical between the two. The public marketing/landing
-sites are **separate** repositories ([`hermes-marketing`](https://github.com/balaji-embedcentrum/hermes-marketing),
-[`sylang-visual-forge`](https://github.com/balaji-embedcentrum/sylang-visual-forge));
-`/` in *this* repo is a minimal sign-in gateway, not a marketing page.
+`/` in this repo is a minimal sign-in gateway, not a marketing page; each
+brand's public landing site is a separate app.
 
 > **License:** MIT · **Node:** ≥ 22 · **Package manager:** pnpm 9
 
@@ -34,10 +37,10 @@ cp .env.example .env
 #      and HERMES_API_URL (your agent gateway). See "Configuration" below.
 
 # 3. Run a brand in dev (http://localhost:3000)
-pnpm dev:hermes      # or: pnpm dev:sylang
+pnpm dev:hermes      # or: pnpm dev:sylang  ·  pnpm dev:sample
 
 # 4. Production build + serve
-pnpm build:hermes    # or: pnpm build:sylang
+pnpm build:hermes    # or: pnpm build:sylang  ·  pnpm build:sample
 pnpm serve           # runs server-entry.js (Node SSR) on $PORT (default 3000)
 ```
 
@@ -73,9 +76,9 @@ server-only. Full annotated list is in [`.env.example`](.env.example).
 
 ## Branding — make your own studio
 
-A "brand" is the only thing that differs between Hermes and Sylang. The repo
+A "brand" is the only thing that differs between the studios above. This repo
 ships a **complete reference brand, `sample` ("Sample Studio")**, so you can see
-a full one end to end and copy it. Try it right now:
+a full one end to end and copy it. Try it now:
 
 ```bash
 pnpm dev:sample        # or: VITE_BRAND=sample pnpm build && pnpm serve
@@ -122,9 +125,9 @@ The [`Brand`](src/brand/types.ts) interface is the contract — there are exactl
    config (`brand.appTitle`, `brand.logo`, …), so a new brand gets a working
    landing automatically.
 
-For a **public marketing site**, create a separate static app (see
-`hermes-marketing` as a template) — keep heavy marketing out of this repo; its
-`/` route is only a sign-in gateway + OAuth-error surface.
+For a richer **public marketing site**, build it as a separate static app —
+keep heavy marketing out of this repo; its `/` route is only a sign-in gateway
++ OAuth-error surface.
 
 ---
 
@@ -215,16 +218,17 @@ A user's agent (and its key) is looked up here per request; the global
   baked in. `HERMES_API_TOKEN` and the service key are explicitly never sent to
   the client.
 
+Reporting a vulnerability: see [SECURITY.md](SECURITY.md).
+
 ---
 
 ## Deployment
 
 Production runs as a hardened Docker image behind a **Cloudflare Tunnel** (no
-inbound ports). The build + compose live in the
-[`hermes-apps`](https://github.com/balaji-embedcentrum/hermes-apps) repo, which
-builds this image with `VITE_BRAND` per brand and serves it via `cloudflared`.
-The `Dockerfile` here is the multi-stage build (pnpm 9 install → `pnpm build` →
-slim `node:22-alpine` runner running `server-entry.js`).
+inbound ports). The included [`Dockerfile`](Dockerfile) is a multi-stage build
+(pnpm 9 install → `pnpm build` → slim `node:22-alpine` runner running
+`server-entry.js`); build it once per brand with `--build-arg VITE_BRAND=<brand>`
+and front it with your reverse proxy or tunnel of choice.
 
 ---
 
@@ -232,8 +236,8 @@ slim `node:22-alpine` runner running `server-entry.js`).
 
 | Script | What it does |
 |---|---|
-| `pnpm dev:hermes` / `dev:sylang` | dev server for a brand on `:3000` |
-| `pnpm build:hermes` / `build:sylang` | production build for a brand |
+| `pnpm dev:hermes` / `dev:sylang` / `dev:sample` | dev server for a brand on `:3000` |
+| `pnpm build:hermes` / `build:sylang` / `build:sample` | production build for a brand |
 | `pnpm serve` | run the built SSR server (`server-entry.js`) |
 | `pnpm sync:editors` | copy the Sylang editor bundles into `public/` |
 | `pnpm migrate:encrypt-secrets` | one-time backfill to encrypt existing secrets |
@@ -241,6 +245,11 @@ slim `node:22-alpine` runner running `server-entry.js`).
 | `pnpm test` | vitest |
 
 ---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — prerequisites, the dev loop, PR/commit
+conventions, and the brand rule (keep brand differences in `src/brand`).
 
 ## License
 
