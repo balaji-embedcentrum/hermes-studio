@@ -11,7 +11,12 @@ ARG VITE_BRAND=sylang
 ENV VITE_BRAND=$VITE_BRAND
 
 COPY package.json pnpm-lock.yaml .npmrc ./
-RUN npm install -g pnpm && pnpm install --no-frozen-lockfile
+# --ignore-scripts: pnpm v10 errors (ERR_PNPM_IGNORED_BUILDS) on unapproved
+# dependency build scripts in non-interactive installs. We don't need any of
+# them at install time — esbuild/unrs-resolver ship prebuilt platform binaries
+# as optional deps, core-js' script only prints a funding notice — and the
+# project's own editor sync + build are run explicitly after `COPY . .` below.
+RUN npm install -g pnpm && pnpm install --no-frozen-lockfile --ignore-scripts
 
 COPY . .
 # Sync the @sylang editor bundles from node_modules into public/ AFTER the
