@@ -13,6 +13,9 @@ ARG VITE_BRAND=sylang
 ENV VITE_BRAND=$VITE_BRAND
 
 COPY package.json pnpm-lock.yaml .npmrc ./
+# Patches must be present before install: pnpm 9 applies patchedDependencies
+# (@jotx-labs/editor) during `pnpm install`, reading patches/ from the cwd.
+COPY patches ./patches
 # Pin pnpm 9 (matches lockfileVersion 9.0). pnpm 10/11 no longer read the
 # "pnpm" field in package.json, silently dropping our overrides + the
 # @jotx-labs/editor patch; pnpm 9 honors them and has no build-script gate.
