@@ -483,7 +483,7 @@ function ChatScreenV2Inner({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
-              rows={1}
+              rows={3}
               autoFocus={!composerDisabled}
               disabled={composerDisabled}
               placeholder={

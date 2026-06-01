@@ -446,6 +446,16 @@ const QUICK_ACTIONS = [
   { label: 'ASPICE Workbench', viewKey: 'aspice', icon: '🏗️', desc: 'Automotive SPICE process assessment' },
 ]
 
+// Getting-started cards shown on the workspace home for brands without the
+// MBSE toolset (Hermes, sample) — the agent-workspace equivalent of Sylang's
+// Quick Actions.
+const GETTING_STARTED = [
+  { icon: '💬', title: 'Chat with the agent', desc: 'Ask the agent to read, write, or refactor files in your project. It sees the whole workspace and streams its work as it goes.' },
+  { icon: '📁', title: 'Browse & edit files', desc: 'Open any file from the sidebar to view or edit it. Changes the agent makes show up here live.' },
+  { icon: '⌨️', title: 'Integrated terminal', desc: 'Run commands in your workspace — installs, tests, git, anything you or the agent need.' },
+  { icon: '🔌', title: 'Pick an agent & project', desc: 'Choose an agent on /agents and a project on /projects to unlock the chat composer.' },
+]
+
 function WorkspaceHome({
   workspacePath,
   onViewChange,
@@ -476,6 +486,56 @@ function WorkspaceHome({
             </p>
           </div>
         </div>
+
+        {/* Getting-started cards — brands without the MBSE toolset (Hermes,
+            sample). Mirrors the Sylang quick-action card layout. */}
+        {!brand.showMbseTools && (
+          <>
+            <div className="mb-10">
+              <h2
+                className="text-xs font-semibold uppercase tracking-wider mb-3"
+                style={{ color: 'var(--theme-muted)' }}
+              >
+                Getting Started
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {GETTING_STARTED.map((c) => (
+                  <div
+                    key={c.title}
+                    className="rounded-xl px-4 py-4"
+                    style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)' }}
+                  >
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <span className="text-xl">{c.icon}</span>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
+                        {c.title}
+                      </span>
+                    </div>
+                    <p className="text-[12px] leading-relaxed" style={{ color: 'var(--theme-muted)' }}>
+                      {c.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="rounded-xl px-5 py-4"
+              style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)' }}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-lg">💡</span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
+                  Tip
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--theme-muted)' }}>
+                Select a file from the sidebar to start editing, or just describe what
+                you want in the chat and let the agent do it across your project.
+              </p>
+            </div>
+          </>
+        )}
 
         {/* MBSE tools (Quick Actions + file-type guide + standards callout) —
             Sylang only; hidden in Hermes via brand.showMbseTools. */}
