@@ -3,6 +3,7 @@ import {
   Add01Icon,
   ArrowDown01Icon,
   ArrowUp02Icon,
+  AttachmentIcon,
   Cancel01Icon,
   Delete01Icon,
   Mic01Icon,
@@ -2071,7 +2072,7 @@ function ChatComposerComponent({
                         >
                           <span className="rounded-lg bg-orange-100 dark:bg-orange-900/30 p-1.5 text-orange-600 dark:text-orange-400">
                             <HugeiconsIcon
-                              icon={Add01Icon}
+                              icon={AttachmentIcon}
                               size={24}
                               strokeWidth={1.5}
                             />
@@ -2390,7 +2391,7 @@ function ChatComposerComponent({
                     onClick={handleOpenAttachmentPicker}
                   >
                     <HugeiconsIcon
-                      icon={Add01Icon}
+                      icon={AttachmentIcon}
                       size={20}
                       strokeWidth={1.5}
                     />

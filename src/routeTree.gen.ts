@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TerminalRouteImport } from './routes/terminal'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -56,8 +57,18 @@ import { Route as ApiAuthCheckRouteImport } from './routes/api/auth-check'
 import { Route as ApiAuthRouteImport } from './routes/api/auth'
 import { Route as ApiWorkspacesOpenRouteImport } from './routes/api/workspaces/open'
 import { Route as ApiWorkspacesListRouteImport } from './routes/api/workspaces/list'
+import { Route as ApiWorkspacesDeleteRouteImport } from './routes/api/workspaces/delete'
 import { Route as ApiWorkspacesCreateRouteImport } from './routes/api/workspaces/create'
 import { Route as ApiWorkspacesCloneRouteImport } from './routes/api/workspaces/clone'
+import { Route as ApiSylangVariantMatrixRouteImport } from './routes/api/sylang/variant-matrix'
+import { Route as ApiSylangTraceabilityRouteImport } from './routes/api/sylang/traceability'
+import { Route as ApiSylangSymbolsRouteImport } from './routes/api/sylang/symbols'
+import { Route as ApiSylangSymbolDetailsRouteImport } from './routes/api/sylang/symbol-details'
+import { Route as ApiSylangSpecRenderRouteImport } from './routes/api/sylang/spec-render'
+import { Route as ApiSylangFmeaRouteImport } from './routes/api/sylang/fmea'
+import { Route as ApiSylangDiagramRouteImport } from './routes/api/sylang/diagram'
+import { Route as ApiSylangDashRenderRouteImport } from './routes/api/sylang/dash-render'
+import { Route as ApiSylangCoverageRouteImport } from './routes/api/sylang/coverage'
 import { Route as ApiSkillsUninstallRouteImport } from './routes/api/skills/uninstall'
 import { Route as ApiSkillsInstallRouteImport } from './routes/api/skills/install'
 import { Route as ApiSkillsHubSearchRouteImport } from './routes/api/skills/hub-search'
@@ -68,6 +79,7 @@ import { Route as ApiProfilesListRouteImport } from './routes/api/profiles/list'
 import { Route as ApiProfilesDeleteRouteImport } from './routes/api/profiles/delete'
 import { Route as ApiProfilesCreateRouteImport } from './routes/api/profiles/create'
 import { Route as ApiProfilesActivateRouteImport } from './routes/api/profiles/activate'
+import { Route as ApiPlaygroundListRouteImport } from './routes/api/playground/list'
 import { Route as ApiOauthPollTokenRouteImport } from './routes/api/oauth.poll-token'
 import { Route as ApiOauthDeviceCodeRouteImport } from './routes/api/oauth.device-code'
 import { Route as ApiMemoryWriteRouteImport } from './routes/api/memory/write'
@@ -86,6 +98,7 @@ import { Route as ApiGithubReposRouteImport } from './routes/api/github/repos'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthGithubRouteImport } from './routes/api/auth/github'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
+import { Route as ApiAgentsTestRouteImport } from './routes/api/agents/test'
 import { Route as ApiAgentsSelectRouteImport } from './routes/api/agents/select'
 import { Route as ApiAgentsListRouteImport } from './routes/api/agents/list'
 import { Route as ApiAgentsAddRouteImport } from './routes/api/agents/add'
@@ -96,6 +109,11 @@ import { Route as ApiAgentSessionsEndRouteImport } from './routes/api/agent-sess
 import { Route as ApiSessionsSessionKeyStatusRouteImport } from './routes/api/sessions/$sessionKey.status'
 import { Route as ApiSessionsSessionKeyActiveRunRouteImport } from './routes/api/sessions/$sessionKey.active-run'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TerminalRoute = TerminalRouteImport.update({
   id: '/terminal',
   path: '/terminal',
@@ -331,6 +349,11 @@ const ApiWorkspacesListRoute = ApiWorkspacesListRouteImport.update({
   path: '/api/workspaces/list',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWorkspacesDeleteRoute = ApiWorkspacesDeleteRouteImport.update({
+  id: '/api/workspaces/delete',
+  path: '/api/workspaces/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWorkspacesCreateRoute = ApiWorkspacesCreateRouteImport.update({
   id: '/api/workspaces/create',
   path: '/api/workspaces/create',
@@ -339,6 +362,51 @@ const ApiWorkspacesCreateRoute = ApiWorkspacesCreateRouteImport.update({
 const ApiWorkspacesCloneRoute = ApiWorkspacesCloneRouteImport.update({
   id: '/api/workspaces/clone',
   path: '/api/workspaces/clone',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangVariantMatrixRoute = ApiSylangVariantMatrixRouteImport.update({
+  id: '/api/sylang/variant-matrix',
+  path: '/api/sylang/variant-matrix',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangTraceabilityRoute = ApiSylangTraceabilityRouteImport.update({
+  id: '/api/sylang/traceability',
+  path: '/api/sylang/traceability',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangSymbolsRoute = ApiSylangSymbolsRouteImport.update({
+  id: '/api/sylang/symbols',
+  path: '/api/sylang/symbols',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangSymbolDetailsRoute = ApiSylangSymbolDetailsRouteImport.update({
+  id: '/api/sylang/symbol-details',
+  path: '/api/sylang/symbol-details',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangSpecRenderRoute = ApiSylangSpecRenderRouteImport.update({
+  id: '/api/sylang/spec-render',
+  path: '/api/sylang/spec-render',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangFmeaRoute = ApiSylangFmeaRouteImport.update({
+  id: '/api/sylang/fmea',
+  path: '/api/sylang/fmea',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangDiagramRoute = ApiSylangDiagramRouteImport.update({
+  id: '/api/sylang/diagram',
+  path: '/api/sylang/diagram',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangDashRenderRoute = ApiSylangDashRenderRouteImport.update({
+  id: '/api/sylang/dash-render',
+  path: '/api/sylang/dash-render',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSylangCoverageRoute = ApiSylangCoverageRouteImport.update({
+  id: '/api/sylang/coverage',
+  path: '/api/sylang/coverage',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSkillsUninstallRoute = ApiSkillsUninstallRouteImport.update({
@@ -389,6 +457,11 @@ const ApiProfilesCreateRoute = ApiProfilesCreateRouteImport.update({
 const ApiProfilesActivateRoute = ApiProfilesActivateRouteImport.update({
   id: '/api/profiles/activate',
   path: '/api/profiles/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlaygroundListRoute = ApiPlaygroundListRouteImport.update({
+  id: '/api/playground/list',
+  path: '/api/playground/list',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOauthPollTokenRoute = ApiOauthPollTokenRouteImport.update({
@@ -481,6 +554,11 @@ const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => ApiAuthRoute,
 } as any)
+const ApiAgentsTestRoute = ApiAgentsTestRouteImport.update({
+  id: '/api/agents/test',
+  path: '/api/agents/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAgentsSelectRoute = ApiAgentsSelectRouteImport.update({
   id: '/api/agents/select',
   path: '/api/agents/select',
@@ -543,6 +621,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteWithChildren
   '/skills': typeof SkillsRoute
   '/terminal': typeof TerminalRoute
+  '/terms': typeof TermsRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
@@ -583,6 +662,7 @@ export interface FileRoutesByFullPath {
   '/api/agents/add': typeof ApiAgentsAddRoute
   '/api/agents/list': typeof ApiAgentsListRoute
   '/api/agents/select': typeof ApiAgentsSelectRoute
+  '/api/agents/test': typeof ApiAgentsTestRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/github': typeof ApiAuthGithubRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -601,6 +681,7 @@ export interface FileRoutesByFullPath {
   '/api/memory/write': typeof ApiMemoryWriteRoute
   '/api/oauth/device-code': typeof ApiOauthDeviceCodeRoute
   '/api/oauth/poll-token': typeof ApiOauthPollTokenRoute
+  '/api/playground/list': typeof ApiPlaygroundListRoute
   '/api/profiles/activate': typeof ApiProfilesActivateRoute
   '/api/profiles/create': typeof ApiProfilesCreateRoute
   '/api/profiles/delete': typeof ApiProfilesDeleteRoute
@@ -611,8 +692,18 @@ export interface FileRoutesByFullPath {
   '/api/skills/hub-search': typeof ApiSkillsHubSearchRoute
   '/api/skills/install': typeof ApiSkillsInstallRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
+  '/api/sylang/coverage': typeof ApiSylangCoverageRoute
+  '/api/sylang/dash-render': typeof ApiSylangDashRenderRoute
+  '/api/sylang/diagram': typeof ApiSylangDiagramRoute
+  '/api/sylang/fmea': typeof ApiSylangFmeaRoute
+  '/api/sylang/spec-render': typeof ApiSylangSpecRenderRoute
+  '/api/sylang/symbol-details': typeof ApiSylangSymbolDetailsRoute
+  '/api/sylang/symbols': typeof ApiSylangSymbolsRoute
+  '/api/sylang/traceability': typeof ApiSylangTraceabilityRoute
+  '/api/sylang/variant-matrix': typeof ApiSylangVariantMatrixRoute
   '/api/workspaces/clone': typeof ApiWorkspacesCloneRoute
   '/api/workspaces/create': typeof ApiWorkspacesCreateRoute
+  '/api/workspaces/delete': typeof ApiWorkspacesDeleteRoute
   '/api/workspaces/list': typeof ApiWorkspacesListRoute
   '/api/workspaces/open': typeof ApiWorkspacesOpenRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
@@ -630,6 +721,7 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsRoute
   '/skills': typeof SkillsRoute
   '/terminal': typeof TerminalRoute
+  '/terms': typeof TermsRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
@@ -670,6 +762,7 @@ export interface FileRoutesByTo {
   '/api/agents/add': typeof ApiAgentsAddRoute
   '/api/agents/list': typeof ApiAgentsListRoute
   '/api/agents/select': typeof ApiAgentsSelectRoute
+  '/api/agents/test': typeof ApiAgentsTestRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/github': typeof ApiAuthGithubRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -688,6 +781,7 @@ export interface FileRoutesByTo {
   '/api/memory/write': typeof ApiMemoryWriteRoute
   '/api/oauth/device-code': typeof ApiOauthDeviceCodeRoute
   '/api/oauth/poll-token': typeof ApiOauthPollTokenRoute
+  '/api/playground/list': typeof ApiPlaygroundListRoute
   '/api/profiles/activate': typeof ApiProfilesActivateRoute
   '/api/profiles/create': typeof ApiProfilesCreateRoute
   '/api/profiles/delete': typeof ApiProfilesDeleteRoute
@@ -698,8 +792,18 @@ export interface FileRoutesByTo {
   '/api/skills/hub-search': typeof ApiSkillsHubSearchRoute
   '/api/skills/install': typeof ApiSkillsInstallRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
+  '/api/sylang/coverage': typeof ApiSylangCoverageRoute
+  '/api/sylang/dash-render': typeof ApiSylangDashRenderRoute
+  '/api/sylang/diagram': typeof ApiSylangDiagramRoute
+  '/api/sylang/fmea': typeof ApiSylangFmeaRoute
+  '/api/sylang/spec-render': typeof ApiSylangSpecRenderRoute
+  '/api/sylang/symbol-details': typeof ApiSylangSymbolDetailsRoute
+  '/api/sylang/symbols': typeof ApiSylangSymbolsRoute
+  '/api/sylang/traceability': typeof ApiSylangTraceabilityRoute
+  '/api/sylang/variant-matrix': typeof ApiSylangVariantMatrixRoute
   '/api/workspaces/clone': typeof ApiWorkspacesCloneRoute
   '/api/workspaces/create': typeof ApiWorkspacesCreateRoute
+  '/api/workspaces/delete': typeof ApiWorkspacesDeleteRoute
   '/api/workspaces/list': typeof ApiWorkspacesListRoute
   '/api/workspaces/open': typeof ApiWorkspacesOpenRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
@@ -719,6 +823,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteWithChildren
   '/skills': typeof SkillsRoute
   '/terminal': typeof TerminalRoute
+  '/terms': typeof TermsRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
@@ -759,6 +864,7 @@ export interface FileRoutesById {
   '/api/agents/add': typeof ApiAgentsAddRoute
   '/api/agents/list': typeof ApiAgentsListRoute
   '/api/agents/select': typeof ApiAgentsSelectRoute
+  '/api/agents/test': typeof ApiAgentsTestRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/github': typeof ApiAuthGithubRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -777,6 +883,7 @@ export interface FileRoutesById {
   '/api/memory/write': typeof ApiMemoryWriteRoute
   '/api/oauth/device-code': typeof ApiOauthDeviceCodeRoute
   '/api/oauth/poll-token': typeof ApiOauthPollTokenRoute
+  '/api/playground/list': typeof ApiPlaygroundListRoute
   '/api/profiles/activate': typeof ApiProfilesActivateRoute
   '/api/profiles/create': typeof ApiProfilesCreateRoute
   '/api/profiles/delete': typeof ApiProfilesDeleteRoute
@@ -787,8 +894,18 @@ export interface FileRoutesById {
   '/api/skills/hub-search': typeof ApiSkillsHubSearchRoute
   '/api/skills/install': typeof ApiSkillsInstallRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
+  '/api/sylang/coverage': typeof ApiSylangCoverageRoute
+  '/api/sylang/dash-render': typeof ApiSylangDashRenderRoute
+  '/api/sylang/diagram': typeof ApiSylangDiagramRoute
+  '/api/sylang/fmea': typeof ApiSylangFmeaRoute
+  '/api/sylang/spec-render': typeof ApiSylangSpecRenderRoute
+  '/api/sylang/symbol-details': typeof ApiSylangSymbolDetailsRoute
+  '/api/sylang/symbols': typeof ApiSylangSymbolsRoute
+  '/api/sylang/traceability': typeof ApiSylangTraceabilityRoute
+  '/api/sylang/variant-matrix': typeof ApiSylangVariantMatrixRoute
   '/api/workspaces/clone': typeof ApiWorkspacesCloneRoute
   '/api/workspaces/create': typeof ApiWorkspacesCreateRoute
+  '/api/workspaces/delete': typeof ApiWorkspacesDeleteRoute
   '/api/workspaces/list': typeof ApiWorkspacesListRoute
   '/api/workspaces/open': typeof ApiWorkspacesOpenRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
@@ -809,6 +926,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/skills'
     | '/terminal'
+    | '/terms'
     | '/api/auth'
     | '/api/auth-check'
     | '/api/chat-events'
@@ -849,6 +967,7 @@ export interface FileRouteTypes {
     | '/api/agents/add'
     | '/api/agents/list'
     | '/api/agents/select'
+    | '/api/agents/test'
     | '/api/auth/callback'
     | '/api/auth/github'
     | '/api/auth/logout'
@@ -867,6 +986,7 @@ export interface FileRouteTypes {
     | '/api/memory/write'
     | '/api/oauth/device-code'
     | '/api/oauth/poll-token'
+    | '/api/playground/list'
     | '/api/profiles/activate'
     | '/api/profiles/create'
     | '/api/profiles/delete'
@@ -877,8 +997,18 @@ export interface FileRouteTypes {
     | '/api/skills/hub-search'
     | '/api/skills/install'
     | '/api/skills/uninstall'
+    | '/api/sylang/coverage'
+    | '/api/sylang/dash-render'
+    | '/api/sylang/diagram'
+    | '/api/sylang/fmea'
+    | '/api/sylang/spec-render'
+    | '/api/sylang/symbol-details'
+    | '/api/sylang/symbols'
+    | '/api/sylang/traceability'
+    | '/api/sylang/variant-matrix'
     | '/api/workspaces/clone'
     | '/api/workspaces/create'
+    | '/api/workspaces/delete'
     | '/api/workspaces/list'
     | '/api/workspaces/open'
     | '/api/sessions/$sessionKey/active-run'
@@ -896,6 +1026,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/skills'
     | '/terminal'
+    | '/terms'
     | '/api/auth'
     | '/api/auth-check'
     | '/api/chat-events'
@@ -936,6 +1067,7 @@ export interface FileRouteTypes {
     | '/api/agents/add'
     | '/api/agents/list'
     | '/api/agents/select'
+    | '/api/agents/test'
     | '/api/auth/callback'
     | '/api/auth/github'
     | '/api/auth/logout'
@@ -954,6 +1086,7 @@ export interface FileRouteTypes {
     | '/api/memory/write'
     | '/api/oauth/device-code'
     | '/api/oauth/poll-token'
+    | '/api/playground/list'
     | '/api/profiles/activate'
     | '/api/profiles/create'
     | '/api/profiles/delete'
@@ -964,8 +1097,18 @@ export interface FileRouteTypes {
     | '/api/skills/hub-search'
     | '/api/skills/install'
     | '/api/skills/uninstall'
+    | '/api/sylang/coverage'
+    | '/api/sylang/dash-render'
+    | '/api/sylang/diagram'
+    | '/api/sylang/fmea'
+    | '/api/sylang/spec-render'
+    | '/api/sylang/symbol-details'
+    | '/api/sylang/symbols'
+    | '/api/sylang/traceability'
+    | '/api/sylang/variant-matrix'
     | '/api/workspaces/clone'
     | '/api/workspaces/create'
+    | '/api/workspaces/delete'
     | '/api/workspaces/list'
     | '/api/workspaces/open'
     | '/api/sessions/$sessionKey/active-run'
@@ -984,6 +1127,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/skills'
     | '/terminal'
+    | '/terms'
     | '/api/auth'
     | '/api/auth-check'
     | '/api/chat-events'
@@ -1024,6 +1168,7 @@ export interface FileRouteTypes {
     | '/api/agents/add'
     | '/api/agents/list'
     | '/api/agents/select'
+    | '/api/agents/test'
     | '/api/auth/callback'
     | '/api/auth/github'
     | '/api/auth/logout'
@@ -1042,6 +1187,7 @@ export interface FileRouteTypes {
     | '/api/memory/write'
     | '/api/oauth/device-code'
     | '/api/oauth/poll-token'
+    | '/api/playground/list'
     | '/api/profiles/activate'
     | '/api/profiles/create'
     | '/api/profiles/delete'
@@ -1052,8 +1198,18 @@ export interface FileRouteTypes {
     | '/api/skills/hub-search'
     | '/api/skills/install'
     | '/api/skills/uninstall'
+    | '/api/sylang/coverage'
+    | '/api/sylang/dash-render'
+    | '/api/sylang/diagram'
+    | '/api/sylang/fmea'
+    | '/api/sylang/spec-render'
+    | '/api/sylang/symbol-details'
+    | '/api/sylang/symbols'
+    | '/api/sylang/traceability'
+    | '/api/sylang/variant-matrix'
     | '/api/workspaces/clone'
     | '/api/workspaces/create'
+    | '/api/workspaces/delete'
     | '/api/workspaces/list'
     | '/api/workspaces/open'
     | '/api/sessions/$sessionKey/active-run'
@@ -1073,6 +1229,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRouteWithChildren
   SkillsRoute: typeof SkillsRoute
   TerminalRoute: typeof TerminalRoute
+  TermsRoute: typeof TermsRoute
   ApiAuthRoute: typeof ApiAuthRouteWithChildren
   ApiAuthCheckRoute: typeof ApiAuthCheckRoute
   ApiChatEventsRoute: typeof ApiChatEventsRoute
@@ -1110,6 +1267,7 @@ export interface RootRouteChildren {
   ApiAgentsAddRoute: typeof ApiAgentsAddRoute
   ApiAgentsListRoute: typeof ApiAgentsListRoute
   ApiAgentsSelectRoute: typeof ApiAgentsSelectRoute
+  ApiAgentsTestRoute: typeof ApiAgentsTestRoute
   ApiGithubReposRoute: typeof ApiGithubReposRoute
   ApiHermesProxySplatRoute: typeof ApiHermesProxySplatRoute
   ApiKnowledgeGraphRoute: typeof ApiKnowledgeGraphRoute
@@ -1120,20 +1278,38 @@ export interface RootRouteChildren {
   ApiMcpServersRoute: typeof ApiMcpServersRoute
   ApiOauthDeviceCodeRoute: typeof ApiOauthDeviceCodeRoute
   ApiOauthPollTokenRoute: typeof ApiOauthPollTokenRoute
+  ApiPlaygroundListRoute: typeof ApiPlaygroundListRoute
   ApiProfilesActivateRoute: typeof ApiProfilesActivateRoute
   ApiProfilesCreateRoute: typeof ApiProfilesCreateRoute
   ApiProfilesDeleteRoute: typeof ApiProfilesDeleteRoute
   ApiProfilesListRoute: typeof ApiProfilesListRoute
   ApiProfilesReadRoute: typeof ApiProfilesReadRoute
   ApiProfilesRenameRoute: typeof ApiProfilesRenameRoute
+  ApiSylangCoverageRoute: typeof ApiSylangCoverageRoute
+  ApiSylangDashRenderRoute: typeof ApiSylangDashRenderRoute
+  ApiSylangDiagramRoute: typeof ApiSylangDiagramRoute
+  ApiSylangFmeaRoute: typeof ApiSylangFmeaRoute
+  ApiSylangSpecRenderRoute: typeof ApiSylangSpecRenderRoute
+  ApiSylangSymbolDetailsRoute: typeof ApiSylangSymbolDetailsRoute
+  ApiSylangSymbolsRoute: typeof ApiSylangSymbolsRoute
+  ApiSylangTraceabilityRoute: typeof ApiSylangTraceabilityRoute
+  ApiSylangVariantMatrixRoute: typeof ApiSylangVariantMatrixRoute
   ApiWorkspacesCloneRoute: typeof ApiWorkspacesCloneRoute
   ApiWorkspacesCreateRoute: typeof ApiWorkspacesCreateRoute
+  ApiWorkspacesDeleteRoute: typeof ApiWorkspacesDeleteRoute
   ApiWorkspacesListRoute: typeof ApiWorkspacesListRoute
   ApiWorkspacesOpenRoute: typeof ApiWorkspacesOpenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terminal': {
       id: '/terminal'
       path: '/terminal'
@@ -1463,6 +1639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWorkspacesListRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/workspaces/delete': {
+      id: '/api/workspaces/delete'
+      path: '/api/workspaces/delete'
+      fullPath: '/api/workspaces/delete'
+      preLoaderRoute: typeof ApiWorkspacesDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/workspaces/create': {
       id: '/api/workspaces/create'
       path: '/api/workspaces/create'
@@ -1475,6 +1658,69 @@ declare module '@tanstack/react-router' {
       path: '/api/workspaces/clone'
       fullPath: '/api/workspaces/clone'
       preLoaderRoute: typeof ApiWorkspacesCloneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/variant-matrix': {
+      id: '/api/sylang/variant-matrix'
+      path: '/api/sylang/variant-matrix'
+      fullPath: '/api/sylang/variant-matrix'
+      preLoaderRoute: typeof ApiSylangVariantMatrixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/traceability': {
+      id: '/api/sylang/traceability'
+      path: '/api/sylang/traceability'
+      fullPath: '/api/sylang/traceability'
+      preLoaderRoute: typeof ApiSylangTraceabilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/symbols': {
+      id: '/api/sylang/symbols'
+      path: '/api/sylang/symbols'
+      fullPath: '/api/sylang/symbols'
+      preLoaderRoute: typeof ApiSylangSymbolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/symbol-details': {
+      id: '/api/sylang/symbol-details'
+      path: '/api/sylang/symbol-details'
+      fullPath: '/api/sylang/symbol-details'
+      preLoaderRoute: typeof ApiSylangSymbolDetailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/spec-render': {
+      id: '/api/sylang/spec-render'
+      path: '/api/sylang/spec-render'
+      fullPath: '/api/sylang/spec-render'
+      preLoaderRoute: typeof ApiSylangSpecRenderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/fmea': {
+      id: '/api/sylang/fmea'
+      path: '/api/sylang/fmea'
+      fullPath: '/api/sylang/fmea'
+      preLoaderRoute: typeof ApiSylangFmeaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/diagram': {
+      id: '/api/sylang/diagram'
+      path: '/api/sylang/diagram'
+      fullPath: '/api/sylang/diagram'
+      preLoaderRoute: typeof ApiSylangDiagramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/dash-render': {
+      id: '/api/sylang/dash-render'
+      path: '/api/sylang/dash-render'
+      fullPath: '/api/sylang/dash-render'
+      preLoaderRoute: typeof ApiSylangDashRenderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sylang/coverage': {
+      id: '/api/sylang/coverage'
+      path: '/api/sylang/coverage'
+      fullPath: '/api/sylang/coverage'
+      preLoaderRoute: typeof ApiSylangCoverageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/skills/uninstall': {
@@ -1545,6 +1791,13 @@ declare module '@tanstack/react-router' {
       path: '/api/profiles/activate'
       fullPath: '/api/profiles/activate'
       preLoaderRoute: typeof ApiProfilesActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/playground/list': {
+      id: '/api/playground/list'
+      path: '/api/playground/list'
+      fullPath: '/api/playground/list'
+      preLoaderRoute: typeof ApiPlaygroundListRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/oauth/poll-token': {
@@ -1672,6 +1925,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/callback'
       preLoaderRoute: typeof ApiAuthCallbackRouteImport
       parentRoute: typeof ApiAuthRoute
+    }
+    '/api/agents/test': {
+      id: '/api/agents/test'
+      path: '/api/agents/test'
+      fullPath: '/api/agents/test'
+      preLoaderRoute: typeof ApiAgentsTestRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/agents/select': {
       id: '/api/agents/select'
@@ -1845,6 +2105,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRouteWithChildren,
   SkillsRoute: SkillsRoute,
   TerminalRoute: TerminalRoute,
+  TermsRoute: TermsRoute,
   ApiAuthRoute: ApiAuthRouteWithChildren,
   ApiAuthCheckRoute: ApiAuthCheckRoute,
   ApiChatEventsRoute: ApiChatEventsRoute,
@@ -1882,6 +2143,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAgentsAddRoute: ApiAgentsAddRoute,
   ApiAgentsListRoute: ApiAgentsListRoute,
   ApiAgentsSelectRoute: ApiAgentsSelectRoute,
+  ApiAgentsTestRoute: ApiAgentsTestRoute,
   ApiGithubReposRoute: ApiGithubReposRoute,
   ApiHermesProxySplatRoute: ApiHermesProxySplatRoute,
   ApiKnowledgeGraphRoute: ApiKnowledgeGraphRoute,
@@ -1892,14 +2154,25 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMcpServersRoute: ApiMcpServersRoute,
   ApiOauthDeviceCodeRoute: ApiOauthDeviceCodeRoute,
   ApiOauthPollTokenRoute: ApiOauthPollTokenRoute,
+  ApiPlaygroundListRoute: ApiPlaygroundListRoute,
   ApiProfilesActivateRoute: ApiProfilesActivateRoute,
   ApiProfilesCreateRoute: ApiProfilesCreateRoute,
   ApiProfilesDeleteRoute: ApiProfilesDeleteRoute,
   ApiProfilesListRoute: ApiProfilesListRoute,
   ApiProfilesReadRoute: ApiProfilesReadRoute,
   ApiProfilesRenameRoute: ApiProfilesRenameRoute,
+  ApiSylangCoverageRoute: ApiSylangCoverageRoute,
+  ApiSylangDashRenderRoute: ApiSylangDashRenderRoute,
+  ApiSylangDiagramRoute: ApiSylangDiagramRoute,
+  ApiSylangFmeaRoute: ApiSylangFmeaRoute,
+  ApiSylangSpecRenderRoute: ApiSylangSpecRenderRoute,
+  ApiSylangSymbolDetailsRoute: ApiSylangSymbolDetailsRoute,
+  ApiSylangSymbolsRoute: ApiSylangSymbolsRoute,
+  ApiSylangTraceabilityRoute: ApiSylangTraceabilityRoute,
+  ApiSylangVariantMatrixRoute: ApiSylangVariantMatrixRoute,
   ApiWorkspacesCloneRoute: ApiWorkspacesCloneRoute,
   ApiWorkspacesCreateRoute: ApiWorkspacesCreateRoute,
+  ApiWorkspacesDeleteRoute: ApiWorkspacesDeleteRoute,
   ApiWorkspacesListRoute: ApiWorkspacesListRoute,
   ApiWorkspacesOpenRoute: ApiWorkspacesOpenRoute,
 }

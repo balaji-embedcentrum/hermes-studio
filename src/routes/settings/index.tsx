@@ -89,6 +89,20 @@ const THEME_PREVIEWS: Record<
   ThemeId,
   { bg: string; panel: string; border: string; accent: string; text: string }
 > = {
+  'sylang-studio-light': {
+    bg: '#fbfaf7',
+    panel: '#ffffff',
+    border: '#e7e2d6',
+    accent: '#c2410c',
+    text: '#0f172a',
+  },
+  'sylang-studio': {
+    bg: '#0a0a0b',
+    panel: '#121214',
+    border: '#232327',
+    accent: '#fb923c',
+    text: '#fafaf9',
+  },
   'hermes-official': {
     bg: '#0A0E1A',
     panel: '#11182A',

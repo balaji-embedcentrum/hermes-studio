@@ -12,6 +12,7 @@
  * Non-chat routes show the sub-page content.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { brand } from '@/brand'
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Suspense, lazy } from 'react'
@@ -27,6 +28,7 @@ import { useSwipeNavigation } from '@/hooks/use-swipe-navigation'
 import { ChatPanel } from '@/components/chat-panel'
 import { ChatPanelToggle } from '@/components/chat-panel-toggle'
 import { useSessionActivity } from '@/hooks/use-session-activity'
+import { useResetChatOnContextChange } from '@/hooks/use-reset-chat-on-context-change'
 import { LoginScreen } from '@/components/auth/login-screen'
 import { MobileTabBar } from '@/components/mobile-tab-bar'
 import { MobileHamburgerMenu } from '@/components/mobile-hamburger-menu'
@@ -62,6 +64,7 @@ async function fetchSessions(): Promise<SessionsListResponse> {
 
 export function WorkspaceShell() {
   useSessionActivity() // Track activity for idle timeout
+  useResetChatOnContextChange() // Force /chat/new when project or agent switches
   const navigate = useNavigate()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -288,7 +291,7 @@ export function WorkspaceShell() {
                 className="text-[13px] font-medium select-none"
                 style={{ color: 'var(--theme-accent, #B98A44)' }}
               >
-                Hermes Studio
+                {brand.appTitle}
               </span>
             </div>
             {/* Right spacer to balance */}

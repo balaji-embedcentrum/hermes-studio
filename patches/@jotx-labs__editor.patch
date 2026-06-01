@@ -1,0 +1,75 @@
+diff --git a/dist/components/BlockMenu.js b/dist/components/BlockMenu.js
+index 6e63c1f74eca43c33b23d1d8320cdb9304467d38..2130edb765c274eb2ddcabfc19f755674173a1d5 100644
+--- a/dist/components/BlockMenu.js
++++ b/dist/components/BlockMenu.js
+@@ -28,7 +28,16 @@ function BlockMenu({ editor }) {
+     (0, react_1.useEffect)(() => {
+         if (!editor)
+             return;
+-        const editorElement = editor.view.dom;
++        // PATCH: TipTap v3's `editor.view` is a Proxy that throws on access
++        // before the view is mounted to the DOM. This effect originally ran
++        // synchronously during React commit, which beats TipTap's mount. We
++        // defer to requestAnimationFrame so the view is attached first.
++        let cleanupFn = () => {};
++        let cancelled = false;
++        const rafId = requestAnimationFrame(() => {
++            if (cancelled) return;
++            let editorElement;
++            try { editorElement = editor.view.dom; } catch { return; }
+         let currentHoverElement = null;
+         let hideTimeout = null;
+         let isHandleHovered = false;
+@@ -215,10 +224,16 @@ function BlockMenu({ editor }) {
+                 }
+             }, true);
+         }
+-        return () => {
++            cleanupFn = () => {
+             clearHideTimeout();
+             editorElement.removeEventListener('mousemove', handleMouseMove);
+             editorElement.removeEventListener('mouseleave', handleMouseLeave);
++            };
++        });
++        return () => {
++            cancelled = true;
++            cancelAnimationFrame(rafId);
++            cleanupFn();
+         };
+     }, [editor]);
+     // Close menu when clicking outside
+diff --git a/dist/components/JotxEditor.js b/dist/components/JotxEditor.js
+index 09fd13f46e99ebff8f4e949448b1552de64b757b..2ffeb95904eb1759b817e5609897b9d1b1eb5513 100644
+--- a/dist/components/JotxEditor.js
++++ b/dist/components/JotxEditor.js
+@@ -1122,7 +1122,15 @@ function JotxEditor({ documentId, documentType, tiptapDoc, onChange, ribbonExpan
+     (0, react_1.useEffect)(() => {
+         if (!editor)
+             return;
+-        const el = editor.view.dom;
++        // PATCH: TipTap v3's `editor.view` is a Proxy that throws on access
++        // before the view is mounted to the DOM. Defer to rAF so TipTap mounts
++        // its view first. See also BlockMenu.js for the matching patch.
++        let cleanupFn = () => {};
++        let cancelled = false;
++        const rafId = requestAnimationFrame(() => {
++            if (cancelled) return;
++            let el;
++            try { el = editor.view.dom; } catch { return; }
+         const onClick = (e) => {
+             const target = e.target;
+             const a = target?.closest?.('a[href]');
+@@ -1137,6 +1145,13 @@ function JotxEditor({ documentId, documentType, tiptapDoc, onChange, ribbonExpan
+         };
+         el.addEventListener('click', onClick);
+         return () => el.removeEventListener('click', onClick);
++    
++        });
++        return () => {
++            cancelled = true;
++            cancelAnimationFrame(rafId);
++            cleanupFn();
++        };
+     }, [editor]);
+     // Close link dialog on Escape
+     (0, react_1.useEffect)(() => {

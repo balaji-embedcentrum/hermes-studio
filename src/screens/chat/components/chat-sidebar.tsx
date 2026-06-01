@@ -1,4 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react'
+import { brand } from '@/brand'
 import {
   ArrowDown01Icon,
   ArrowLeft01Icon,
@@ -828,15 +829,15 @@ function ChatSidebarComponent({
                 )}
               >
                 <img
-                  src="/hermes-crest.svg"
-                  alt="Hermes Studio"
+                  src={brand.logo}
+                  alt={brand.appTitle}
                   className="size-6 rounded-lg"
                 />
                 <span
                   className="text-sm font-semibold tracking-tight"
                   style={{ color: 'var(--theme-text)' }}
                 >
-                  Hermes Studio
+                  {brand.appTitle}
                 </span>
               </Link>
             </motion.div>
@@ -900,10 +901,10 @@ function ChatSidebarComponent({
             onSelectSession={onSelectSession}
           />
 
-          {/* Knowledge and System sections removed — Hermes Studio MBSE IDE */}
+          {/* Knowledge and System sections removed — Sylang Studio MBSE IDE */}
         </div>
 
-        {/* Sessions list removed — Hermes Studio MBSE IDE */}
+        {/* Sessions list removed — Sylang Studio MBSE IDE */}
       </div>
       {/* end scrollable body */}
 

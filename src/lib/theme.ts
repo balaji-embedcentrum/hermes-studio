@@ -1,4 +1,6 @@
 export type ThemeId =
+  | 'sylang-studio'
+  | 'sylang-studio-light'
   | 'hermes-official'
   | 'hermes-official-light'
   | 'hermes-classic'
@@ -14,6 +16,18 @@ export const THEMES: Array<{
   description: string
   icon: string
 }> = [
+  {
+    id: 'sylang-studio-light',
+    label: 'Sylang Studio',
+    description: 'Warm editorial light — paper & terracotta (default)',
+    icon: '◆',
+  },
+  {
+    id: 'sylang-studio',
+    label: 'Sylang Studio Dark',
+    description: 'Warm editorial dark — true black & amber',
+    icon: '◆',
+  },
   {
     id: 'hermes-official',
     label: 'Hermes Official',
@@ -65,12 +79,13 @@ export const THEMES: Array<{
 ]
 
 const STORAGE_KEY = 'hermes-theme'
-const DEFAULT_THEME: ThemeId = 'hermes-official'
+const DEFAULT_THEME: ThemeId = 'sylang-studio-light'
 const THEME_SET = new Set<ThemeId>(THEMES.map((theme) => theme.id))
 const LIGHT_THEME_MAP: Record<
   Exclude<ThemeId, `${string}-light`>,
   Extract<ThemeId, `${string}-light`>
 > = {
+  'sylang-studio': 'sylang-studio-light',
   'hermes-official': 'hermes-official-light',
   'hermes-classic': 'hermes-classic-light',
   'hermes-slate': 'hermes-slate-light',
@@ -80,6 +95,7 @@ const DARK_THEME_MAP: Record<
   Extract<ThemeId, `${string}-light`>,
   Exclude<ThemeId, `${string}-light`>
 > = {
+  'sylang-studio-light': 'sylang-studio',
   'hermes-official-light': 'hermes-official',
   'hermes-classic-light': 'hermes-classic',
   'hermes-slate-light': 'hermes-slate',
@@ -87,6 +103,7 @@ const DARK_THEME_MAP: Record<
 }
 
 const LIGHT_THEMES = new Set<ThemeId>([
+  'sylang-studio-light',
   'hermes-official-light',
   'hermes-classic-light',
   'hermes-slate-light',

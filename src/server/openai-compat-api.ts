@@ -88,7 +88,18 @@ export async function buildRequestBody(
   }
 }
 
-export type StreamChunkType = { type: 'content' | 'reasoning'; text: string }
+export type ToolChunkPayload = {
+  phase: 'started' | 'completed' | string
+  id?: string
+  name?: string
+  args?: unknown
+  result?: unknown
+}
+
+export type StreamChunkType =
+  | { type: 'content'; text: string }
+  | { type: 'reasoning'; text: string }
+  | { type: 'tool'; text: ''; tool: ToolChunkPayload }
 
 export async function* parseOpenAIStream(
   response: Response,
@@ -112,14 +123,36 @@ export async function* parseOpenAIStream(
       const rawEvent = buffer.slice(0, boundary)
       buffer = buffer.slice(boundary + 2)
 
+      // SSE frames can carry an `event:` line that names the frame —
+      // we use this to forward Hermes-adapter's `event: tool` frames as
+      // typed tool chunks. Per-frame state so a stray `event:` line
+      // doesn't leak into subsequent frames.
+      let frameEvent: string | null = null
+      const dataLines: Array<string> = []
       for (const line of rawEvent.split('\n')) {
         const trimmed = line.trim()
-        if (!trimmed.startsWith('data:')) continue
+        if (trimmed.startsWith('event:')) {
+          frameEvent = trimmed.slice(6).trim()
+        } else if (trimmed.startsWith('data:')) {
+          dataLines.push(trimmed.slice(5).trim())
+        }
+      }
+      if (dataLines.length === 0) {
+        boundary = buffer.indexOf('\n\n')
+        continue
+      }
+      const payload = dataLines.join('\n')
+      if (!payload || payload === '[DONE]') {
+        boundary = buffer.indexOf('\n\n')
+        continue
+      }
 
-        const payload = trimmed.slice(5).trim()
-        if (!payload || payload === '[DONE]') continue
-
-        try {
+      try {
+        if (frameEvent === 'tool') {
+          // Named tool event from hermes-adapter — pass through.
+          const tool = JSON.parse(payload) as ToolChunkPayload
+          yield { type: 'tool' as const, text: '', tool }
+        } else {
           const parsed = JSON.parse(payload) as {
             choices?: Array<{
               delta?: {
@@ -136,9 +169,9 @@ export async function* parseOpenAIStream(
           if (content) yield { type: 'content' as const, text: content }
           else if (reasoning)
             yield { type: 'reasoning' as const, text: reasoning }
-        } catch {
-          // Ignore malformed chunks.
         }
+      } catch {
+        // Ignore malformed chunks.
       }
 
       boundary = buffer.indexOf('\n\n')

@@ -42,13 +42,15 @@ export function useActiveSession() {
     try {
       const sessRes = (await fetch('/api/agent-sessions/status').then((r) =>
         r.json(),
-      )) as { session: SessionInfo | null; hasPersonalAgent?: boolean }
+      )) as { session: SessionInfo | null }
       setSession(sessRes.session)
-      // BYO single-tenant users (user_vps, user_tunnel) don't create
-      // session rows but DO have a registered personal agent. Treat that
-      // as "has session" so the global SessionEndRedirect in __root.tsx
-      // doesn't kick them off /projects, /files, /chat, etc.
-      setHasSession(Boolean(sessRes.session) || Boolean(sessRes.hasPersonalAgent))
+      // The old hasPersonalAgent bypass let any user with an agent_instances
+      // row through — meaning a stale BYO registration from before the
+      // playground-only UI shipped kept the chat unlocked even when the user
+      // had no actively-claimed playground agent. BYO is hidden from the UI
+      // now (only playground agents are surfaced), so "has agent" means
+      // "has a current playground session row", full stop.
+      setHasSession(Boolean(sessRes.session))
     } catch {
       setHasSession(false)
     }

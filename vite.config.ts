@@ -386,6 +386,21 @@ const config = defineConfig(({ mode, command }) => {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
+      // pnpm-linked @sylang/* packages install their own node_modules
+      // inside sylang-core's workspace (separate lockfile, no cross-workspace
+      // dedup). Without dedupe, @jotx-labs/editor — reached via
+      // @sylang/jot-editor — would resolve TipTap + React from
+      // sylang-core's tree while the host renders against its own copies.
+      // Two TipTap instances on the same page → ProseMirror's instanceof
+      // checks fail → "[tiptap error]: editor view is not available".
+      //
+      // To make dedupe work we keep @jotx-labs/* and the editor's @tiptap/*
+      // deps as direct dependencies in this project's package.json (they're
+      // imported transitively but pnpm needs them at the host level to dedupe
+      // them). Pattern: @sylang/jot-editor provides the React component
+      // boundary; the host owns the heavy deps. Same shape as
+      // @hugeicons/react + @hugeicons/core-free-icons.
+      dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
     },
     ssr: {
       external: [
@@ -394,8 +409,39 @@ const config = defineConfig(({ mode, command }) => {
         'playwright-extra',
         'puppeteer-extra-plugin-stealth',
       ],
+      // `@sylang/jot-editor` (and its `@jotx-labs/adapters` dep) ship a bare
+      // directory import — `from '@jotx-labs/adapters/dist/editor'` with no
+      // `/index.js`. Node's strict ESM resolver rejects that
+      // (ERR_UNSUPPORTED_DIR_IMPORT) when these are externalized during
+      // `vite dev` SSR, so the JotxFileEditor module fails to evaluate and
+      // the `.jot` view renders `undefined` ("Failed to Load Files"). The
+      // production build already bundles them (Rollup resolves the dir
+      // import → its index.js), which is why prod works. Bundling them for
+      // SSR too applies the same lenient resolution in dev.
+      noExternal: [
+        '@sylang/jot-editor',
+        '@jotx-labs/adapters',
+        '@jotx-labs/editor',
+      ],
+      // `@jotx-labs/adapters/dist/editor/index.js` is CommonJS (`exports`),
+      // which Vite's SSR ESM module-runner can't execute raw
+      // ("ReferenceError: exports is not defined"). esbuild-prebundle the
+      // jot packages for SSR so CJS→ESM interop is applied (the prod Rollup
+      // build does this via @rollup/plugin-commonjs — hence prod works).
+      optimizeDeps: {
+        include: [
+          '@sylang/jot-editor',
+          '@jotx-labs/adapters',
+          '@jotx-labs/editor',
+        ],
+      },
     },
     optimizeDeps: {
+      include: [
+        '@sylang/jot-editor',
+        '@jotx-labs/adapters',
+        '@jotx-labs/editor',
+      ],
       exclude: [
         'playwright',
         'playwright-core',

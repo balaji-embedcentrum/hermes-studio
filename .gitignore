@@ -138,3 +138,9 @@ __pycache__/
 .env.bak
 .runtime/
 workspace-final-markdown-review.md
+
+# Editor iframe bundles — generated from the published @sylang/* npm packages
+# at install/prebuild (postinstall + prebuild → sync:editors:npm). Not tracked.
+public/sylang-editor
+public/sylang-diagrams
+public/sylang-fmea

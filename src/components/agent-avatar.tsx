@@ -143,7 +143,7 @@ function AgentAvatar({
           ) : (
             <img
               src="/hermes-avatar.webp"
-              alt="Hermes"
+              alt="Sylang"
               className={cn(
                 getLogoSizeClassName(size),
                 iconClassName,

@@ -17,7 +17,7 @@ export const Route = createFileRoute('/api/workspaces/list')({
         const admin = getSupabaseServer()
         const { data: workspaces, error } = await admin
           .from('workspaces')
-          .select('repo_full, fs_path, last_accessed, created_at')
+          .select('id, repo_full, fs_path, last_accessed, created_at')
           .eq('user_id', auth.userId)
           .order('last_accessed', { ascending: false, nullsFirst: false })
 

@@ -14,6 +14,8 @@ export type LoaderStyle =
   | 'logo'
 export const DEFAULT_CHAT_DISPLAY_NAME = 'User'
 
+export type EnterBehavior = 'send' | 'newline'
+
 export type ChatSettings = {
   showToolMessages: boolean
   showReasoningBlocks: boolean
@@ -21,6 +23,7 @@ export type ChatSettings = {
   loaderStyle: LoaderStyle
   displayName: string
   avatarDataUrl: string | null
+  enterBehavior: EnterBehavior
 }
 
 type ChatSettingsState = {
@@ -36,6 +39,7 @@ function defaultChatSettings(): ChatSettings {
     loaderStyle: 'dots',
     displayName: DEFAULT_CHAT_DISPLAY_NAME,
     avatarDataUrl: null,
+    enterBehavior: 'send',
   }
 }
 
@@ -98,6 +102,10 @@ export function selectChatProfileAvatarDataUrl(
   state: ChatSettingsState,
 ): string | null {
   return state.settings.avatarDataUrl
+}
+
+export function selectEnterBehavior(state: ChatSettingsState): EnterBehavior {
+  return state.settings.enterBehavior
 }
 
 export function useChatSettings() {
