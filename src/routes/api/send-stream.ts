@@ -1055,8 +1055,12 @@ export const Route = createFileRoute('/api/send-stream')({
         return new Response(stream, {
           headers: {
             'Content-Type': 'text/event-stream; charset=utf-8',
-            'Cache-Control': 'no-cache',
+            // no-transform stops Cloudflare from compressing/transforming the
+            // stream at the edge (compression buffers → bursty tokens through
+            // the tunnel). X-Accel-Buffering disables any proxy buffering.
+            'Cache-Control': 'no-cache, no-transform',
             Connection: 'keep-alive',
+            'X-Accel-Buffering': 'no',
             'X-Hermes-Session-Key': sessionKey,
             'X-Hermes-Friendly-Id': resolvedFriendlyId,
           },
