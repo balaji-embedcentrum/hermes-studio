@@ -131,6 +131,11 @@
     },
     "patchedDependencies": {
       "@jotx-labs/editor": "patches/@jotx-labs__editor.patch"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild",
+      "unrs-resolver"
+    ]
   }
 }
