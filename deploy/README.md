@@ -79,6 +79,7 @@ nano /opt/hermes/hermes-studio/.env
 | `SUPABASE_URL` | Supabase → Settings → API → Project URL |
 | `SUPABASE_ANON_KEY` | Supabase → Settings → API → `anon` `public` key |
 | `SUPABASE_SERVICE_KEY` | Supabase → Settings → API → `service_role` **secret** key |
+| `SECRETS_ENCRYPTION_KEY` | Generate: `openssl rand -base64 32`. Encrypts secrets at rest. Back up offline — losing it is unrecoverable. See `KEY-MANAGEMENT.md` |
 | `HERMES_API_URL` | Your agent gateway URL (e.g. `https://agent.hermes-studio.com`) |
 | `HERMES_API_TOKEN` | Generate: `openssl rand -hex 32` — must match the agent's config |
 | `ANTHROPIC_API_KEY` | console.anthropic.com → Settings → API Keys |

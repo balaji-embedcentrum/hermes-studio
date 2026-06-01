@@ -44,6 +44,12 @@ export function useActiveSession() {
         r.json(),
       )) as { session: SessionInfo | null }
       setSession(sessRes.session)
+      // The old hasPersonalAgent bypass let any user with an agent_instances
+      // row through — meaning a stale BYO registration from before the
+      // playground-only UI shipped kept the chat unlocked even when the user
+      // had no actively-claimed playground agent. BYO is hidden from the UI
+      // now (only playground agents are surfaced), so "has agent" means
+      // "has a current playground session row", full stop.
       setHasSession(Boolean(sessRes.session))
     } catch {
       setHasSession(false)

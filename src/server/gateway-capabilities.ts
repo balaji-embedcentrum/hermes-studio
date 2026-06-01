@@ -8,9 +8,22 @@
  *   - Enhanced: Hermes-native extras (sessions, skills, memory, config, jobs)
  */
 
+import { decryptSecret } from './secret-crypto'
+
 export let HERMES_API = process.env.HERMES_API_URL || 'http://127.0.0.1:8642'
 
-export type AgentConfig = { url: string; model?: string; apiKey?: string }
+export type AgentConfig = {
+  url: string
+  model?: string
+  apiKey?: string
+  /**
+   * True only when this points at the local default Hermes (no user-selected
+   * agent). The shared global HERMES_API_TOKEN may ONLY be sent when this is
+   * true — never to a user-selected/remote agent. Required (not optional) so
+   * every construction site must decide explicitly: fail-closed by design.
+   */
+  isLocalDefault: boolean
+}
 
 /**
  * Get the API URL and model name for a user's selected agent.
@@ -19,7 +32,7 @@ export type AgentConfig = { url: string; model?: string; apiKey?: string }
  * routes to localhost when the user intended to use a remote agent.
  */
 export async function getAgentConfig(userId?: string): Promise<AgentConfig> {
-  if (!userId) return { url: HERMES_API }
+  if (!userId) return { url: HERMES_API, isLocalDefault: true }
   try {
     const { createClient } = await import('@supabase/supabase-js')
     const admin = createClient(
@@ -35,7 +48,7 @@ export async function getAgentConfig(userId?: string): Promise<AgentConfig> {
 
     if (!profile?.selected_agent_id) {
       // No agent selected — use local Hermes
-      return { url: HERMES_API }
+      return { url: HERMES_API, isLocalDefault: true }
     }
 
     console.info(`[gateway] Profile selected_agent_id: ${profile.selected_agent_id}`)
@@ -57,7 +70,7 @@ export async function getAgentConfig(userId?: string): Promise<AgentConfig> {
     }
 
     console.info(`[gateway] Agent lookup: url=${agent.api_url} model=${agent.model_name ?? 'default'} hasKey=${Boolean(agent.api_key)}`)
-    return { url: agent.api_url, model: agent.model_name || undefined, apiKey: agent.api_key || undefined }
+    return { url: agent.api_url, model: agent.model_name || undefined, apiKey: decryptSecret(agent.api_key) || undefined, isLocalDefault: false }
   } catch (e) {
     // Re-throw agent-specific errors — never silently fall back to localhost
     if (e instanceof Error && (
@@ -68,7 +81,7 @@ export async function getAgentConfig(userId?: string): Promise<AgentConfig> {
     }
     // Only fall back to localhost for infrastructure errors (no Supabase, no profile table, etc.)
     console.error('[gateway] Failed to get agent config:', e)
-    return { url: HERMES_API }
+    return { url: HERMES_API, isLocalDefault: true }
   }
 }
 

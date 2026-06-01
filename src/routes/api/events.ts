@@ -75,7 +75,7 @@ export const Route = createFileRoute('/api/events')({
           status: 200,
           headers: {
             'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache, no-store',
+            'Cache-Control': 'no-cache, no-store, no-transform',
             Connection: 'keep-alive',
             'X-Accel-Buffering': 'no',
           },

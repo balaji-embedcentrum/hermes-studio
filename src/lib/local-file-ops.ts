@@ -55,7 +55,7 @@ export async function localListFiles(
 
   const res = await fetch(
     `${agentUrl}/ws/${encodeURIComponent(repo)}/tree?path=${encodeURIComponent(relPath)}`,
-    { signal: AbortSignal.timeout(10_000) },
+    { signal: AbortSignal.timeout(10_000), cache: 'no-store' },
   )
   if (!res.ok) return []
 

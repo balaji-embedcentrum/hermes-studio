@@ -11,6 +11,7 @@ import {
   textFromMessage,
 } from '../utils'
 import { MessageItem } from './message-item'
+import { TuiActivityCard } from './tui-activity-card'
 import { ScrollToBottomButton } from './scroll-to-bottom-button'
 import { ResearchCard } from './research-card'
 import type { ChatMessage } from '../types'
@@ -294,11 +295,11 @@ function ThinkingBubble({
     return () => window.clearTimeout(swapTimer)
   }, [statusLabel])
 
-  // Tool calls are rendered by InlineToolSectionItem on the message itself —
-  // skip the duplicate ToolCallCard rendering in the thinking bubble.
-  if (allTools.length > 0 && !isCompacting) {
-    return null
-  }
+  // Keep the streaming "Thinking…" shimmer bubble visible while tools are
+  // active. The grouped TUI activity card renders above the assistant bubble
+  // (message-item) once assistant text arrives / the run finishes; before
+  // that, returning null here would leave a blank gap during early
+  // streaming-with-tools, so we keep the bubble.
 
   return (
     <div className="flex items-end gap-2">
@@ -433,16 +434,13 @@ const VIRTUAL_OVERSCAN = 8
 const NEAR_BOTTOM_THRESHOLD = 200
 // Pull-to-refresh constants removed
 
-const HIDDEN_SYSTEM_USER_SUBSTRINGS = [
+const HIDDEN_SYSTEM_USER_PREFIXES = [
   'Pre-compaction memory flush',
   'Read HEARTBEAT.md',
   'HEARTBEAT_OK',
   'Execute your Session Startup sequence',
   '[Queued messages',
   'Heartbeat prompt',
-] as const
-
-const HIDDEN_SYSTEM_USER_PREFIXES = [
   '[Fri ',
   '[Mon ',
   '[Tue ',
@@ -455,14 +453,10 @@ const HIDDEN_SYSTEM_USER_PREFIXES = [
 function shouldHideSystemInjectedUserMessage(text: string): boolean {
   const trimmed = text.trim()
   if (!trimmed) return false
-  if (
-    HIDDEN_SYSTEM_USER_PREFIXES.some((prefix) => trimmed.startsWith(prefix))
-  ) {
-    return true
-  }
-  return HIDDEN_SYSTEM_USER_SUBSTRINGS.some((substring) =>
-    trimmed.includes(substring),
-  )
+  // Only hide messages that begin with known system-injected prompts. User
+  // context summaries may quote these phrases later in the message and must
+  // remain visible/persistent in the chat UI.
+  return HIDDEN_SYSTEM_USER_PREFIXES.some((prefix) => trimmed.startsWith(prefix))
 }
 
 function getChronologyRank(message: ChatMessage): number {
@@ -1169,25 +1163,47 @@ function ChatMessageListComponent({
       id: string
       name: string
       phase: 'calling' | 'running' | 'done' | 'error'
+      args?: unknown
+      preview?: string
+      result?: string
     }>
-  >(
-    () =>
-      activeToolCalls.map((toolCall) => ({
-        id: toolCall.id,
-        name: toolCall.name,
-        phase:
-          toolCall.phase === 'complete' || toolCall.phase === 'completed'
-            ? 'done'
-            : toolCall.phase === 'start'
-              ? 'calling'
-              : toolCall.phase === 'failed'
-                ? 'error'
-                : toolCall.phase === 'calling' || toolCall.phase === 'running'
-                  ? toolCall.phase
-                  : 'calling',
-      })),
-    [activeToolCalls],
-  )
+  >(() => {
+    if (activeToolCalls.length > 0) {
+      return activeToolCalls.map((toolCall) => {
+        const tcAny = toolCall as unknown as Record<string, unknown>
+        return {
+          id: toolCall.id,
+          name: toolCall.name,
+          phase:
+            toolCall.phase === 'complete' || toolCall.phase === 'completed'
+              ? 'done'
+              : toolCall.phase === 'start'
+                ? 'calling'
+                : toolCall.phase === 'failed' || toolCall.phase === 'error'
+                  ? 'error'
+                  : toolCall.phase === 'calling' ||
+                      toolCall.phase === 'running'
+                    ? toolCall.phase
+                    : 'calling',
+          args: tcAny.args,
+          preview:
+            typeof tcAny.preview === 'string'
+              ? (tcAny.preview as string)
+              : undefined,
+          result:
+            typeof tcAny.result === 'string'
+              ? (tcAny.result as string)
+              : undefined,
+        }
+      })
+    }
+
+    return liveToolActivity.map((entry, index) => ({
+      id: `live-${entry.name}-${index}`,
+      name: entry.name,
+      phase: 'running' as const,
+    }))
+  }, [activeToolCalls, liveToolActivity])
 
   // Pin the last user+assistant group without adding bottom padding.
   const groupStartIndex = typeof lastUserIndex === 'number' ? lastUserIndex : -1
@@ -1275,7 +1291,8 @@ function ChatMessageListComponent({
     // while this wrapper is invisible.
     if (messageIsStreaming) {
       const hasStreamingActivity =
-        activeToolCalls.length > 0 ||
+        normalizedStreamingToolCalls.length > 0 ||
+        liveToolActivity.length > 0 ||
         lifecycleEvents.length > 0 ||
         Boolean(streamingThinking && streamingThinking.trim().length > 0)
       const isEmptyPlaceholder =
@@ -1823,12 +1840,21 @@ function ChatMessageListComponent({
                 ) : null}
               </>
             )}
-            {showTypingIndicator ||
-            showResearchCard ||
-            isCompacting ||
-            liveToolActivity.length > 0 ||
-            (isStreaming && !streamingText) ||
-            (isStreaming && activeToolCalls.length > 0) ? (
+            {/* Bottom shimmer + branch TUI card. Hide as soon as the
+                streaming text starts arriving — the per-message TUI card
+                above the assistant bubble takes over from there to avoid
+                a duplicated activity surface. */}
+            {(showTypingIndicator ||
+              showResearchCard ||
+              isCompacting ||
+              liveToolActivity.length > 0 ||
+              (isStreaming && !streamingText) ||
+              (isStreaming && activeToolCalls.length > 0)) &&
+            !(
+              isStreaming &&
+              streamingText &&
+              streamingText.trim().length > 0
+            ) ? (
               <div
                 className="flex flex-col gap-1 py-1.5 px-1 animate-in fade-in duration-300 md:gap-1.5 md:py-2"
                 role="status"
@@ -1840,6 +1866,69 @@ function ChatMessageListComponent({
                   researchCard={researchCard}
                   isCompacting={isCompacting}
                 />
+                {/* Branch from the thinking bubble into a single compact
+                    TUI-style tool activity card. Use normalized streaming
+                    calls so the card appears for both structured tool events
+                    and the lighter live activity feed. */}
+                {normalizedStreamingToolCalls.length > 0 ? (
+                  <div className="flex max-w-[900px]">
+                    <div
+                      className="ml-[14px] mr-2 w-px shrink-0"
+                      style={{
+                        background:
+                          'linear-gradient(to bottom, color-mix(in srgb, var(--theme-accent) 35%, transparent), color-mix(in srgb, var(--theme-border) 60%, transparent))',
+                      }}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1 pt-1">
+                      <TuiActivityCard
+                        toolSections={normalizedStreamingToolCalls.map((tc) => {
+                          const phase = tc.phase
+                          const state =
+                            phase === 'error'
+                              ? ('output-error' as const)
+                              : phase === 'done'
+                                ? ('output-available' as const)
+                                : phase === 'running'
+                                  ? ('input-streaming' as const)
+                                  : ('input-available' as const)
+                          return {
+                            key: tc.id,
+                            type: tc.name,
+                            input:
+                              tc.args &&
+                              typeof tc.args === 'object' &&
+                              !Array.isArray(tc.args)
+                                ? (tc.args as Record<string, unknown>)
+                                : undefined,
+                            preview: tc.preview,
+                            outputText:
+                              state === 'output-available'
+                                ? tc.result || ''
+                                : '',
+                            errorText:
+                              state === 'output-error'
+                                ? tc.result || 'Tool failed'
+                                : undefined,
+                            state,
+                          }
+                        })}
+                        thinking={null}
+                        isStreaming={true}
+                        formatLabel={(name) => name.replace(/_/g, ' ')}
+                        formatArg={(_name, args) => {
+                          if (!args) return null
+                          const first = Object.values(args).find(
+                            (v) => typeof v === 'string' && v.trim(),
+                          )
+                          return typeof first === 'string'
+                            ? first.trim()
+                            : null
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : null}
             {notice && noticePosition === 'end' ? notice : null}

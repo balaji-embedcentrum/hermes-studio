@@ -22,7 +22,10 @@ import type { GitFileStatus } from '../../types/git'
 import type { GitDiffSelection } from './diff-view'
 import { Button } from '../ui/button'
 
-function statusLabel(code: string): { label: string; color: string } {
+function statusLabel(code: string | undefined): {
+  label: string
+  color: string
+} {
   switch (code) {
     case 'M':
       return { label: 'M', color: 'var(--theme-accent)' }
@@ -37,8 +40,31 @@ function statusLabel(code: string): { label: string; color: string } {
     case 'U':
       return { label: '!', color: '#ef4444' }
     default:
-      return { label: code.trim() || '·', color: 'var(--theme-muted)' }
+      // ``code`` may be undefined when running against an older adapter
+      // that returns only the deprecated ``status`` field with no
+      // ``index``/``worktree`` split. Normalize to '·' so the row still
+      // renders instead of crashing the whole panel.
+      return { label: (code ?? '').trim() || '·', color: 'var(--theme-muted)' }
   }
+}
+
+/**
+ * Backfill ``index``/``worktree`` from the deprecated single-char ``status``
+ * field when the adapter doesn't expose them separately. Without this, rows
+ * from an older adapter (no X/Y split) end up with both ``index`` and
+ * ``worktree`` undefined, which (a) crashes ``statusLabel`` on ``.trim()``
+ * and (b) misclassifies them in the partition functions below.
+ *
+ * Drop this once every fleet has a hermes-adapter that returns the split.
+ */
+function normalize(f: GitFileStatus): GitFileStatus {
+  if (f.index !== undefined && f.worktree !== undefined) return f
+  const code = (f as { status?: string }).status ?? '?'
+  // Adapter convention for the deprecated single field: '?' = untracked,
+  // anything else = unstaged worktree change. Treat as unstaged so the
+  // partitioner routes it correctly.
+  if (code === '?') return { ...f, index: '?', worktree: '?' }
+  return { ...f, index: ' ', worktree: code }
 }
 
 function isStaged(f: GitFileStatus): boolean {
@@ -70,7 +96,7 @@ export function ChangesTab({ onOpenDiff }: ChangesTabProps) {
   } = useGit()
   const [message, setMessage] = useState('')
 
-  const files = status.data?.changed ?? []
+  const files = (status.data?.changed ?? []).map(normalize)
   const ahead = status.data?.ahead ?? 0
   const behind = status.data?.behind ?? 0
 

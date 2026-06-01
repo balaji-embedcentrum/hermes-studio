@@ -9,6 +9,7 @@
  * Hidden when using local agent.
  */
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useSessionRealtime } from '@/hooks/use-session-realtime'
 
@@ -28,6 +29,7 @@ function formatTime(ms: number): string {
 
 export function SessionTimer() {
   const localHermesUrl = useWorkspaceStore(s => s.localHermesUrl)
+  const navigate = useNavigate()
   const [session, setSession] = useState<SessionData | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [timeLeft, setTimeLeft] = useState<number>(0)
@@ -81,18 +83,25 @@ export function SessionTimer() {
   }, [])
   useSessionRealtime(userId, handleRealtimeChange)
 
-  // Client-side tick every second — uses expiresAt as source of truth
+  // Client-side tick every second — uses expiresAt as source of truth.
+  // When the countdown reaches zero we redirect to /agents immediately
+  // instead of waiting on the realtime UPDATE push from the server
+  // (which can be dropped or delayed for several seconds, leaving the
+  // user staring at an expired session on whatever route they were on).
   useEffect(() => {
     if (!session) { setTimeLeft(0); return }
     const compute = () => {
       const remaining = new Date(session.expiresAt).getTime() - Date.now()
       setTimeLeft(Math.max(0, remaining))
-      if (remaining <= 0) setEnded(true)
+      if (remaining <= 0) {
+        setEnded(true)
+        navigate({ to: '/agents', replace: true })
+      }
     }
     compute()
     const id = setInterval(compute, 1000)
     return () => clearInterval(id)
-  }, [session])
+  }, [session, navigate])
 
   const handleEndSession = async () => {
     try {
@@ -114,6 +123,12 @@ export function SessionTimer() {
           /* private mode etc. */
         }
       }
+      // Redirect to the agent picker right away. The global
+      // SessionEndRedirect would also kick in once hasSession flips to
+      // false, but we beat it to the punch so the user doesn't see the
+      // current route briefly with a "Session ended" badge in the
+      // header before being moved.
+      navigate({ to: '/agents', replace: true })
     } catch {}
   }
 

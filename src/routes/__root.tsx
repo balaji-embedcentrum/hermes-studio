@@ -8,6 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import appCss from '../styles.css?url'
+import { brand } from '@/brand'
 import { SearchModal } from '@/components/search/search-modal'
 import { TerminalShortcutListener } from '@/components/terminal-shortcut-listener'
 import { GlobalShortcutListener } from '@/components/global-shortcut-listener'
@@ -36,17 +37,24 @@ const APP_CSP = [
 ].join('; ')
 
 const THEME_STORAGE_KEY = 'hermes-theme'
-const DEFAULT_THEME = 'hermes-official'
-const VALID_THEMES = [
-  'hermes-official',
-  'hermes-official-light',
-  'hermes-classic',
-  'hermes-classic-light',
-  'hermes-slate',
-  'hermes-slate-light',
-  'hermes-mono',
-  'hermes-mono-light',
-]
+const DEFAULT_THEME = brand.defaultTheme
+const VALID_THEMES = brand.themes
+
+// Sylang-only: one-time migration of legacy 'hermes-*' theme values to the
+// Sylang editorial default. Hermes builds skip this entirely (empty string).
+const themeMigration =
+  brand.id === 'sylang'
+    ? `
+    try {
+      if (!localStorage.getItem('sylang-theme-migrated-v1')) {
+        if (!storedTheme || storedTheme.indexOf('hermes-') === 0) {
+          storedTheme = '${brand.defaultTheme}'
+          localStorage.setItem('${THEME_STORAGE_KEY}', storedTheme)
+        }
+        localStorage.setItem('sylang-theme-migrated-v1', '1')
+      }
+    } catch {}`
+    : ''
 
 const themeScript = `
 (() => {
@@ -54,9 +62,9 @@ const themeScript = `
 
   try {
     const root = document.documentElement
-    const storedTheme = localStorage.getItem('${THEME_STORAGE_KEY}')
+    let storedTheme = localStorage.getItem('${THEME_STORAGE_KEY}')${themeMigration}
     const theme = ${JSON.stringify(VALID_THEMES)}.includes(storedTheme) ? storedTheme : '${DEFAULT_THEME}'
-    const lightThemes = ['hermes-official-light', 'hermes-classic-light', 'hermes-slate-light', 'hermes-mono-light']
+    const lightThemes = ['sylang-studio-light', 'hermes-official-light', 'hermes-classic-light', 'hermes-slate-light', 'hermes-mono-light']
     const isDark = !lightThemes.includes(theme)
     root.classList.remove('light', 'dark', 'system')
     root.classList.add(isDark ? 'dark' : 'light')
@@ -79,6 +87,8 @@ const themeColorScript = `
     const root = document.documentElement
     const theme = root.getAttribute('data-theme') || '${DEFAULT_THEME}'
     const colors = {
+      'sylang-studio': '#0a0a0b',
+      'sylang-studio-light': '#fbfaf7',
       'hermes-official': '#0A0E1A',
       'hermes-official-light': '#F6F8FC',
       'hermes-classic': '#0d0f12',
@@ -115,12 +125,11 @@ export const Route = createRootRoute({
           'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual',
       },
       {
-        title: 'Hermes Studio',
+        title: brand.appTitle,
       },
       {
         name: 'description',
-        content:
-          'Hermes Studio — AI agent workspace with chat, files, terminal, memory, and skills.',
+        content: brand.description,
       },
       {
         property: 'og:image',
@@ -160,7 +169,7 @@ export const Route = createRootRoute({
       {
         rel: 'icon',
         type: 'image/svg+xml',
-        href: '/hermes-crest.svg',
+        href: brand.logo,
       },
       // PWA manifest and icons
       {
@@ -336,15 +345,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             } catch(e){}
 
             var isDark = !['hermes-official-light','hermes-classic-light','hermes-slate-light','hermes-mono-light'].includes(theme);
-            var quips = ["Consulting the oracle...","Loading ancient knowledge...","Warming up the messenger...","Calibrating tool chain...","Summoning Hermes...","Preparing the workspace...","Bridging realms...","Initializing agent runtime..."];
+            var quips = ${JSON.stringify(brand.loadingQuips)};
             var quip = quips[Math.floor(Math.random() * quips.length)];
 
             var d = document.createElement('div');
             d.id = 'splash-screen';
             d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:'+bg+';transition:opacity 0.5s ease;';
-            d.innerHTML = '<img src="/hermes-crest.svg" alt="Hermes Studio" style="width:72px;height:72px;margin-bottom:20px;border-radius:16px;filter:drop-shadow(0 8px 32px color-mix(in srgb,'+accent+' 45%, transparent))" />'
-              + '<div style="font:700 28px/1 system-ui,-apple-system,sans-serif;letter-spacing:-0.02em;color:'+accent+';margin-bottom:6px">Hermes Studio</div>'
-              + '<div style="font:400 13px/1 system-ui,-apple-system,sans-serif;letter-spacing:0.04em;color:'+muted+'">AI Agent Workspace</div>'
+            d.innerHTML = '<img src="${brand.logo}" alt="${brand.appTitle}" style="width:72px;height:72px;margin-bottom:20px;border-radius:16px;filter:drop-shadow(0 8px 32px color-mix(in srgb,'+accent+' 45%, transparent))" />'
+              + '<div style="font:700 28px/1 system-ui,-apple-system,sans-serif;letter-spacing:-0.02em;color:'+accent+';margin-bottom:6px">${brand.appTitle}</div>'
+              + '<div style="font:400 13px/1 system-ui,-apple-system,sans-serif;letter-spacing:0.04em;color:'+muted+'">${brand.loadingTagline}</div>'
               + '<div style="margin-top:28px;width:140px;height:3px;background:'+(isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')+';border-radius:3px;overflow:hidden;position:relative"><div id=splash-bar style="width:0%;height:100%;background:'+accent+';border-radius:3px;transition:width 0.4s ease"></div></div>';
             document.body.prepend(d);
 

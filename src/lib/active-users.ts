@@ -36,14 +36,18 @@ function markAsPingedToday(): void {
 }
 
 async function sendPing(fingerprint: string): Promise<void> {
-  const pingUrl = process.env.NEXT_PUBLIC_PING_URL
+  // Client-side env access — `process.env.X` is undefined in Vite browser
+  // bundles; only `import.meta.env.VITE_X` is statically replaced at build
+  // time. The previous NEXT_PUBLIC_* names were a leftover from a Next.js
+  // attempt and silently resolved to undefined, disabling the ping.
+  const pingUrl = import.meta.env.VITE_PING_URL
   if (!pingUrl) {
     return
   }
 
   const payload = {
     id: fingerprint,
-    version: process.env.NEXT_PUBLIC_APP_VERSION ?? '1.0.0',
+    version: import.meta.env.VITE_APP_VERSION ?? '1.0.0',
     ts: Date.now(),
     mobile: window.innerWidth < 768,
   }

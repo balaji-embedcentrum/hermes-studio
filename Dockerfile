@@ -3,12 +3,44 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+# Vite/Rollup chunk rendering for this app needs more than Node's ~2GB default.
+ENV NODE_OPTIONS=--max-old-space-size=4096
+
+# Brand selection — one engine, two products. Build the Hermes image with
+#   docker build --build-arg VITE_BRAND=hermes .
+# Defaults to Sylang. studio-apps passes this per brand.
+ARG VITE_BRAND=sylang
+ENV VITE_BRAND=$VITE_BRAND
+
+# The client bundle bakes SUPABASE_URL + SUPABASE_ANON_KEY at build time (vite
+# loadEnv reads them from the environment). Both are public, RLS-protected
+# values — safe to embed. SUPABASE_SERVICE_KEY is intentionally NOT passed here:
+# it must stay a runtime-only secret and is never baked into the client.
+ARG SUPABASE_URL=
+ARG SUPABASE_ANON_KEY=
+ENV SUPABASE_URL=$SUPABASE_URL
+ENV SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
 COPY package.json pnpm-lock.yaml .npmrc ./
-RUN npm install -g pnpm && pnpm install --no-frozen-lockfile
+# Patches must be present before install: pnpm 9 applies patchedDependencies
+# (@jotx-labs/editor) during `pnpm install`, reading patches/ from the cwd.
+COPY patches ./patches
+# Pin pnpm 9 (matches lockfileVersion 9.0). pnpm 10/11 no longer read the
+# "pnpm" field in package.json, silently dropping our overrides + the
+# @jotx-labs/editor patch; pnpm 9 honors them and has no build-script gate.
+# --ignore-scripts: dependency build scripts aren't needed at install time
+# (esbuild/unrs-resolver ship prebuilt binaries as optional deps; core-js'
+# script only prints a notice), and the editor sync + build run explicitly
+# after `COPY . .` below. Patches still apply (patching isn't a script).
+RUN npm install -g pnpm@9 && pnpm install --no-frozen-lockfile --ignore-scripts
 
 COPY . .
-RUN pnpm build
+# Sync the @sylang editor bundles from node_modules into public/ AFTER the
+# source copy. The public/sylang-* dirs are no longer vendored in git, and
+# `postinstall` runs before `COPY . .` (so a stale bundle from the VPS
+# working tree could overlay it). This explicit, idempotent sync makes the
+# bundle deterministic regardless of pnpm pre/post-script settings.
+RUN pnpm sync:editors:npm && pnpm build
 
 # --- Production stage ---
 FROM node:22-alpine AS runner

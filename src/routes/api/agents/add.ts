@@ -10,6 +10,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { requireAuth } from '../../../server/supabase-auth'
 import { getSupabaseServer } from '../../../lib/supabase'
+import { encryptSecret } from '../../../server/secret-crypto'
 
 const VALID_DEPLOYMENTS = new Set(['user_vps', 'user_tunnel'])
 
@@ -61,7 +62,7 @@ export const Route = createFileRoute('/api/agents/add')({
           status: 'idle',
           agent_status: 'available',
           api_url: url,
-          api_key: apiKey || null,
+          api_key: apiKey ? encryptSecret(apiKey) : null,
           model_name: model,
           skills: ['Custom'],
           owner_user_id: auth.userId,

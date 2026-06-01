@@ -1,8 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=EB+Garamond:opsz,wght@8..120,400..800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 
+/* Bind Tailwind dark: variant to the app theme (.dark set by __root theme
+   script) instead of the OS prefers-color-scheme. Without this, dark:
+   utilities (e.g. chat-v2) followed the OS, not the selected theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --tabbar-h: 0px;
+  /* System font stack (VSCode-like = SF Pro on macOS; matches bbalaji.com).
+     No bundled webfont. UI everywhere = --font-sans; code & tool
+     stdout/stderr/output only = --font-mono. */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, 'Cascadia Code',
+    'JetBrains Mono', 'Liberation Mono', 'Courier New', monospace;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
 }
 
 /* Hide scrollbars until scroll (cross-browser) */
@@ -196,9 +218,7 @@ body {
   border: 1px solid var(--color-primary-200);
   border-radius: 0.5rem;
   color: var(--color-primary-900);
-  font-family:
-    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 0.95em;
   padding: 0.1rem 0.4rem;
   white-space: nowrap;
@@ -216,8 +236,7 @@ body {
 }
 
 code {
-  font-family:
-    'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 @keyframes shimmer {
@@ -881,6 +900,53 @@ code {
   --theme-input: #222222;
 }
 
+/* ── Sylang Studio — editorial dark (warm-black, terracotta-orange accent) ── */
+[data-theme='sylang-studio'] {
+  --theme-bg: #0a0a0b;
+  --theme-sidebar: #121214;
+  --theme-panel: #121214;
+  --theme-card: #121214;
+  --theme-card2: #18181c;
+  --theme-border: #232327;
+  --theme-border-subtle: #1d1d20;
+  --theme-text: #fafaf9;
+  --theme-muted: #a1a1aa;
+  --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --theme-shadow-2: 0 4px 18px rgba(0, 0, 0, 0.45);
+  --theme-shadow-3: 0 16px 36px rgba(0, 0, 0, 0.55);
+  --theme-glass: rgba(10, 10, 11, 0.88);
+  --theme-focus: #fb923c;
+  --theme-accent: #fb923c;
+  --theme-accent-secondary: #fdba74;
+  --theme-accent-subtle: rgba(251, 146, 60, 0.14);
+  --theme-accent-border: rgba(251, 146, 60, 0.3);
+  --theme-active: #fdba74;
+  --theme-link: #fdba74;
+  --theme-success: #22c55e;
+  --theme-warning: #f59e0b;
+  --theme-danger: #ef4444;
+  --theme-stripe: rgba(35, 35, 39, 0.48);
+  --theme-header-bg: #121214;
+  --theme-header-border: #232327;
+  --chat-user-bg: #232327;
+  --chat-user-border: #3f3f46;
+  --chat-user-foreground: #fafaf9;
+  --chat-assistant-bg: #121214;
+  --chat-assistant-border: #232327;
+  --chat-assistant-foreground: #fafaf9;
+  --composer-bg: #121214;
+  --composer-border: #2a2a2f;
+  --composer-placeholder: #71717a;
+  --tool-card-bg: #18181c;
+  --tool-card-border: #2a2a2f;
+  --tool-card-title: #fafaf9;
+  --tool-card-muted: #a1a1aa;
+  --code-bg: #18181c;
+  --code-border: #2a2a2f;
+  --code-foreground: #fafaf9;
+  --theme-input: #18181c;
+}
+
 [data-theme='hermes-official-light'] {
   --theme-bg: #f6f8fc;
   --theme-sidebar: #eef2ff;
@@ -1065,6 +1131,57 @@ code {
   --theme-input: #ffffff;
 }
 
+/* ── Sylang Studio — editorial light (warm paper, terracotta accent) ── */
+[data-theme='sylang-studio-light'] {
+  --theme-bg: #fbfaf7;
+  --theme-sidebar: #f5f3ee;
+  --theme-panel: #f5f3ee;
+  --theme-card: #ffffff;
+  --theme-card2: #f5f3ee;
+  --theme-border: #e7e2d6;
+  --theme-border-subtle: #efece3;
+  --theme-text: #0f172a;
+  --theme-muted: #475569;
+  --theme-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --theme-shadow-2: 0 4px 14px rgba(15, 23, 42, 0.06);
+  --theme-shadow-3: 0 18px 38px rgba(15, 23, 42, 0.1);
+  --theme-glass: rgba(251, 250, 247, 0.86);
+  --theme-focus: #c2410c;
+  --theme-accent: #c2410c;
+  --theme-accent-secondary: #b45309;
+  --theme-accent-subtle: rgba(194, 65, 12, 0.1);
+  --theme-accent-border: rgba(194, 65, 12, 0.24);
+  --theme-active: #b45309;
+  --theme-link: #b45309;
+  --theme-success: #16a34a;
+  --theme-warning: #d97706;
+  --theme-danger: #dc2626;
+  --theme-stripe: rgba(231, 226, 214, 0.4);
+  --theme-header-bg: #f5f3ee;
+  --theme-header-border: #e7e2d6;
+  --chat-user-bg: #fdf0e7;
+  --chat-user-border: rgba(194, 65, 12, 0.22);
+  --chat-user-foreground: #0f172a;
+  --chat-assistant-bg: #ffffff;
+  --chat-assistant-border: #e7e2d6;
+  --chat-assistant-foreground: #0f172a;
+  --composer-bg: #ffffff;
+  --composer-border: #e7e2d6;
+  --composer-placeholder: #64748b;
+  --tool-card-bg: #f5f3ee;
+  --tool-card-border: #e7e2d6;
+  --tool-card-title: #0f172a;
+  --tool-card-muted: #475569;
+  --code-bg: #f5f3ee;
+  --code-border: #e7e2d6;
+  --code-foreground: #0f172a;
+  --theme-input: #ffffff;
+}
+
+[data-theme='sylang-studio'] html,
+[data-theme='sylang-studio'] body,
+[data-theme='sylang-studio'] #root,
+[data-theme='sylang-studio'] .dark,
 [data-theme='hermes-official'] html,
 [data-theme='hermes-official'] body,
 [data-theme='hermes-official'] #root,
@@ -1085,6 +1202,10 @@ code {
   color: var(--theme-text);
 }
 
+[data-theme='sylang-studio-light'] html,
+[data-theme='sylang-studio-light'] body,
+[data-theme='sylang-studio-light'] #root,
+[data-theme='sylang-studio-light'] .light,
 [data-theme='hermes-official-light'] html,
 [data-theme='hermes-official-light'] body,
 [data-theme='hermes-official-light'] #root,
@@ -1110,6 +1231,7 @@ code {
    to theme-appropriate values so ALL existing Tailwind classes work.
    Dark: 50=darkest surface, 950=lightest text (already set above) */
 
+[data-theme='sylang-studio'],
 [data-theme='hermes-official'],
 [data-theme='hermes-classic'],
 [data-theme='hermes-slate'],
@@ -1136,6 +1258,7 @@ code {
 /* ── Tailwind primary token remaps for light themes ────────────────────
    Light: 50=lightest surface, 950=darkest text */
 
+[data-theme='sylang-studio-light'],
 [data-theme='hermes-official-light'],
 [data-theme='hermes-classic-light'],
 [data-theme='hermes-slate-light'],
@@ -1179,6 +1302,25 @@ code {
   border-color: var(--theme-accent);
 }
 
+/* ── jotx (.jot) editor: follow the active editorial theme ──────────────
+   jotx-editor.css defines its `--jotx-*` tokens on :root with dark-only
+   values (#0e1117 bg, #e2e8f0 text, #5EEAD4 teal primary), so on the light
+   editorial theme the toolbar stayed dark and content washed out. Remapping
+   them on the jotx host subtree (more specific than :root → wins for all
+   descendants) makes the whole jotx editor track --theme-* (paper/terracotta
+   in light, warm-black/amber in dark). Scoped — does not leak globally. */
+.jotx-host {
+  --jotx-bg: var(--theme-bg);
+  --jotx-bgSecondary: var(--theme-card);
+  --jotx-bgTertiary: var(--theme-card2);
+  --jotx-text: var(--theme-text);
+  --jotx-textSecondary: var(--theme-muted);
+  --jotx-textMuted: var(--theme-muted);
+  --jotx-border: var(--theme-border);
+  --jotx-primary: var(--theme-accent);
+  --jotx-primaryHover: var(--theme-accent-secondary);
+}
+
 /* Demo mode — activated via ?demo=1 query param */
 [data-demo='true'] {
   font-size: 105%;
@@ -1217,3 +1359,26 @@ code {
   }
 }
 
+
+/* ── chat-v2 surfaces ──────────────────────────────────────────────────────
+   chat-v2 was authored with Tailwind `primary-*` + `dark:` utilities that this
+   Tailwind 4 setup never generated (the palette isn't registered via @theme),
+   so its surfaces fell back to bg-white and stayed light in every theme. These
+   classes drive chat-v2 from the same --theme-* vars the rest of the app uses,
+   so it themes correctly in light AND dark without primary-*/dark:. */
+.cv2-bg { background: var(--theme-bg); }
+.cv2-panel { background: var(--theme-panel); }
+.cv2-card { background: var(--theme-card); color: var(--theme-text); }
+.cv2-output { background: var(--theme-card2); color: var(--theme-text); }
+.cv2-input { background: var(--theme-card); color: var(--theme-text); border-color: var(--theme-border); }
+.cv2-input::placeholder { color: var(--theme-muted); }
+.cv2-text { color: var(--theme-text); }
+.cv2-muted { color: var(--theme-muted); }
+.cv2-border { border-color: var(--theme-border); }
+.cv2-accent { background: var(--theme-accent); color: #fff; }
+.cv2-accent:hover { filter: brightness(1.08); }
+.cv2-user-bubble { background: var(--theme-card2); color: var(--theme-text); }
+.cv2-assistant-bubble { background: var(--theme-card); color: var(--theme-text); border: 1px solid var(--theme-border); }
+.cv2-active { background: var(--theme-card2); color: var(--theme-text); }
+.cv2-hover:hover { background: var(--theme-card2); }
+.cv2-dot { background: var(--theme-muted); }
